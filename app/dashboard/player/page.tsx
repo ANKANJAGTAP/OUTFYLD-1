@@ -37,6 +37,7 @@ function PlayerDashboard() {
   const recentBookings = [
     {
       id: 1,
+      turfId: '1', // Add turfId for navigation
       turfName: 'Prime Sports Arena',
       location: 'Sangli, Maharashtra',
       date: '2025-09-25',
@@ -46,6 +47,7 @@ function PlayerDashboard() {
     },
     {
       id: 2,
+      turfId: '2', // Add turfId for navigation
       turfName: 'Elite Cricket Ground',
       location: 'Miraj, Maharashtra',
       date: '2025-09-28',
@@ -58,6 +60,7 @@ function PlayerDashboard() {
   const favoriteTurfs = [
     {
       id: 1,
+      turfId: '1', // Add turfId for navigation
       name: 'Prime Sports Arena',
       location: 'Sangli, Maharashtra',
       rating: 4.6,
@@ -65,6 +68,7 @@ function PlayerDashboard() {
     },
     {
       id: 2,
+      turfId: '2', // Add turfId for navigation
       name: 'Elite Cricket Ground', 
       location: 'Miraj, Maharashtra',
       rating: 4.4,
@@ -243,9 +247,11 @@ function PlayerDashboard() {
                     <div className="text-right">
                       <p className="text-sm font-medium text-gray-900">{booking.sport}</p>
                       {booking.status === 'upcoming' && (
-                        <Button size="sm" variant="outline" className="mt-2">
-                          View Details
-                        </Button>
+                        <Link href={`/book/${booking.turfId}`}>
+                          <Button size="sm" variant="outline" className="mt-2">
+                            View Details
+                          </Button>
+                        </Link>
                       )}
                     </div>
                   </div>
@@ -321,9 +327,11 @@ function PlayerDashboard() {
                           <span className="text-sm text-gray-500 ml-2">{turf.price}</span>
                         </div>
                       </div>
-                      <Button size="sm" variant="outline">
-                        Book Now
-                      </Button>
+                      <Link href={`/book/${turf.turfId}`}>
+                        <Button size="sm" variant="outline">
+                          Book Now
+                        </Button>
+                      </Link>
                     </div>
                   ))}
                 </div>
