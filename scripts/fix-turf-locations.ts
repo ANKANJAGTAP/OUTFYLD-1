@@ -39,7 +39,7 @@ async function fixTurfLocations() {
         { 'location.city': null },
         { 'location.city': '' }
       ]
-    }).lean() as ITurf[];
+    }).lean() as unknown as ITurf[];
 
     console.log(`📊 Found ${turfsWithoutCity.length} turfs without proper location.city\n`);
 
