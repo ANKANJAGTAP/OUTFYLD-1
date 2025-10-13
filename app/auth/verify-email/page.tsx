@@ -31,11 +31,32 @@ export default function VerifyEmailPage() {
     setError('');
 
     try {
-      await sendEmailVerification(firebaseUser);
-      setMessage('Verification email sent! Please check your inbox.');
+      const actionCodeSettings = {
+        url: `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/auth/login`,
+        handleCodeInApp: false,
+      };
+      
+      console.log('Resending email verification to:', firebaseUser.email);
+      console.log('Action code settings:', actionCodeSettings);
+      
+      await sendEmailVerification(firebaseUser, actionCodeSettings);
+      setMessage('Verification email sent! Please check your inbox and spam folder.');
+      console.log('Email verification sent successfully');
     } catch (error: any) {
       console.error('Error sending verification email:', error);
-      setError(error.message || 'Failed to send verification email');
+      console.error('Email error details:', {
+        code: error.code,
+        message: error.message
+      });
+      
+      let errorMessage = 'Failed to send verification email. ';
+      if (error.code === 'auth/too-many-requests') {
+        errorMessage += 'Too many requests. Please try again later.';
+      } else {
+        errorMessage += error.message || 'Please try again.';
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsResending(false);
     }

@@ -174,8 +174,11 @@ function OwnerDashboard() {
           return;
         }
 
-        // Approved - stay on owner dashboard
-        // User is already on owner dashboard, no need to redirect
+        // Approved - redirect to turf owner dashboard to add/manage turfs
+        if (data.subscription.verificationStatus === 'approved') {
+          router.push('/dashboard/turf-owner');
+          return;
+        }
       }
     } catch (error) {
       console.error('Error checking subscription:', error);
@@ -463,7 +466,7 @@ function OwnerDashboard() {
                         variant="outline" 
                         size="sm" 
                         className="flex-1"
-                        onClick={() => router.push(`/owner/turfs/${turf._id}/bookings`)}
+                        onClick={() => router.push(`/dashboard/turf-owner?turfId=${turf._id}`)}
                       >
                         <Calendar className="h-4 w-4 mr-1" />
                         Bookings
@@ -472,7 +475,7 @@ function OwnerDashboard() {
                         variant="outline" 
                         size="sm" 
                         className="flex-1"
-                        onClick={() => router.push(`/owner/turfs/${turf._id}`)}
+                        onClick={() => router.push(`/dashboard/turf-owner?turfId=${turf._id}`)}
                       >
                         <Edit className="h-4 w-4 mr-1" />
                         Edit

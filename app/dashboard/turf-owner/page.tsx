@@ -54,12 +54,18 @@ interface OwnerFormData {
 }
 
 function TurfOwnerDashboard() {
-  const { user, firebaseUser, logout, isVerifiedOwner } = useAuth();
+  const { user, firebaseUser, logout } = useAuth();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<{
+    hasSubscription: boolean;
+    status: string;
+    rejectionReason?: string;
+  } | null>(null);
+  const [checkingSubscription, setCheckingSubscription] = useState(true);
   
   const [formData, setFormData] = useState<OwnerFormData>({
     businessName: '',
@@ -79,6 +85,34 @@ function TurfOwnerDashboard() {
       pincode: ''
     }
   });
+
+  // Check subscription status on mount
+  useEffect(() => {
+    const checkSubscription = async () => {
+      if (!user?.uid) return;
+
+      try {
+        const response = await fetch(`/api/owner/subscription?uid=${user.uid}`);
+        const data = await response.json();
+
+        if (data.success) {
+          setSubscriptionStatus({
+            hasSubscription: !!data.subscription.subscriptionPlan,
+            status: data.subscription.verificationStatus || 'none',
+            rejectionReason: data.subscription.rejectionReason
+          });
+        }
+      } catch (err) {
+        console.error('Error checking subscription:', err);
+      } finally {
+        setCheckingSubscription(false);
+      }
+    };
+
+    if (user) {
+      checkSubscription();
+    }
+  }, [user]);
 
   // Load existing owner data on component mount
   useEffect(() => {
@@ -319,40 +353,69 @@ function TurfOwnerDashboard() {
     );
   }
 
-  // Check if owner is verified
-  if (!isVerifiedOwner()) {
+  // Check subscription status
+  if (checkingSubscription) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!subscriptionStatus?.hasSubscription) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <Card className="max-w-2xl">
           <CardHeader>
-            <CardTitle className="text-2xl text-center">Account Not Verified</CardTitle>
+            <CardTitle className="text-2xl text-center">Subscription Required</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-center space-y-4">
               <AlertCircle className="h-16 w-16 text-yellow-500 mx-auto" />
               <div>
-                <h3 className="text-lg font-semibold mb-2">Verification Required</h3>
+                <h3 className="text-lg font-semibold mb-2">No Subscription Plan</h3>
                 <p className="text-gray-600 mb-4">
-                  Your account is currently{' '}
-                  {user?.verificationStatus === 'pending' && 'pending verification'}
-                  {user?.verificationStatus === 'rejected' && 'not approved'}.
+                  You need to select a subscription plan before you can add turfs.
                 </p>
-                {user?.verificationStatus === 'pending' && (
-                  <p className="text-sm text-gray-500 mb-4">
-                    Please wait for the administrator to verify your payment and approve your account.
-                    You will be notified once your account is approved.
-                  </p>
-                )}
-                {user?.verificationStatus === 'rejected' && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-                    <p className="text-sm text-red-700">
-                      <strong>Rejection Reason:</strong> {user?.rejectionReason || 'No reason provided'}
-                    </p>
-                    <p className="text-sm text-red-600 mt-2">
-                      Please contact support for more information or to reapply.
-                    </p>
-                  </div>
-                )}
+              </div>
+              <div className="flex gap-4 justify-center">
+                <Link href="/owner/subscription">
+                  <Button>
+                    Choose Subscription Plan
+                  </Button>
+                </Link>
+                <Link href="/owner/dashboard">
+                  <Button variant="outline">
+                    Go to Dashboard
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (subscriptionStatus?.status === 'pending') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <Card className="max-w-2xl">
+          <CardHeader>
+            <CardTitle className="text-2xl text-center">Subscription Pending</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center space-y-4">
+              <AlertCircle className="h-16 w-16 text-yellow-500 mx-auto" />
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Awaiting Admin Approval</h3>
+                <p className="text-gray-600 mb-4">
+                  Your subscription payment is being verified by our admin team.
+                  You will be able to add turfs once approved.
+                </p>
               </div>
               <div className="flex gap-4 justify-center">
                 <Link href="/owner/dashboard">
@@ -360,9 +423,44 @@ function TurfOwnerDashboard() {
                     Go to Dashboard
                   </Button>
                 </Link>
-                <Link href="/">
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (subscriptionStatus?.status === 'rejected') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <Card className="max-w-2xl">
+          <CardHeader>
+            <CardTitle className="text-2xl text-center">Subscription Rejected</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center space-y-4">
+              <AlertCircle className="h-16 w-16 text-red-500 mx-auto" />
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Application Not Approved</h3>
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                  <p className="text-sm text-red-700">
+                    <strong>Rejection Reason:</strong> {subscriptionStatus.rejectionReason || 'No reason provided'}
+                  </p>
+                  <p className="text-sm text-red-600 mt-2">
+                    Please contact support for more information or to reapply.
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-4 justify-center">
+                <Link href="/owner/subscription">
                   <Button>
-                    Go to Home
+                    Reapply
+                  </Button>
+                </Link>
+                <Link href="/owner/dashboard">
+                  <Button variant="outline">
+                    Go to Dashboard
                   </Button>
                 </Link>
               </div>

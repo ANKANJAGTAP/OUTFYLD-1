@@ -154,8 +154,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         displayName: userData.name
       });
 
-      // Send email verification
-      await sendEmailVerification(userCredential.user);
+      // Send email verification with proper action code settings
+      try {
+        const actionCodeSettings = {
+          url: `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/auth/login`,
+          handleCodeInApp: false,
+        };
+        
+        console.log('Sending email verification to:', userData.email);
+        console.log('Action code settings:', actionCodeSettings);
+        
+        await sendEmailVerification(userCredential.user, actionCodeSettings);
+        console.log('Email verification sent successfully');
+      } catch (emailError: any) {
+        console.error('Error sending email verification:', emailError);
+        console.error('Email error details:', {
+          code: emailError.code,
+          message: emailError.message
+        });
+        
+        // Don't fail the registration if email verification fails
+        // The user can request a new verification email later
+        console.warn('Email verification failed but continuing with registration');
+      }
 
       // Create MongoDB user document
       const mongoUser = {
