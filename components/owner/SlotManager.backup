@@ -1,0 +1,536 @@
+'use client';'use client';
+
+
+
+import { useState } from 'react';import { useState, useEffect } from 'react';
+
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+import { Button } from '@/components/ui/button';import { Button } from '@/components/ui/button';
+
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+import { Label } from '@/components/ui/label';import { Badge } from '@/components/ui/badge';
+
+import { Checkbox } from '@/components/ui/checkbox';import { Label } from '@/components/ui/label';
+
+import { Clock, Info, RefreshCw } from 'lucide-react';import { Checkbox } from '@/components/ui/checkbox';
+
+import { Alert, AlertDescription } from '@/components/ui/alert';import { Clock, Info } from 'lucide-react';
+
+import { Alert, AlertDescription } from '@/components/ui/alert';
+
+interface TimeSlot {
+
+  day: string;interface TimeSlot {
+
+  startTime: string;  day: string;
+
+  endTime: string;  startTime: string;
+
+}  endTime: string;
+
+}
+
+interface SlotManagerProps {
+
+  value: TimeSlot[];interface SlotManagerProps {
+
+  onChange: (slots: TimeSlot[]) => void;  value: TimeSlot[];
+
+}  onChange: (slots: TimeSlot[]) => void;
+
+}
+
+const DAYS = [
+
+  'Monday', 'Tuesday', 'Wednesday', 'Thursday', const DAYS = [
+
+  'Friday', 'Saturday', 'Sunday'  'Monday', 'Tuesday', 'Wednesday', 'Thursday', 
+
+];  'Friday', 'Saturday', 'Sunday'
+
+];
+
+const TIME_OPTIONS = [
+
+  '06:00', '07:00', '08:00', '09:00', '10:00', '11:00',const TIME_OPTIONS = [
+
+  '12:00', '13:00', '14:00', '15:00', '16:00', '17:00',  '06:00', '07:00', '08:00', '09:00', '10:00', '11:00',
+
+  '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'  '12:00', '13:00', '14:00', '15:00', '16:00', '17:00',
+
+];  '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'
+
+];
+
+export function SlotManager({ value, onChange }: SlotManagerProps) {
+
+  // Simple operating hours setupexport function SlotManager({ value, onChange }: SlotManagerProps) {
+
+  const [openingTime, setOpeningTime] = useState('06:00');  // Simple operating hours setup
+
+  const [closingTime, setClosingTime] = useState('23:00');  const [openingTime, setOpeningTime] = useState('06:00');
+
+  const [selectedDays, setSelectedDays] = useState<string[]>(DAYS); // All days selected by default  const [closingTime, setClosingTime] = useState('23:00');
+
+  const [differentWeekendHours, setDifferentWeekendHours] = useState(false);  const [selectedDays, setSelectedDays] = useState<string[]>(DAYS); // All days selected by default
+
+  const [weekendOpeningTime, setWeekendOpeningTime] = useState('06:00');  const [differentWeekendHours, setDifferentWeekendHours] = useState(false);
+
+  const [weekendClosingTime, setWeekendClosingTime] = useState('23:00');  const [weekendOpeningTime, setWeekendOpeningTime] = useState('06:00');
+
+  const [weekendClosingTime, setWeekendClosingTime] = useState('23:00');
+
+  // Generate hourly slots based on settings
+
+  const generateSlots = () => {  // Generate hourly slots based on settings
+
+    const slots: TimeSlot[] = [];  const generateSlots = () => {
+
+        const slots: TimeSlot[] = [];
+
+    selectedDays.forEach(day => {    
+
+      const isWeekend = day === 'Saturday' || day === 'Sunday';    selectedDays.forEach(day => {
+
+      const dayOpeningTime = (differentWeekendHours && isWeekend) ? weekendOpeningTime : openingTime;      const isWeekend = day === 'Saturday' || day === 'Sunday';
+
+      const dayClosingTime = (differentWeekendHours && isWeekend) ? weekendClosingTime : closingTime;      const dayOpeningTime = (differentWeekendHours && isWeekend) ? weekendOpeningTime : openingTime;
+
+            const dayClosingTime = (differentWeekendHours && isWeekend) ? weekendClosingTime : closingTime;
+
+      // Parse hours      
+
+      const startHour = parseInt(dayOpeningTime.split(':')[0]);      // Parse hours
+
+      const endHour = parseInt(dayClosingTime.split(':')[0]);      const startHour = parseInt(dayOpeningTime.split(':')[0]);
+
+            const endHour = parseInt(dayClosingTime.split(':')[0]);
+
+      // Generate hourly slots      
+
+      for (let hour = startHour; hour < endHour; hour++) {      // Generate hourly slots
+
+        const start = `${hour.toString().padStart(2, '0')}:00`;      for (let hour = startHour; hour < endHour; hour++) {
+
+        const end = `${(hour + 1).toString().padStart(2, '0')}:00`;        const start = `${hour.toString().padStart(2, '0')}:00`;
+
+                const end = `${(hour + 1).toString().padStart(2, '0')}:00`;
+
+        slots.push({    
+
+          day,    if (end <= start) {
+
+          startTime: start,      alert('End time must be after start time');
+
+          endTime: end      return;
+
+        });    }
+
+      }
+
+    });    // Check for overlapping slots on the same day
+
+        const overlapping = value.some(slot => {
+
+    onChange(slots);      if (slot.day !== newSlot.day) return false;
+
+  };      
+
+      const existingStart = new Date(`2024-01-01 ${slot.startTime}`);
+
+  const toggleDay = (day: string) => {      const existingEnd = new Date(`2024-01-01 ${slot.endTime}`);
+
+    setSelectedDays(prev =>       
+
+      prev.includes(day)       return (start < existingEnd && end > existingStart);
+
+        ? prev.filter(d => d !== day)    });
+
+        : [...prev, day]
+
+    );    if (overlapping) {
+
+  };      alert('This time slot overlaps with an existing slot on the same day');
+
+      return;
+
+  const selectAllDays = () => {    }
+
+    setSelectedDays(DAYS);
+
+  };    onChange([...value, newSlot]);
+
+    setNewSlot({ day: '', startTime: '', endTime: '' });
+
+  const selectWeekdays = () => {  };
+
+    setSelectedDays(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']);
+
+  };  const removeSlot = (index: number) => {
+
+    onChange(value.filter((_, i) => i !== index));
+
+  const selectWeekends = () => {  };
+
+    setSelectedDays(['Saturday', 'Sunday']);
+
+  };  const getSlotsByDay = () => {
+
+    const slotsByDay: { [key: string]: TimeSlot[] } = {};
+
+  // Calculate total slots    
+
+  const totalSlots = value.length;    DAYS.forEach(day => {
+
+  const slotsByDay = DAYS.map(day => ({      slotsByDay[day] = value
+
+    day,        .filter(slot => slot.day === day)
+
+    count: value.filter(slot => slot.day === day).length        .sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+  }));    });
+
+    
+
+  return (    return slotsByDay;
+
+    <Card>  };
+
+      <CardHeader>
+
+        <CardTitle className="flex items-center">  const slotsByDay = getSlotsByDay();
+
+          <Clock className="h-5 w-5 mr-2 text-green-500" />
+
+          Set Operating Hours (Simplified)  return (
+
+        </CardTitle>    <Card>
+
+      </CardHeader>      <CardHeader>
+
+      <CardContent className="space-y-6">        <CardTitle className="flex items-center gap-2">
+
+        {/* Info Alert */}          <Clock className="h-5 w-5" />
+
+        <Alert>          Available Time Slots
+
+          <Info className="h-4 w-4" />        </CardTitle>
+
+          <AlertDescription>      </CardHeader>
+
+            Set your turf&apos;s operating hours. The system will automatically create hourly booking slots for customers.      <CardContent>
+
+            For example: 6 AM to 11 PM = 17 hourly slots (06:00-07:00, 07:00-08:00, etc.)        <div className="space-y-6">
+
+          </AlertDescription>          <p className="text-sm text-gray-600">
+
+        </Alert>            Set up your available time slots for each day. Customers will only be able to book during these times.
+
+          </p>
+
+        {/* Operating Days Selection */}
+
+        <div className="space-y-3">          {/* Add New Slot */}
+
+          <Label className="text-base font-semibold">Select Operating Days</Label>          <div className="border rounded-lg p-4 bg-gray-50">
+
+                      <h4 className="text-sm font-medium mb-3">Add New Time Slot</h4>
+
+          {/* Quick Select Buttons */}            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+
+          <div className="flex gap-2 flex-wrap">              <Select 
+
+            <Button type="button" size="sm" variant="outline" onClick={selectAllDays}>                value={newSlot.day} 
+
+              All Days                onValueChange={(day) => setNewSlot({...newSlot, day})}
+
+            </Button>              >
+
+            <Button type="button" size="sm" variant="outline" onClick={selectWeekdays}>                <SelectTrigger>
+
+              Weekdays Only                  <SelectValue placeholder="Select day" />
+
+            </Button>                </SelectTrigger>
+
+            <Button type="button" size="sm" variant="outline" onClick={selectWeekends}>                <SelectContent>
+
+              Weekends Only                  {DAYS.map(day => (
+
+            </Button>                    <SelectItem key={day} value={day}>{day}</SelectItem>
+
+          </div>                  ))}
+
+                </SelectContent>
+
+          {/* Day Checkboxes */}              </Select>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+
+            {DAYS.map(day => (              <Select 
+
+              <div key={day} className="flex items-center space-x-2">                value={newSlot.startTime} 
+
+                <Checkbox                onValueChange={(startTime) => setNewSlot({...newSlot, startTime})}
+
+                  id={day}              >
+
+                  checked={selectedDays.includes(day)}                <SelectTrigger>
+
+                  onCheckedChange={() => toggleDay(day)}                  <SelectValue placeholder="Start time" />
+
+                />                </SelectTrigger>
+
+                <label                <SelectContent>
+
+                  htmlFor={day}                  {TIME_OPTIONS.map(time => (
+
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"                    <SelectItem key={time} value={time}>{time}</SelectItem>
+
+                >                  ))}
+
+                  {day}                </SelectContent>
+
+                </label>              </Select>
+
+              </div>
+
+            ))}              <Select 
+
+          </div>                value={newSlot.endTime} 
+
+        </div>                onValueChange={(endTime) => setNewSlot({...newSlot, endTime})}
+
+              >
+
+        {/* Weekday Hours */}                <SelectTrigger>
+
+        <div className="space-y-3">                  <SelectValue placeholder="End time" />
+
+          <Label className="text-base font-semibold">                </SelectTrigger>
+
+            {differentWeekendHours ? 'Weekday Hours' : 'Operating Hours'}                <SelectContent>
+
+          </Label>                  {TIME_OPTIONS.map(time => (
+
+          <div className="grid grid-cols-2 gap-4">                    <SelectItem key={time} value={time}>{time}</SelectItem>
+
+            <div className="space-y-2">                  ))}
+
+              <Label htmlFor="opening-time">Opening Time</Label>                </SelectContent>
+
+              <Select value={openingTime} onValueChange={setOpeningTime}>              </Select>
+
+                <SelectTrigger id="opening-time">
+
+                  <SelectValue placeholder="Select opening time" />              <Button onClick={addSlot} className="bg-green-500 hover:bg-green-600">
+
+                </SelectTrigger>                <Plus className="h-4 w-4 mr-2" />
+
+                <SelectContent>                Add Slot
+
+                  {TIME_OPTIONS.map(time => (              </Button>
+
+                    <SelectItem key={time} value={time}>            </div>
+
+                      {time}          </div>
+
+                    </SelectItem>
+
+                  ))}          {/* Display Existing Slots by Day */}
+
+                </SelectContent>          <div className="space-y-4">
+
+              </Select>            <h4 className="text-sm font-medium">Current Schedule ({value.length} slots)</h4>
+
+            </div>            
+
+            {DAYS.map(day => {
+
+            <div className="space-y-2">              const daySlots = slotsByDay[day];
+
+              <Label htmlFor="closing-time">Closing Time</Label>              return (
+
+              <Select value={closingTime} onValueChange={setClosingTime}>                <div key={day} className="border rounded-lg p-3">
+
+                <SelectTrigger id="closing-time">                  <div className="flex items-center justify-between mb-2">
+
+                  <SelectValue placeholder="Select closing time" />                    <h5 className="font-medium text-gray-900">{day}</h5>
+
+                </SelectTrigger>                    <Badge variant="outline">
+
+                <SelectContent>                      {daySlots.length} slot{daySlots.length !== 1 ? 's' : ''}
+
+                  {TIME_OPTIONS.filter(time => time > openingTime).map(time => (                    </Badge>
+
+                    <SelectItem key={time} value={time}>                  </div>
+
+                      {time}                  
+
+                    </SelectItem>                  {daySlots.length > 0 ? (
+
+                  ))}                    <div className="space-y-2">
+
+                </SelectContent>                      {daySlots.map((slot, dayIndex) => {
+
+              </Select>                        const globalIndex = value.findIndex(s => 
+
+            </div>                          s.day === slot.day && 
+
+          </div>                          s.startTime === slot.startTime && 
+
+        </div>                          s.endTime === slot.endTime
+
+                        );
+
+        {/* Different Weekend Hours Option */}                        
+
+        <div className="flex items-center space-x-2">                        return (
+
+          <Checkbox                          <div 
+
+            id="different-weekend-hours"                            key={`${slot.day}-${slot.startTime}-${slot.endTime}`}
+
+            checked={differentWeekendHours}                            className="flex items-center justify-between bg-green-50 p-2 rounded border"
+
+            onCheckedChange={(checked) => setDifferentWeekendHours(checked as boolean)}                          >
+
+          />                            <span className="text-sm text-green-800">
+
+          <label                              {slot.startTime} - {slot.endTime}
+
+            htmlFor="different-weekend-hours"                            </span>
+
+            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"                            <Button
+
+          >                              variant="outline"
+
+            Set different hours for weekends (Saturday & Sunday)                              size="sm"
+
+          </label>                              onClick={() => removeSlot(globalIndex)}
+
+        </div>                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+
+                            >
+
+        {/* Weekend Hours (if different) */}                              <Trash2 className="h-3 w-3" />
+
+        {differentWeekendHours && (                            </Button>
+
+          <div className="space-y-3 p-4 bg-blue-50 rounded-lg border border-blue-200">                          </div>
+
+            <Label className="text-base font-semibold text-blue-900">Weekend Hours</Label>                        );
+
+            <div className="grid grid-cols-2 gap-4">                      })}
+
+              <div className="space-y-2">                    </div>
+
+                <Label htmlFor="weekend-opening-time">Opening Time</Label>                  ) : (
+
+                <Select value={weekendOpeningTime} onValueChange={setWeekendOpeningTime}>                    <p className="text-sm text-gray-500 italic">No slots available</p>
+
+                  <SelectTrigger id="weekend-opening-time">                  )}
+
+                    <SelectValue placeholder="Select opening time" />                </div>
+
+                  </SelectTrigger>              );
+
+                  <SelectContent>            })}
+
+                    {TIME_OPTIONS.map(time => (          </div>
+
+                      <SelectItem key={time} value={time}>
+
+                        {time}          {value.length === 0 && (
+
+                      </SelectItem>            <div className="text-center py-6 border-2 border-dashed border-gray-300 rounded-lg">
+
+                    ))}              <Clock className="h-12 w-12 mx-auto text-gray-400 mb-2" />
+
+                  </SelectContent>              <p className="text-sm text-gray-500">
+
+                </Select>                No time slots added yet. Add your first slot above.
+
+              </div>              </p>
+
+            </div>
+
+              <div className="space-y-2">          )}
+
+                <Label htmlFor="weekend-closing-time">Closing Time</Label>
+
+                <Select value={weekendClosingTime} onValueChange={setWeekendClosingTime}>          {value.length > 0 && (
+
+                  <SelectTrigger id="weekend-closing-time">            <div className="bg-blue-50 p-3 rounded-lg">
+
+                    <SelectValue placeholder="Select closing time" />              <h4 className="text-sm font-medium text-blue-800 mb-1">
+
+                  </SelectTrigger>                💡 Pro Tips:
+
+                  <SelectContent>              </h4>
+
+                    {TIME_OPTIONS.filter(time => time > weekendOpeningTime).map(time => (              <ul className="text-sm text-blue-700 space-y-1">
+
+                      <SelectItem key={time} value={time}>                <li>• Consider peak hours (evenings and weekends) for better bookings</li>
+
+                        {time}                <li>• Allow buffer time between slots for cleaning and setup</li>
+
+                      </SelectItem>                <li>• Different sports may need different slot durations</li>
+
+                    ))}              </ul>
+
+                  </SelectContent>            </div>
+
+                </Select>          )}
+
+              </div>        </div>
+
+            </div>      </CardContent>
+
+          </div>    </Card>
+
+        )}  );
+
+}
+        {/* Generate Slots Button */}
+        <Button 
+          type="button"
+          onClick={generateSlots} 
+          className="w-full bg-green-600 hover:bg-green-700"
+          size="lg"
+        >
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Generate Time Slots
+        </Button>
+
+        {/* Current Slots Summary */}
+        {totalSlots > 0 && (
+          <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+            <h4 className="font-semibold text-green-900 mb-3">
+              Generated Slots: {totalSlots} hourly slots
+            </h4>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+              {slotsByDay.map(({ day, count }) => (
+                count > 0 && (
+                  <div key={day} className="flex justify-between bg-white px-3 py-2 rounded border">
+                    <span className="font-medium">{day.slice(0, 3)}</span>
+                    <span className="text-green-600">{count} slots</span>
+                  </div>
+                )
+              ))}
+            </div>
+          </div>
+        )}
+
+        {totalSlots === 0 && (
+          <Alert>
+            <AlertDescription>
+              Click &quot;Generate Time Slots&quot; to create hourly booking slots based on your operating hours.
+            </AlertDescription>
+          </Alert>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
