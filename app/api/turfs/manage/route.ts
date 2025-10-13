@@ -117,6 +117,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate location with city
+    if (!location || !location.city || location.city.trim() === '') {
+      return NextResponse.json(
+        { error: 'Location with city is required' },
+        { status: 400 }
+      );
+    }
+
     // Create new turf (allow multiple turfs per owner)
     const newTurf = new Turf({
       ownerId: user._id,
@@ -245,6 +253,14 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json(
         { error: 'Turf not found or you do not have permission to update it' },
         { status: 404 }
+      );
+    }
+
+    // Validate location with city if location is being updated
+    if (location && (!location.city || location.city.trim() === '')) {
+      return NextResponse.json(
+        { error: 'Location city is required' },
+        { status: 400 }
       );
     }
 

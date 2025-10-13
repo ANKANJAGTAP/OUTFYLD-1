@@ -90,6 +90,10 @@ export async function GET(request: NextRequest) {
     // Calculate pagination
     const skip = (page - 1) * limit;
 
+    // 🔍 DEBUG: Log query details
+    console.log('🔍 Browse API Query:', JSON.stringify(query, null, 2));
+    console.log('📄 Page:', page, 'Limit:', limit, 'Skip:', skip);
+
     try {
       // Get turfs with pagination
       const turfs = await Turf.find(query)
@@ -101,6 +105,15 @@ export async function GET(request: NextRequest) {
 
       // Get total count
       const total = await Turf.countDocuments(query);
+
+      // 🔍 DEBUG: Log results
+      console.log('✅ Found turfs:', turfs.length, '/', total, 'total');
+      console.log('📊 First turf:', turfs[0] ? {
+        id: turfs[0]._id,
+        name: turfs[0].name,
+        city: turfs[0].location?.city,
+        isActive: turfs[0].isActive
+      } : 'None');
 
       // Transform data for frontend
       const transformedTurfs = turfs.map((turf: any) => ({

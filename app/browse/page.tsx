@@ -70,7 +70,7 @@ export default function BrowsePage() {
   const [filters, setFilters] = useState({
     location: '',
     sport: '',
-    priceRange: [0, 2000],
+    priceRange: [0, 10000],
     rating: 0,
     amenities: []
   });
@@ -97,7 +97,7 @@ export default function BrowsePage() {
               onFiltersChange={setFilters}
               availableCities={browseData?.filters.cities || []}
               availableSports={browseData?.filters.sports || []}
-              priceRange={browseData?.filters.priceRange || { min: 0, max: 2000 }}
+              priceRange={browseData?.filters.priceRange || { min: 0, max: 10000 }}
             />
           </div>
           

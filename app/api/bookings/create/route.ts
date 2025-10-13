@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
     console.log('10. Looking up users and turf...');
     const [customer, owner, turf] = await Promise.all([
       User.findOne({ uid: customerId }), // Find customer by Firebase UID
-      User.findById(ownerId), // Find owner by MongoDB ObjectId
+      User.findOne({ uid: ownerId }), // Find owner by Firebase UID
       Turf.findById(turfId) // Find turf by MongoDB ObjectId
     ]);
 
@@ -144,13 +144,13 @@ export async function POST(request: NextRequest) {
     // Create the booking
     console.log('12. Creating booking with IDs:', {
       customerMongoId: customer._id,
-      ownerId,
+      ownerMongoId: owner._id,
       turfId
     });
     
     const booking = new Booking({
       customerId: customer._id, // Use customer's MongoDB ObjectId
-      ownerId,
+      ownerId: owner._id, // Use owner's MongoDB ObjectId
       turfId,
       slot,
       totalAmount: parseFloat(totalAmount),

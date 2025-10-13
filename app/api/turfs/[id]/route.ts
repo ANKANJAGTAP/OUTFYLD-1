@@ -55,7 +55,7 @@ export async function GET(
 
       const turfData = {
         _id: userTurf._id,
-        ownerId: userTurf._id, // Add ownerId for booking API
+        ownerId: userTurf.uid, // Use Firebase UID for booking API
         name: userTurf.name || userTurf.businessName,
         businessName: userTurf.businessName,
         email: userTurf.email,
@@ -105,7 +105,7 @@ export async function GET(
     // Prepare turf data with availability info and backward compatibility
     const turfData = {
       _id: turf._id,
-      ownerId: turf.ownerId, // Add ownerId for booking API
+      ownerId: turf.ownerUid, // Use Firebase UID for booking API
       name: turf.name,
       businessName: turf.contactInfo?.businessName || turf.name,
       email: turf.contactInfo?.email || '',
