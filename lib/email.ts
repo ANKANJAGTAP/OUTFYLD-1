@@ -5,10 +5,15 @@ const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST || 'smtp.gmail.com',
   port: parseInt(process.env.EMAIL_PORT || '587'),
   secure: process.env.EMAIL_SECURE === 'true', // true for 465, false for other ports
+  requireTLS: true, // Force TLS for production
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASSWORD,
   },
+  tls: {
+    ciphers: 'SSLv3',
+    rejectUnauthorized: false // Allow self-signed certificates if needed
+  }
 });
 
 // Note: Removed transporter.verify() as it causes DYNAMIC_SERVER_USAGE error in Next.js App Router
