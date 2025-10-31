@@ -80,8 +80,11 @@ export async function sendBookingNotificationEmail(
       bookingId 
     } = bookingDetails;
 
+    const senderName = process.env.EMAIL_SENDER_NAME || 'OutFyld Notifications';
+    const fromEmail = process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@outfyld.in';
+    
     const mailOptions = {
-      from: process.env.EMAIL_FROM || `"OutFyld Notifications" <${process.env.EMAIL_USER}>`,
+      from: `"${senderName}" <${fromEmail}>`,
       to: ownerEmail,
       subject: `🔔 New Booking Request - ${turfName}`,
       html: `
@@ -341,8 +344,11 @@ export async function sendBookingConfirmationEmail(
       ? `✅ Booking Confirmed - ${turfName}` 
       : `❌ Booking Rejected - ${turfName}`;
     
+    const senderName = process.env.EMAIL_SENDER_NAME || 'OutFyld';
+    const fromEmail = process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@outfyld.in';
+    
     const mailOptions = {
-      from: process.env.EMAIL_FROM || `"OutFyld" <${process.env.EMAIL_USER}>`,
+      from: `"${senderName}" <${fromEmail}>`,
       to: customerEmail,
       subject,
       html: `

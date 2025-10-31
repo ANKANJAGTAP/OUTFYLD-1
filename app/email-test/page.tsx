@@ -180,13 +180,17 @@ EMAIL_PORT=587
 EMAIL_SECURE=false
 EMAIL_USER=resend
 EMAIL_PASSWORD=re_YourAPIKeyHere
-EMAIL_FROM=OutFyld <admin@outfyld.in>
+EMAIL_FROM=admin@outfyld.in
+EMAIL_SENDER_NAME=OutFyld
 ENABLE_EMAIL_NOTIFICATIONS=true`}
             </pre>
             <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded">
               <p className="text-sm font-semibold text-green-800">✅ Using Verified Domain</p>
               <p className="text-xs text-green-700 mt-1">
                 Your domain <strong>admin@outfyld.in</strong> is verified on Resend. All emails will be sent from this address.
+              </p>
+              <p className="text-xs text-green-700 mt-1">
+                <strong>Note:</strong> EMAIL_FROM should be just the email address (no angle brackets or quotes).
               </p>
             </div>
             <p className="text-xs text-gray-600 mt-2">
