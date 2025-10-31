@@ -122,6 +122,12 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Fallback (should never reach here due to validation)
+    return NextResponse.json(
+      { error: 'Invalid action' },
+      { status: 400 }
+    );
+
   } catch (error: any) {
     console.error('Error revoking owner:', error);
     return NextResponse.json(
