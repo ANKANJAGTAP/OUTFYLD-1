@@ -1,5 +1,16 @@
 import nodemailer from 'nodemailer';
 
+// Check if email is configured
+const isEmailConfigured = !!(
+  process.env.EMAIL_HOST && 
+  process.env.EMAIL_USER && 
+  process.env.EMAIL_PASSWORD
+);
+
+if (!isEmailConfigured) {
+  console.warn('⚠️  Email not configured. Set EMAIL_HOST, EMAIL_USER, and EMAIL_PASSWORD in .env.local');
+}
+
 // Email configuration
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST || 'smtp.gmail.com',
@@ -9,10 +20,20 @@ const transporter = nodemailer.createTransport({
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASSWORD,
   },
+  debug: process.env.SMTP_DEBUG === 'true', // Enable debug output
+  logger: process.env.SMTP_LOGGER === 'true', // Enable logger
 });
 
 // Note: Removed transporter.verify() as it causes DYNAMIC_SERVER_USAGE error in Next.js App Router
 // Verification will happen automatically when sending emails
+
+console.log('📧 Email transporter initialized:', {
+  host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+  port: process.env.EMAIL_PORT || '587',
+  secure: process.env.EMAIL_SECURE === 'true',
+  user: process.env.EMAIL_USER ? '✓ configured' : '✗ missing',
+  password: process.env.EMAIL_PASSWORD ? '✓ configured' : '✗ missing',
+});
 
 interface BookingDetails {
   customerName: string;
@@ -34,7 +55,19 @@ export async function sendBookingNotificationEmail(
   ownerName: string,
   bookingDetails: BookingDetails
 ): Promise<void> {
+  // Check if email is enabled
+  if (process.env.ENABLE_EMAIL_NOTIFICATIONS !== 'true') {
+    console.log('📧 Email notifications disabled. Set ENABLE_EMAIL_NOTIFICATIONS=true to enable.');
+    return;
+  }
+
+  if (!isEmailConfigured) {
+    console.warn('⚠️  Cannot send email: Email not configured');
+    return;
+  }
+
   try {
+    console.log(`📧 Sending booking notification to owner: ${ownerEmail}`);
     const { 
       customerName, 
       customerEmail, 
@@ -48,7 +81,7 @@ export async function sendBookingNotificationEmail(
     } = bookingDetails;
 
     const mailOptions = {
-      from: `"OutFyld Notifications" <${process.env.EMAIL_USER}>`,
+      from: process.env.EMAIL_FROM || `"OutFyld Notifications" <${process.env.EMAIL_USER}>`,
       to: ownerEmail,
       subject: `🔔 New Booking Request - ${turfName}`,
       html: `
@@ -264,9 +297,17 @@ OutFyld Team
     };
 
     const info = await transporter.sendMail(mailOptions);
-    console.log('Booking notification email sent:', info.messageId);
-  } catch (error) {
-    console.error('Error sending booking notification email:', error);
+    console.log('✅ Booking notification email sent successfully');
+    console.log('📬 Message ID:', info.messageId);
+    console.log('📧 Sent to:', ownerEmail);
+  } catch (error: any) {
+    console.error('❌ Error sending owner notification email:', error);
+    console.error('Error details:', {
+      code: error?.code,
+      command: error?.command,
+      response: error?.response,
+      responseCode: error?.responseCode
+    });
     throw error;
   }
 }
@@ -280,7 +321,19 @@ export async function sendBookingConfirmationEmail(
   bookingDetails: BookingDetails,
   status: 'confirmed' | 'rejected'
 ): Promise<void> {
+  // Check if email is enabled
+  if (process.env.ENABLE_EMAIL_NOTIFICATIONS !== 'true') {
+    console.log('📧 Email notifications disabled. Set ENABLE_EMAIL_NOTIFICATIONS=true to enable.');
+    return;
+  }
+
+  if (!isEmailConfigured) {
+    console.warn('⚠️  Cannot send email: Email not configured');
+    return;
+  }
+
   try {
+    console.log(`📧 Sending booking ${status} email to customer: ${customerEmail}`);
     const { turfName, bookingDate, bookingTime, totalAmount } = bookingDetails;
     
     const isConfirmed = status === 'confirmed';
@@ -289,7 +342,7 @@ export async function sendBookingConfirmationEmail(
       : `❌ Booking Rejected - ${turfName}`;
     
     const mailOptions = {
-      from: `"OutFyld" <${process.env.EMAIL_USER}>`,
+      from: process.env.EMAIL_FROM || `"OutFyld" <${process.env.EMAIL_USER}>`,
       to: customerEmail,
       subject,
       html: `
@@ -361,10 +414,18 @@ export async function sendBookingConfirmationEmail(
       `,
     };
 
-    await transporter.sendMail(mailOptions);
-    console.log(`Booking ${status} email sent to customer`);
-  } catch (error) {
-    console.error('Error sending customer email:', error);
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`✅ Booking ${status} email sent to customer successfully`);
+    console.log('📬 Message ID:', info.messageId);
+    console.log('📧 Sent to:', customerEmail);
+  } catch (error: any) {
+    console.error('❌ Error sending customer email:', error);
+    console.error('Error details:', {
+      code: error?.code,
+      command: error?.command,
+      response: error?.response,
+      responseCode: error?.responseCode
+    });
     throw error;
   }
 }

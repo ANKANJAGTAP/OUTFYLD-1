@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectMongoDB } from '@/lib/mongodb';
 import Booking from '@/app/models/Booking';
 import User from '@/app/models/User';
+import Turf from '@/app/models/Turf';
 import mongoose from 'mongoose';
+import { sendBookingConfirmationEmail } from '@/lib/email';
 
 // Tell Next.js this route should be dynamic (not statically generated)
 export const dynamic = 'force-dynamic';
@@ -97,7 +99,38 @@ export async function PUT(request: NextRequest) {
       // Populate the updated booking for response
       const updatedBooking = await Booking.findById(booking._id)
         .populate('customerId', 'name email phone')
-        .populate('turfId', 'businessName location pricing');
+        .populate('turfId', 'name location pricing');
+
+      // Send confirmation email to customer
+      try {
+        const customerData = updatedBooking.customerId as any;
+        const turfData = updatedBooking.turfId as any;
+
+        if (customerData && customerData.email && turfData) {
+          const bookingDetails = {
+            customerName: customerData.name,
+            customerEmail: customerData.email,
+            customerPhone: customerData.phone,
+            turfName: turfData.name,
+            turfLocation: `${turfData.location?.address || ''}, ${turfData.location?.city || ''}`,
+            bookingDate: updatedBooking.slot.date,
+            bookingTime: `${updatedBooking.slot.startTime} - ${updatedBooking.slot.endTime}`,
+            totalAmount: updatedBooking.totalAmount,
+            bookingId: updatedBooking._id.toString()
+          };
+
+          await sendBookingConfirmationEmail(
+            customerData.email,
+            customerData.name,
+            bookingDetails,
+            status as 'confirmed' | 'rejected'
+          );
+          console.log(`✅ ${status} email sent to customer ${customerData.email}`);
+        }
+      } catch (emailError) {
+        console.error('❌ Failed to send confirmation email to customer:', emailError);
+        // Don't fail the request if email fails
+      }
 
       return NextResponse.json({
         message: `Booking ${status} successfully`,
