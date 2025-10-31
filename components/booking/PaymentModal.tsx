@@ -30,23 +30,25 @@ interface PaymentModalProps {
       public_id: string;
     };
   };
-  selectedSlot: {
+  selectedSlots: Array<{
     day: string;
     date: Date;
     startTime: string;
     endTime: string;
-  };
+  }>;
   totalAmount: number;
   onSuccess: () => void;
+  paymentTimer?: number; // Timer in seconds
 }
 
 export default function PaymentModal({
   isOpen,
   onClose,
   turf,
-  selectedSlot,
+  selectedSlots,
   totalAmount,
-  onSuccess
+  onSuccess,
+  paymentTimer = 0
 }: PaymentModalProps) {
   const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState<'payment' | 'upload' | 'processing' | 'success' | 'error'>('payment');
@@ -108,12 +110,12 @@ export default function PaymentModal({
       formData.append('ownerId', turf.ownerId); // The turf owner's user ID
       formData.append('turfId', turf._id);
       
-      // Prepare slot data with date as string
-      const slotData = {
-        ...selectedSlot,
-        date: format(selectedSlot.date, 'yyyy-MM-dd')
-      };
-      formData.append('slot', JSON.stringify(slotData));
+      // Prepare slots data with dates as strings
+      const slotsData = selectedSlots.map(slot => ({
+        ...slot,
+        date: format(slot.date, 'yyyy-MM-dd')
+      }));
+      formData.append('slots', JSON.stringify(slotsData));
       formData.append('totalAmount', totalAmount.toString());
       formData.append('paymentScreenshot', paymentScreenshot);
 
@@ -122,12 +124,19 @@ export default function PaymentModal({
         body: formData,
       });
 
+      const result = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create booking');
+        // Handle specific slot conflict errors
+        if (response.status === 409 && result.code === 'SLOT_CONFLICT') {
+          setError(`⚠️ Booking failed: Some slots are no longer available. Another customer just booked them.\n\nUnavailable slots: ${result.unavailableSlots.map((slot: any) => `${slot.startTime}-${slot.endTime}`).join(', ')}\n\nPlease close this dialog and select different time slots.`);
+          setCurrentStep('error');
+          return;
+        }
+        
+        throw new Error(result.error || 'Failed to create booking');
       }
 
-      const result = await response.json();
       console.log('Booking created successfully:', result);
 
       setCurrentStep('success');
@@ -200,6 +209,12 @@ export default function PaymentModal({
           <li>5. Upload the screenshot below</li>
         </ol>
       </div>
+
+      <Alert className="bg-yellow-50 border-yellow-200">
+        <AlertDescription className="text-yellow-800 text-sm">
+          ⏰ <strong>Note:</strong> Your selected time slots are not reserved. Please complete payment quickly as other customers may book the same slots.
+        </AlertDescription>
+      </Alert>
 
       <Button 
         onClick={() => setCurrentStep('upload')} 
@@ -315,7 +330,14 @@ export default function PaymentModal({
         <h4 className="font-medium text-green-900 mb-2">Booking Details:</h4>
         <div className="text-sm text-green-800 space-y-1">
           <p><strong>Turf:</strong> {turf.businessName}</p>
-          <p><strong>Slot:</strong> {format(selectedSlot.date, 'EEEE, MMM d')}, {selectedSlot.startTime} - {selectedSlot.endTime}</p>
+          <div>
+            <strong>Slots ({selectedSlots.length}):</strong>
+            {selectedSlots.map((slot, index) => (
+              <div key={index} className="ml-2">
+                • {format(slot.date, 'EEEE, MMM d')}, {slot.startTime} - {slot.endTime}
+              </div>
+            ))}
+          </div>
           <p><strong>Amount:</strong> ₹{totalAmount}</p>
           <p><strong>Status:</strong> Pending Approval</p>
         </div>
@@ -343,9 +365,21 @@ export default function PaymentModal({
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Complete Your Booking</DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle>Complete Your Booking</DialogTitle>
+            {paymentTimer > 0 && (
+              <div className="text-sm text-orange-600 font-medium">
+                ⏰ {Math.floor(paymentTimer / 60)}:{(paymentTimer % 60).toString().padStart(2, '0')}
+              </div>
+            )}
+          </div>
           <DialogDescription>
             Follow the steps below to complete your turf booking
+            {paymentTimer > 0 && (
+              <span className="block text-orange-600 mt-1">
+                Complete payment within {Math.floor(paymentTimer / 60)} minutes to secure your slots
+              </span>
+            )}
           </DialogDescription>
         </DialogHeader>
 
@@ -359,11 +393,18 @@ export default function PaymentModal({
               <span>Turf:</span>
               <span className="font-medium">{turf.businessName}</span>
             </div>
-            <div className="flex justify-between text-sm">
-              <span>Date & Time:</span>
-              <span className="font-medium">
-                {format(selectedSlot.date, 'EEEE, MMM d')}, {selectedSlot.startTime} - {selectedSlot.endTime}
-              </span>
+            <div className="text-sm">
+              <span>Slots ({selectedSlots.length}):</span>
+              <div className="mt-1 space-y-1">
+                {selectedSlots.map((slot, index) => (
+                  <div key={index} className="flex justify-between text-xs">
+                    <span className="text-gray-600">
+                      {format(slot.date, 'MMM d')}, {slot.startTime} - {slot.endTime}
+                    </span>
+                    <span className="font-medium">₹{turf.pricing}</span>
+                  </div>
+                ))}
+              </div>
             </div>
             <Separator />
             <div className="flex justify-between font-semibold">

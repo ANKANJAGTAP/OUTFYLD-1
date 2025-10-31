@@ -9,6 +9,7 @@ interface IBooking extends Document {
     day: string;
     startTime: string;
     endTime: string;
+    date: string; // YYYY-MM-DD format
   };
   status: 'pending' | 'confirmed' | 'rejected';
   paymentScreenshot: {
@@ -36,6 +37,11 @@ const BookingSlotSchema = new mongoose.Schema({
     type: String,
     required: true,
     match: /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/ // HH:MM format validation
+  },
+  date: {
+    type: String,
+    required: true,
+    match: /^\d{4}-\d{2}-\d{2}$/ // YYYY-MM-DD format validation
   }
 }, { _id: false });
 
@@ -95,7 +101,7 @@ BookingSchema.index({ customerId: 1 });
 BookingSchema.index({ ownerId: 1 });
 BookingSchema.index({ turfId: 1 });
 BookingSchema.index({ status: 1 });
-BookingSchema.index({ 'slot.day': 1, 'slot.startTime': 1 });
+BookingSchema.index({ 'slot.day': 1, 'slot.startTime': 1, 'slot.date': 1 });
 
 // Pre-save middleware to validate booking data
 BookingSchema.pre('save', function(this: IBooking, next) {

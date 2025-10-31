@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,13 +17,15 @@ import {
   WashingMachine,
   Phone,
   Mail,
-  Loader2
+  Loader2,
+  Lock
 } from 'lucide-react';
 import Image from 'next/image';
-import { format, isSameDay, startOfWeek, endOfWeek, isWithinInterval, parseISO } from 'date-fns';
+import { format, isSameDay, startOfWeek, endOfWeek, isWithinInterval, parseISO, addMonths, isAfter, startOfDay } from 'date-fns';
 // Import PaymentModal component
 import PaymentModal from '@/components/booking/PaymentModal';
 import { WeekCalendar } from '@/components/booking/WeekCalendar';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface TurfData {
   _id: string;
@@ -72,23 +74,92 @@ const amenityIcons: { [key: string]: React.ReactNode } = {
   'WiFi': <Wifi className="w-4 h-4" />
 };
 
-export default function TurfDetailsPage({ turfId }: TurfDetailsPageProps) {
+const TurfDetailsPage = memo(function TurfDetailsPage({ turfId }: TurfDetailsPageProps) {
+  const { user } = useAuth();
   const [turf, setTurf] = useState<TurfData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedSlot, setSelectedSlot] = useState<{
+  const [selectedSlots, setSelectedSlots] = useState<Array<{
     day: string;
     date: Date;
     startTime: string;
     endTime: string;
-  } | null>(null);
+  }>>([]);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [bookedSlots, setBookedSlots] = useState<Array<{
     date: string; // YYYY-MM-DD format
     startTime: string;
     endTime: string;
   }>>([]);
+  const [slotVerificationLoading, setSlotVerificationLoading] = useState(false);
+  const [reservationExpiry, setReservationExpiry] = useState<Date | null>(null);
+  const [countdown, setCountdown] = useState<number>(0);
+  const [paymentModalTimer, setPaymentModalTimer] = useState<number>(0);
+  const [alertMessage, setAlertMessage] = useState<{
+    type: 'error' | 'warning' | 'success' | 'info';
+    message: string;
+  } | null>(null);
+
+  // Simple alert system to replace toasts
+  const showAlert = useCallback((message: string, type: 'error' | 'warning' | 'success' | 'info' = 'info') => {
+    setAlertMessage({ message, type });
+    // Auto hide after 5 seconds
+    setTimeout(() => {
+      setAlertMessage(null);
+    }, 5000);
+  }, []);
+
+  // Update countdown timer
+  useEffect(() => {
+    if (!reservationExpiry) {
+      setCountdown(0);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      const now = new Date().getTime();
+      const expiry = reservationExpiry.getTime();
+      const remaining = Math.max(0, expiry - now);
+      setCountdown(Math.floor(remaining / 1000));
+
+      if (remaining <= 0) {
+        setReservationExpiry(null);
+        setCountdown(0);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [reservationExpiry]);
+
+  // Payment modal auto-close timer (10 minutes)
+  useEffect(() => {
+    if (!showPaymentModal) {
+      setPaymentModalTimer(0);
+      return;
+    }
+
+    // Set 10-minute timer (600 seconds)
+    setPaymentModalTimer(600);
+
+    const interval = setInterval(() => {
+      setPaymentModalTimer((prev) => {
+        if (prev <= 1) {
+          // Timer expired, close modal and show notification
+          setShowPaymentModal(false);
+          setReservationExpiry(null);
+          showAlert(
+            '⏰ Payment time expired. Your slot reservation has been released.',
+            'warning'
+          );
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [showPaymentModal, showAlert]);
 
   const fetchTurfDetails = useCallback(async () => {
     try {
@@ -116,21 +187,12 @@ export default function TurfDetailsPage({ turfId }: TurfDetailsPageProps) {
       const weekStart = startOfWeek(baseDate, { weekStartsOn: 1 }); // Monday
       const weekEnd = endOfWeek(baseDate, { weekStartsOn: 1 }); // Sunday
       
-      console.log('Fetching booked slots for week:', {
-        baseDate: format(baseDate, 'yyyy-MM-dd'),
-        weekStart: format(weekStart, 'yyyy-MM-dd'),
-        weekEnd: format(weekEnd, 'yyyy-MM-dd')
-      });
-      
       // Use the new confirmed bookings endpoint
       const response = await fetch(`/api/bookings/turf/${turfId}/confirmed?start=${format(weekStart, 'yyyy-MM-dd')}&end=${format(weekEnd, 'yyyy-MM-dd')}`);
       
       if (response.ok) {
         const data = await response.json();
-        console.log('Received booked slots:', data.bookedSlots);
         setBookedSlots(data.bookedSlots || []);
-      } else {
-        console.log('Failed to fetch booked slots:', response.status);
       }
     } catch (error) {
       console.error('Error fetching booked slots:', error);
@@ -138,44 +200,225 @@ export default function TurfDetailsPage({ turfId }: TurfDetailsPageProps) {
     }
   }, [turfId, selectedDate]);
 
+  // Effect for initial data fetching
   useEffect(() => {
     fetchTurfDetails();
-    fetchBookedSlots();
+  }, [turfId, fetchTurfDetails]);
 
-    // Set up polling to refresh booked slots every 10 seconds
-    // This ensures approved bookings show up on customer side quickly
+  // Effect for fetching booked slots when date changes
+  useEffect(() => {
+    fetchBookedSlots();
+  }, [fetchBookedSlots]);
+
+  // Effect for setting up polling (separate from date changes)
+  useEffect(() => {
+    // Set up more frequent polling to catch slot conflicts quickly
+    // Reduced from 30 seconds to 15 seconds for better conflict detection
     const pollInterval = setInterval(() => {
       fetchBookedSlots();
-    }, 10000); // Poll every 10 seconds
+    }, 15000); // Poll every 15 seconds
 
     return () => clearInterval(pollInterval);
-  }, [turfId, fetchTurfDetails, fetchBookedSlots]);
+  }, [fetchBookedSlots]);
 
-  const handleSlotSelect = (slot: { day: string; startTime: string; endTime: string }, date: Date) => {
-    setSelectedSlot({
-      ...slot,
-      date
+  const handleSlotSelect = useCallback((slot: { day: string; startTime: string; endTime: string }, date: Date) => {
+    const slotWithDate = { ...slot, date };
+    const slotKey = `${slot.startTime}-${slot.endTime}`;
+    
+    setSelectedSlots(prevSlots => {
+      // Check if this slot is already selected for this date
+      const existingSlotIndex = prevSlots.findIndex(s => 
+        s.startTime === slot.startTime && 
+        s.endTime === slot.endTime && 
+        isSameDay(s.date, date)
+      );
+      
+      if (existingSlotIndex >= 0) {
+        // Remove the slot if it's already selected
+        return prevSlots.filter((_, index) => index !== existingSlotIndex);
+      } else {
+        // Add the slot if it's not selected
+        return [...prevSlots, slotWithDate];
+      }
     });
-  };
+  }, []);
 
-  const handleDateSelect = (date: Date) => {
-    setSelectedDate(date);
-    setSelectedSlot(null); // Clear selected slot when date changes
-  };
-
-  const handleProceedToPayment = () => {
-    if (selectedSlot) {
-      setShowPaymentModal(true);
+  const handleDateSelect = useCallback((date: Date) => {
+    const today = startOfDay(new Date());
+    const maxBookingDate = addMonths(today, 1);
+    
+    // Check if the selected date is within the allowed booking window
+    if (isAfter(date, maxBookingDate)) {
+      showAlert(
+        'Bookings are only allowed up to 1 month in advance.',
+        'info'
+      );
+      return;
     }
-  };
+    
+    setSelectedDate(date);
+    setSelectedSlots([]); // Clear selected slots when date changes
+  }, []);
 
-  const handleBookingSuccess = () => {
+  const handleProceedToPayment = useCallback(async () => {
+    if (selectedSlots.length === 0 || slotVerificationLoading) return;
+
+    setSlotVerificationLoading(true);
+
+    // Verify slots are still available before proceeding to payment
+    try {
+      const verifyResponse = await fetch('/api/bookings/verify-slots', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          slots: selectedSlots.map(slot => ({
+            day: slot.day,
+            startTime: slot.startTime,
+            endTime: slot.endTime,
+            date: format(slot.date, 'yyyy-MM-dd')
+          })),
+          turfId
+        })
+      });
+
+      const verifyData = await verifyResponse.json();
+
+      if (!verifyResponse.ok || !verifyData.available) {
+        // Some slots are no longer available
+        showAlert(
+          '⚠️ Some selected slots are no longer available. Another customer may have just booked them. Please select again.',
+          'error'
+        );
+        
+        // Refresh slot availability and clear selections
+        await fetchBookedSlots();
+        setSelectedSlots([]);
+        return;
+      }
+
+      // If user is logged in, reserve the slots for 10 minutes
+      if (user) {
+        const reserveResponse = await fetch('/api/bookings/reserve-slots', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: 'reserve',
+            turfId,
+            customerId: user.uid,
+            slots: selectedSlots.map(slot => ({
+              day: slot.day,
+              date: format(slot.date, 'yyyy-MM-dd'),
+              startTime: slot.startTime,
+              endTime: slot.endTime,
+            })),
+          }),
+        });
+
+        const reserveData = await reserveResponse.json();
+
+        if (!reserveResponse.ok) {
+          showAlert(
+            '🔒 This slot is currently being booked by another customer. Please wait a moment or select a different slot.',
+            'warning'
+          );
+          return;
+        }
+
+        // Set reservation expiry (10 minutes from now)
+        setReservationExpiry(new Date(Date.now() + 10 * 60 * 1000));
+        
+        // Show success notification
+        showAlert(
+          '✅ Slots reserved successfully! Complete payment within 10 minutes.',
+          'success'
+        );
+      }
+
+      // All slots are verified and reserved, proceed to payment
+      setShowPaymentModal(true);
+    } catch (error) {
+      console.error('Error proceeding to payment:', error);
+      showAlert(
+        'Unable to proceed to payment. Please try again.',
+        'error'
+      );
+    } finally {
+      setSlotVerificationLoading(false);
+    }
+  }, [selectedSlots, turfId, fetchBookedSlots, slotVerificationLoading, user]);
+
+  const handleBookingSuccess = useCallback(() => {
     setShowPaymentModal(false);
-    setSelectedSlot(null);
+    setSelectedSlots([]); // Clear all selected slots
+    setReservationExpiry(null); // Clear reservation expiry
     // Refresh both turf details and booked slots
     fetchTurfDetails();
     fetchBookedSlots();
-  };
+  }, [fetchTurfDetails, fetchBookedSlots]);
+
+  const handlePaymentModalClose = useCallback(async () => {
+    // Clear any reservations when payment modal is closed without completing payment
+    if (user && reservationExpiry) {
+      try {
+        await fetch('/api/bookings/clear-reservations', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            customerId: user.uid,
+            turfId,
+          }),
+        });
+      } catch (error) {
+        console.error('Error clearing reservations:', error);
+      }
+    }
+    
+    setShowPaymentModal(false);
+    setReservationExpiry(null);
+  }, [user, reservationExpiry, turfId]);
+
+  // Get available slots for the selected date - memoized to prevent unnecessary recalculations
+  // This must be before any conditional returns to follow Rules of Hooks
+  const availableSlotsForSelectedDate = useMemo(() => {
+    if (!selectedDate || !turf) return [];
+    
+    const dayName = format(selectedDate, 'EEEE'); // Monday, Tuesday, etc.
+    const dateString = format(selectedDate, 'yyyy-MM-dd');
+    
+    // Get all slots for this day of the week
+    const daySlots = turf.availableSlots.filter(slot => slot.day === dayName);
+    
+    // Remove duplicates by creating a Map with unique time combinations
+    const uniqueSlots = new Map();
+    
+    daySlots.forEach(slot => {
+      const slotKey = `${slot.startTime}-${slot.endTime}`;
+      if (!uniqueSlots.has(slotKey)) {
+        // Check if this specific time slot is booked for this date
+        const isBookedForThisDate = bookedSlots.some(bookedSlot => 
+          bookedSlot.date === dateString &&
+          bookedSlot.startTime === slot.startTime &&
+          bookedSlot.endTime === slot.endTime
+        );
+        
+        uniqueSlots.set(slotKey, {
+          ...slot,
+          isBooked: isBookedForThisDate // Override with date-specific booking status
+        });
+      }
+    });
+    
+    // Convert Map values back to array and sort by start time
+    return Array.from(uniqueSlots.values()).sort((a, b) => 
+      a.startTime.localeCompare(b.startTime)
+    );
+  }, [selectedDate, turf, bookedSlots]);
 
   if (loading) {
     return (
@@ -200,44 +443,29 @@ export default function TurfDetailsPage({ turfId }: TurfDetailsPageProps) {
     );
   }
 
-  // Get available slots for the selected date
-  const getAvailableSlotsForDate = (date: Date) => {
-    if (!turf) return [];
-    
-    const dayName = format(date, 'EEEE'); // Monday, Tuesday, etc.
-    const dateString = format(date, 'yyyy-MM-dd');
-    
-    console.log('Getting slots for:', { dayName, dateString, bookedSlotsCount: bookedSlots.length });
-    
-    // Get all slots for this day of the week
-    const daySlots = turf.availableSlots.filter(slot => slot.day === dayName);
-    
-    // Check which slots are booked for this specific date and override isBooked
-    return daySlots.map(slot => {
-      const isBookedForThisDate = bookedSlots.some(bookedSlot => 
-        bookedSlot.date === dateString &&
-        bookedSlot.startTime === slot.startTime &&
-        bookedSlot.endTime === slot.endTime
-      );
-      
-      console.log(`Slot ${slot.startTime}-${slot.endTime}:`, {
-        originalIsBooked: slot.isBooked,
-        isBookedForThisDate,
-        dateString,
-        bookedSlots: bookedSlots.filter(bs => bs.startTime === slot.startTime && bs.endTime === slot.endTime)
-      });
-      
-      return {
-        ...slot,
-        isBooked: isBookedForThisDate // Override with date-specific booking status
-      };
-    });
-  };
-
-  const availableSlotsForSelectedDate = selectedDate ? getAvailableSlotsForDate(selectedDate) : [];
-
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Alert Message */}
+      {alertMessage && (
+        <div className="fixed top-4 right-4 z-50 max-w-sm">
+          <Alert className={`${
+            alertMessage.type === 'error' ? 'border-red-200 bg-red-50' :
+            alertMessage.type === 'warning' ? 'border-yellow-200 bg-yellow-50' :
+            alertMessage.type === 'success' ? 'border-green-200 bg-green-50' :
+            'border-blue-200 bg-blue-50'
+          }`}>
+            <AlertDescription className={`${
+              alertMessage.type === 'error' ? 'text-red-800' :
+              alertMessage.type === 'warning' ? 'text-yellow-800' :
+              alertMessage.type === 'success' ? 'text-green-800' :
+              'text-blue-800'
+            }`}>
+              {alertMessage.message}
+            </AlertDescription>
+          </Alert>
+        </div>
+      )}
+      
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -329,8 +557,8 @@ export default function TurfDetailsPage({ turfId }: TurfDetailsPageProps) {
             </div>
 
             {/* Calendar and Available Slots */}
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* Calendar */}
+            <div className="space-y-6">
+              {/* Calendar - Full Width */}
               <WeekCalendar
                 selectedDate={selectedDate}
                 onDateSelect={handleDateSelect}
@@ -349,34 +577,54 @@ export default function TurfDetailsPage({ turfId }: TurfDetailsPageProps) {
                 <CardContent>
                   {selectedDate ? (
                     availableSlotsForSelectedDate.length > 0 ? (
-                      <div className="grid grid-cols-2 gap-2">
-                        {availableSlotsForSelectedDate.map((slot, index) => (
-                          <Button
-                            key={index}
-                            variant={
-                              selectedSlot?.startTime === slot.startTime &&
-                              selectedSlot?.endTime === slot.endTime &&
-                              selectedSlot?.date && selectedDate &&
-                              isSameDay(selectedSlot.date, selectedDate)
-                                ? "default"
-                                : slot.isBooked 
-                                  ? "destructive"
-                                  : "outline"
-                            }
-                            disabled={slot.isBooked}
-                            className={`text-sm ${
-                              slot.isBooked 
-                                ? 'bg-red-100 text-red-800 border-red-300 cursor-not-allowed hover:bg-red-100' 
-                                : ''
-                            }`}
-                            onClick={() => !slot.isBooked && handleSlotSelect(slot, selectedDate)}
-                          >
-                            {slot.startTime} - {slot.endTime}
-                            {slot.isBooked && (
-                              <span className="ml-1 text-xs">(Booked)</span>
-                            )}
-                          </Button>
-                        ))}
+                      <div className="grid grid-cols-3 lg:grid-cols-4 gap-2">
+                        {availableSlotsForSelectedDate.map((slot, index) => {
+                          // Check if this slot is selected
+                          const isSlotSelected = selectedSlots.some(s => 
+                            s.startTime === slot.startTime && 
+                            s.endTime === slot.endTime &&
+                            selectedDate && isSameDay(s.date, selectedDate)
+                          );
+                          
+                          // Create unique key - since we removed duplicates, this is safe
+                          const uniqueKey = `${slot.startTime}-${slot.endTime}`;
+                          
+                          return (
+                            <Button
+                              key={uniqueKey}
+                              type="button"
+                              variant={
+                                isSlotSelected
+                                  ? "default"
+                                  : slot.isBooked 
+                                    ? "destructive"
+                                    : "outline"
+                              }
+                              disabled={slot.isBooked}
+                              className={`text-sm ${
+                                slot.isBooked 
+                                  ? 'bg-red-100 text-red-800 border-red-300 cursor-not-allowed hover:bg-red-100' 
+                                  : isSlotSelected
+                                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                                    : ''
+                              }`}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                if (!slot.isBooked && selectedDate) {
+                                  handleSlotSelect(slot, selectedDate);
+                                }
+                              }}
+                            >
+                              {slot.startTime} - {slot.endTime}
+                              {slot.isBooked && (
+                                <span className="ml-1 text-xs">(Booked)</span>
+                              )}
+                              {isSlotSelected && (
+                                <span className="ml-1 text-xs">✓</span>
+                              )}
+                            </Button>
+                          );
+                        })}
                       </div>
                     ) : (
                       <div className="text-center py-8 text-gray-500">
@@ -406,34 +654,79 @@ export default function TurfDetailsPage({ turfId }: TurfDetailsPageProps) {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {selectedSlot && selectedDate ? (
+                  {selectedSlots.length > 0 && selectedDate ? (
                     <div>
-                      <h4 className="font-medium text-gray-900 mb-2">Selected Slot</h4>
-                      <div className="bg-gray-50 p-3 rounded-lg">
+                      <h4 className="font-medium text-gray-900 mb-2">
+                        Selected Slots ({selectedSlots.length})
+                      </h4>
+                      <div className="bg-gray-50 p-3 rounded-lg space-y-2">
                         <p className="font-medium">{format(selectedDate, 'EEEE, MMM d')}</p>
-                        <p className="text-sm text-gray-600">
-                          {selectedSlot.startTime} - {selectedSlot.endTime}
-                        </p>
+                        <div className="space-y-1">
+                          {selectedSlots.map((slot, index) => (
+                            <div key={index} className="flex justify-between items-center text-sm">
+                              <span className="text-gray-600">
+                                {slot.startTime} - {slot.endTime}
+                              </span>
+                              <span className="text-green-600 font-medium">₹{turf.pricing}</span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
+                      
+                      {/* Reservation Timer */}
+                      {reservationExpiry && countdown > 0 && (
+                        <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center text-blue-700">
+                              <Lock className="w-4 h-4 mr-2" />
+                              <span className="text-sm font-medium">Slots Reserved</span>
+                            </div>
+                            <div className="text-blue-600 font-mono text-sm">
+                              {Math.floor(countdown / 60)}:{(countdown % 60).toString().padStart(2, '0')}
+                            </div>
+                          </div>
+                          <p className="text-xs text-blue-600 mt-1">
+                            Complete payment within {Math.floor(countdown / 60)} minutes
+                          </p>
+                        </div>
+                      )}
                       <Separator className="my-4" />
                       <div className="flex justify-between font-medium">
                         <span>Total Amount:</span>
-                        <span className="text-green-600">₹{turf.pricing}</span>
+                        <span className="text-green-600 text-lg">
+                          ₹{(turf.pricing * selectedSlots.length).toLocaleString()}
+                        </span>
                       </div>
                     </div>
                   ) : (
                     <div className="text-center text-gray-500 py-8">
                       <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                      <p>Select a date and time slot to continue</p>
+                      <p>Select a date and time slots to continue</p>
                     </div>
                   )}
                   
                   <Button 
+                    type="button"
                     className="w-full" 
-                    disabled={!selectedSlot || !selectedDate}
-                    onClick={handleProceedToPayment}
+                    disabled={selectedSlots.length === 0 || !selectedDate || slotVerificationLoading}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleProceedToPayment();
+                    }}
                   >
-                    Proceed to Payment
+                    {slotVerificationLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Verifying Availability...
+                      </>
+                    ) : (
+                      <>
+                        Proceed to Payment
+                        {selectedSlots.length > 0 && (
+                          <span className="ml-2">({selectedSlots.length} slot{selectedSlots.length > 1 ? 's' : ''})</span>
+                        )}
+                      </>
+                    )}
                   </Button>
                 </div>
               </CardContent>
@@ -443,16 +736,19 @@ export default function TurfDetailsPage({ turfId }: TurfDetailsPageProps) {
       </div>
 
       {/* Payment Modal */}
-      {showPaymentModal && selectedSlot && selectedDate && (
+      {showPaymentModal && selectedSlots.length > 0 && selectedDate && (
         <PaymentModal
           isOpen={showPaymentModal}
-          onClose={() => setShowPaymentModal(false)}
+          onClose={handlePaymentModalClose}
           turf={turf}
-          selectedSlot={{ ...selectedSlot, date: selectedDate }}
-          totalAmount={turf.pricing}
+          selectedSlots={selectedSlots.map(slot => ({ ...slot, date: selectedDate }))}
+          totalAmount={turf.pricing * selectedSlots.length}
           onSuccess={handleBookingSuccess}
+          paymentTimer={paymentModalTimer}
         />
       )}
     </div>
   );
-}
+});
+
+export default TurfDetailsPage;

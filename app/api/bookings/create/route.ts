@@ -29,14 +29,14 @@ export async function POST(request: NextRequest) {
     const customerId = formData.get('customerId') as string;
     const ownerId = formData.get('ownerId') as string;
     const turfId = formData.get('turfId') as string;
-    const slotData = formData.get('slot') as string;
+    const slotsData = formData.get('slots') as string; // Changed from 'slot' to 'slots'
     const totalAmount = formData.get('totalAmount') as string;
     const paymentScreenshot = formData.get('paymentScreenshot') as File;
 
-    console.log('4. Form data extracted:', { customerId, ownerId, turfId, slotData, totalAmount, hasFile: !!paymentScreenshot });
+    console.log('4. Form data extracted:', { customerId, ownerId, turfId, slotsData, totalAmount, hasFile: !!paymentScreenshot });
 
     // Validate required fields
-    if (!customerId || !ownerId || !turfId || !slotData || !totalAmount || !paymentScreenshot) {
+    if (!customerId || !ownerId || !turfId || !slotsData || !totalAmount || !paymentScreenshot) {
       console.log('5. Validation failed - missing fields');
       return NextResponse.json(
         { error: 'All fields are required' },
@@ -46,29 +46,36 @@ export async function POST(request: NextRequest) {
 
     console.log('6. All required fields present');
 
-    // Parse slot data
-    let slot: { day: string; startTime: string; endTime: string };
+    // Parse slots data (expecting array)
+    let slots: Array<{ day: string; date: string; startTime: string; endTime: string }>;
     try {
-      slot = JSON.parse(slotData);
-      console.log('7. Slot data parsed successfully:', slot);
+      slots = JSON.parse(slotsData);
+      console.log('7. Slots data parsed successfully:', slots);
+      
+      // Validate it's an array
+      if (!Array.isArray(slots) || slots.length === 0) {
+        throw new Error('Slots must be a non-empty array');
+      }
     } catch (error) {
-      console.log('7. Failed to parse slot data:', error);
+      console.log('7. Failed to parse slots data:', error);
       return NextResponse.json(
-        { error: 'Invalid slot data format' },
+        { error: 'Invalid slots data format' },
         { status: 400 }
       );
     }
 
-    // Validate slot structure
-    if (!slot.day || !slot.startTime || !slot.endTime) {
-      console.log('8. Invalid slot structure:', slot);
-      return NextResponse.json(
-        { error: 'Slot must contain day, startTime, and endTime' },
-        { status: 400 }
-      );
+    // Validate all slots have required fields
+    for (const slot of slots) {
+      if (!slot.day || !slot.date || !slot.startTime || !slot.endTime) {
+        console.log('8. Invalid slot structure:', slot);
+        return NextResponse.json(
+          { error: 'Each slot must contain day, date, startTime, and endTime' },
+          { status: 400 }
+        );
+      }
     }
 
-    console.log('9. Slot structure valid');
+    console.log('9. All slots structure valid, count:', slots.length);
 
     // Verify that the customer, owner, and turf exist
     console.log('10. Looking up users and turf...');
@@ -108,23 +115,41 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if the slot is available
-    const existingBooking = await Booking.findOne({
-      turfId,
-      'slot.day': slot.day,
-      'slot.startTime': slot.startTime,
-      'slot.endTime': slot.endTime,
-      status: { $in: ['pending', 'confirmed'] }
-    });
+    // Check if any of the slots are already booked
+    console.log('11. Checking slot availability...');
+    const unavailableSlots = [];
+    
+    for (const slot of slots) {
+      const existingBooking = await Booking.findOne({
+        turfId,
+        'slot.day': slot.day,
+        'slot.date': slot.date,
+        'slot.startTime': slot.startTime,
+        'slot.endTime': slot.endTime,
+        status: { $in: ['pending', 'confirmed'] }
+      });
 
-    if (existingBooking) {
+      if (existingBooking) {
+        unavailableSlots.push(slot);
+      }
+    }
+
+    if (unavailableSlots.length > 0) {
+      console.log('11. Some slots are unavailable:', unavailableSlots);
       return NextResponse.json(
-        { error: 'This slot is no longer available' },
+        { 
+          error: 'Some slots are no longer available',
+          unavailableSlots,
+          code: 'SLOT_CONFLICT'
+        },
         { status: 409 }
       );
     }
 
+    console.log('11. All slots are available');
+
     // Upload payment screenshot to Cloudinary
+    console.log('12. Uploading payment screenshot...');
     const bytes = await paymentScreenshot.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
@@ -141,34 +166,40 @@ export async function POST(request: NextRequest) {
       ).end(buffer);
     }) as any;
 
-    // Create the booking
-    console.log('12. Creating booking with IDs:', {
-      customerMongoId: customer._id,
-      ownerMongoId: owner._id,
-      turfId
-    });
+    console.log('13. Payment screenshot uploaded');
+
+    // Create bookings for each slot (each slot is a separate booking)
+    console.log('14. Creating bookings for', slots.length, 'slots');
     
-    const booking = new Booking({
-      customerId: customer._id, // Use customer's MongoDB ObjectId
-      ownerId: owner._id, // Use owner's MongoDB ObjectId
-      turfId,
-      slot,
-      totalAmount: parseFloat(totalAmount),
-      paymentScreenshot: {
-        url: uploadResult.secure_url,
-        public_id: uploadResult.public_id
-      }
-    });
+    const amountPerSlot = parseFloat(totalAmount) / slots.length;
+    const createdBookings: any[] = [];
+    
+    for (const slot of slots) {
+      const booking = new Booking({
+        customerId: customer._id,
+        ownerId: owner._id,
+        turfId,
+        slot,
+        totalAmount: amountPerSlot,
+        paymentScreenshot: {
+          url: uploadResult.secure_url,
+          public_id: uploadResult.public_id
+        }
+      });
 
-    await booking.save();
+      await booking.save();
+      createdBookings.push(booking);
+    }
 
-    // Populate the booking with user and turf details for response
-    const populatedBooking = await Booking.findById(booking._id)
+    console.log('15. All bookings created successfully:', createdBookings.length);
+
+    // Populate the first booking with user and turf details for response
+    const populatedBooking = await Booking.findById(createdBookings[0]._id)
       .populate('customerId', 'name email phone')
       .populate('ownerId', 'name email businessName phone')
       .populate('turfId', 'name contactInfo description location pricing');
 
-    console.log('13. Booking created successfully, sending notifications...');
+    console.log('16. Booking details populated, sending notifications...');
 
     // Send notifications to turf owner (async, don't block response)
     // This runs in background - failures won't affect booking creation
@@ -178,16 +209,21 @@ export async function POST(request: NextRequest) {
         const turfData = populatedBooking.turfId as any;
         const customerData = populatedBooking.customerId as any;
 
+        // Create time slots summary
+        const timeSlotsText = slots.map(s => `${s.startTime} - ${s.endTime}`).join(', ');
+        const bookingDate = slots[0].date; // All slots should be for the same date
+        const bookingDay = slots[0].day;
+
         const bookingDetails = {
           customerName: customerData.name,
           customerEmail: customerData.email,
           customerPhone: customerData.phone,
           turfName: turfData.name || turfData.contactInfo?.businessName,
           turfLocation: `${turfData.location?.city || ''}, ${turfData.location?.state || ''}`.trim(),
-          bookingDate: slot.day,
-          bookingTime: `${slot.startTime} - ${slot.endTime}`,
+          bookingDate: `${bookingDay}, ${bookingDate}`,
+          bookingTime: timeSlotsText,
           totalAmount: parseFloat(totalAmount),
-          bookingId: booking._id.toString(),
+          bookingId: createdBookings.map(b => b._id.toString()).join(', '),
         };
 
         // Send email notification
@@ -218,16 +254,35 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        console.log('14. Notifications processing completed');
+        console.log('17. Notifications processing completed');
       } catch (notificationError) {
         console.error('Error in notification process:', notificationError);
         // Don't throw - notifications are non-critical
       }
     });
 
+    // Clean up slot reservations after successful booking
+    try {
+      const SlotReservation = (await import('@/app/models/SlotReservation')).default;
+      await SlotReservation.deleteMany({ 
+        customerId: customer._id, 
+        turfId 
+      });
+      console.log('18. Slot reservations cleaned up');
+    } catch (cleanupError) {
+      console.error('Error cleaning up slot reservations:', cleanupError);
+      // Don't throw - cleanup is non-critical
+    }
+
     return NextResponse.json({
-      message: 'Booking created successfully',
-      booking: populatedBooking
+      message: `${createdBookings.length} booking(s) created successfully`,
+      bookings: createdBookings.map(b => ({
+        _id: b._id,
+        slot: b.slot,
+        totalAmount: b.totalAmount,
+        status: b.status
+      })),
+      booking: populatedBooking // Keep for backward compatibility
     }, { status: 201 });
 
   } catch (error) {

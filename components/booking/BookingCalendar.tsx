@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
 import { Clock } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo } from 'react';
 
 interface BookingCalendarProps {
   selectedDate: Date;
@@ -22,35 +22,76 @@ export function BookingCalendar({
   onSlotsChange,
   turf
 }: BookingCalendarProps) {
-  // Generate time slots from 6 AM to 11 PM
-  const generateTimeSlots = () => {
-    const slots = [];
-    for (let hour = 6; hour < 23; hour++) {
-      const timeSlot = `${hour.toString().padStart(2, '0')}:00 - ${(hour + 1).toString().padStart(2, '0')}:00`;
-      slots.push(timeSlot);
-    }
-    return slots;
-  };
-
-  const timeSlots = generateTimeSlots();
   
-  // Mock availability - in real app this would come from API
-  const getSlotStatus = (slot: string) => {
-    const unavailableSlots = ['09:00 - 10:00', '15:00 - 16:00', '19:00 - 20:00'];
-    if (unavailableSlots.includes(slot)) {
-      return 'unavailable';
+  // Get available slots for the selected date
+  const availableSlotsForSelectedDate = useMemo(() => {
+    if (!selectedDate || !turf?.availableSlots) {
+      return [];
     }
-    return selectedSlots.includes(slot) ? 'selected' : 'available';
+    
+    const selectedDateStr = selectedDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+    const dayName = selectedDate.toLocaleDateString('en-US', { weekday: 'long' });
+    
+    // Filter slots that match the selected date and day
+    const slotsForThisDate = turf.availableSlots.filter((slot: any) => {
+      return slot.day === dayName && slot.date === selectedDateStr;
+    });
+    
+    // Sort slots by start time
+    return slotsForThisDate.sort((a: any, b: any) => {
+      const timeA = a.startTime.replace(':', '');
+      const timeB = b.startTime.replace(':', '');
+      return parseInt(timeA) - parseInt(timeB);
+    });
+  }, [selectedDate, turf?.availableSlots]);
+
+  // Check if a slot is selected
+  const isSlotSelected = (slot: any) => {
+    const slotString = `${slot.startTime} - ${slot.endTime}`;
+    return selectedSlots.includes(slotString);
   };
 
-  const handleSlotClick = (slot: string) => {
-    if (getSlotStatus(slot) === 'unavailable') return;
+  // Handle slot selection
+  const handleSlotClick = (slot: any) => {
+    if (slot.isBooked) return; // Don't allow selection of booked slots
     
-    if (selectedSlots.includes(slot)) {
-      onSlotsChange(selectedSlots.filter(s => s !== slot));
+    const slotString = `${slot.startTime} - ${slot.endTime}`;
+    
+    if (isSlotSelected(slot)) {
+      // Remove slot from selection
+      onSlotsChange(selectedSlots.filter(s => s !== slotString));
     } else {
-      onSlotsChange([...selectedSlots, slot]);
+      // Add slot to selection
+      onSlotsChange([...selectedSlots, slotString]);
     }
+  };
+
+  // Get button style based on slot status
+  const getSlotButtonStyle = (slot: any) => {
+    const isSelected = isSlotSelected(slot);
+    const isBooked = slot.isBooked;
+    
+    if (isBooked) {
+      return {
+        variant: 'outline' as const,
+        className: 'opacity-50 cursor-not-allowed bg-gray-100 text-gray-500 border-gray-300',
+        disabled: true
+      };
+    }
+    
+    if (isSelected) {
+      return {
+        variant: 'default' as const,
+        className: 'bg-green-500 hover:bg-green-600 text-white border-green-500',
+        disabled: false
+      };
+    }
+    
+    return {
+      variant: 'outline' as const,
+      className: 'hover:bg-green-50 hover:border-green-300 border-gray-300',
+      disabled: false
+    };
   };
 
   return (
@@ -77,39 +118,45 @@ export function BookingCalendar({
           <div>
             <h3 className="font-semibold mb-4">Available Time Slots</h3>
             <p className="text-sm text-gray-600 mb-4">
-              Selected date: {selectedDate.toLocaleDateString()}
+              Selected date: {selectedDate.toLocaleDateString()} ({selectedDate.toLocaleDateString('en-US', { weekday: 'long' })})
             </p>
             
-            <div className="grid grid-cols-2 gap-2 max-h-96 overflow-y-auto">
-              {timeSlots.map((slot, index) => {
-                const status = getSlotStatus(slot);
-                return (
-                  <Button
-                    key={index}
-                    variant={status === 'selected' ? 'default' : 'outline'}
-                    size="sm"
-                    className={`text-left justify-start ${
-                      status === 'unavailable' 
-                        ? 'opacity-50 cursor-not-allowed bg-gray-100' 
-                        : status === 'selected'
-                          ? 'bg-green-500 hover:bg-green-600 text-white'
-                          : 'hover:bg-green-50 hover:border-green-300'
-                    }`}
-                    onClick={() => handleSlotClick(slot)}
-                    disabled={status === 'unavailable'}
-                  >
-                    <div>
-                      <div className="font-medium">{slot}</div>
-                      {status === 'unavailable' && (
-                        <Badge variant="destructive" className="text-xs mt-1">
-                          Booked
-                        </Badge>
-                      )}
-                    </div>
-                  </Button>
-                );
-              })}
-            </div>
+            {availableSlotsForSelectedDate.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <Clock className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p className="font-medium">No slots available</p>
+                <p className="text-sm">This turf doesn't operate on this day</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-2 max-h-96 overflow-y-auto">
+                {availableSlotsForSelectedDate.map((slot: any, index: number) => {
+                  const buttonStyle = getSlotButtonStyle(slot);
+                  const slotString = `${slot.startTime} - ${slot.endTime}`;
+                  // Create a unique key that includes date to avoid conflicts
+                  const uniqueKey = `${slot.day}-${slot.startTime}-${slot.endTime}-${slot.date}-${index}`;
+                  
+                  return (
+                    <Button
+                      key={uniqueKey}
+                      variant={buttonStyle.variant}
+                      size="sm"
+                      className={`text-left justify-start ${buttonStyle.className}`}
+                      onClick={() => handleSlotClick(slot)}
+                      disabled={buttonStyle.disabled}
+                    >
+                      <div className="w-full">
+                        <div className="font-medium">{slotString}</div>
+                        {slot.isBooked && (
+                          <Badge variant="destructive" className="text-xs mt-1">
+                            Booked
+                          </Badge>
+                        )}
+                      </div>
+                    </Button>
+                  );
+                })}
+              </div>
+            )}
 
             <div className="mt-4 p-3 bg-blue-50 rounded-lg">
               <h4 className="font-medium text-blue-900 mb-2">Legend</h4>
