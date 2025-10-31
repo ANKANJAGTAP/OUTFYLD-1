@@ -20,68 +20,34 @@ export async function GET(
 
     console.log('Fetching confirmed bookings for turf:', { turfId, startDate, endDate });
 
-    // Get all confirmed bookings for this turf
-    const confirmedBookings = await Booking.find({
+    // Build query for confirmed bookings
+    let query: any = {
       turfId: turfId,
       status: 'confirmed'
-    }).select('slot createdAt');
+    };
+
+    // If date range is provided, filter by the specific dates stored in booking.slot.date
+    if (startDate && endDate) {
+      query['slot.date'] = {
+        $gte: startDate, // Greater than or equal to start date
+        $lte: endDate    // Less than or equal to end date
+      };
+    }
+
+    // Get all confirmed bookings for this turf (filtered by date range if provided)
+    const confirmedBookings = await Booking.find(query).select('slot createdAt');
 
     console.log(`Found ${confirmedBookings.length} confirmed bookings`);
 
-    // If date range is provided, filter by date range
-    // Since bookings only store day name, we need to calculate which bookings fall in the range
-    let bookedSlots: Array<{
-      date: string; // YYYY-MM-DD
-      day: string;
-      startTime: string;
-      endTime: string;
-    }> = [];
+    // Map bookings to booked slots format
+    const bookedSlots = confirmedBookings.map(booking => ({
+      date: booking.slot.date,  // Specific date from the booking (YYYY-MM-DD)
+      day: booking.slot.day,
+      startTime: booking.slot.startTime,
+      endTime: booking.slot.endTime
+    }));
 
-    if (startDate && endDate) {
-      const start = parseISO(startDate);
-      const end = parseISO(endDate);
-
-      // For each booking, determine which dates in the range match the day
-      confirmedBookings.forEach(booking => {
-        const dayName = booking.slot.day;
-        
-        // Iterate through each day in the range
-        let currentDate = new Date(start);
-        while (currentDate <= end) {
-          const currentDayName = format(currentDate, 'EEEE'); // Monday, Tuesday, etc.
-          
-          // If this date matches the booking's day, add it
-          if (currentDayName === dayName) {
-            // Check if booking was created before this date (to avoid showing future recurring bookings)
-            const bookingDate = startOfDay(new Date(booking.createdAt));
-            const checkDate = startOfDay(currentDate);
-            
-            if (checkDate >= bookingDate) {
-              bookedSlots.push({
-                date: format(currentDate, 'yyyy-MM-dd'),
-                day: booking.slot.day,
-                startTime: booking.slot.startTime,
-                endTime: booking.slot.endTime
-              });
-            }
-          }
-          
-          // Move to next day
-          currentDate = new Date(currentDate);
-          currentDate.setDate(currentDate.getDate() + 1);
-        }
-      });
-    } else {
-      // If no date range, return all confirmed bookings (without specific dates)
-      bookedSlots = confirmedBookings.map(booking => ({
-        date: '', // No specific date
-        day: booking.slot.day,
-        startTime: booking.slot.startTime,
-        endTime: booking.slot.endTime
-      }));
-    }
-
-    console.log(`Returning ${bookedSlots.length} booked slots`);
+    console.log(`Returning ${bookedSlots.length} booked slots for date range ${startDate} to ${endDate}`);
 
     return NextResponse.json({
       success: true,

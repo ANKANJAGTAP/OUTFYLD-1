@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectMongoDB } from '@/lib/mongodb';
 import User from '@/app/models/User';
+import Turf from '@/app/models/Turf';
+import Booking from '@/app/models/Booking';
+import SlotReservation from '@/app/models/SlotReservation';
 
 // Tell Next.js this route should be dynamic (not statically generated)
 export const dynamic = 'force-dynamic';
@@ -62,28 +65,62 @@ export async function POST(request: NextRequest) {
       owner.verificationStatus = 'pending';
       owner.isVerifiedByAdmin = false;
       owner.rejectionReason = `SUSPENDED: ${reason}`;
+      owner.updatedAt = new Date();
+      await owner.save();
+
+      return NextResponse.json({
+        success: true,
+        message: 'Owner membership suspended successfully',
+        owner: {
+          _id: owner._id,
+          name: owner.name,
+          email: owner.email,
+          verificationStatus: owner.verificationStatus,
+          rejectionReason: owner.rejectionReason
+        }
+      });
     } else if (action === 'revoke') {
-      // Permanently revoke - set to rejected
-      owner.verificationStatus = 'rejected';
-      owner.isVerifiedByAdmin = false;
-      owner.paymentVerified = false;
-      owner.rejectionReason = `REVOKED: ${reason}`;
+      // Permanently revoke - CASCADE DELETE all related data
+      
+      // Step 1: Find all turfs owned by this owner
+      const ownerTurfs = await Turf.find({ ownerId: ownerId });
+      const turfIds = ownerTurfs.map(turf => turf._id);
+      
+      console.log(`🗑️ CASCADE DELETE: Found ${turfIds.length} turfs for owner ${ownerId}`);
+
+      // Step 2: Delete all bookings for these turfs
+      const bookingsDeleted = await Booking.deleteMany({ 
+        turfId: { $in: turfIds } 
+      });
+      console.log(`🗑️ CASCADE DELETE: Deleted ${bookingsDeleted.deletedCount} bookings`);
+
+      // Step 3: Delete all slot reservations for these turfs
+      const reservationsDeleted = await SlotReservation.deleteMany({ 
+        turfId: { $in: turfIds } 
+      });
+      console.log(`🗑️ CASCADE DELETE: Deleted ${reservationsDeleted.deletedCount} slot reservations`);
+
+      // Step 4: Delete all turfs
+      const turfsDeleted = await Turf.deleteMany({ 
+        ownerId: ownerId 
+      });
+      console.log(`🗑️ CASCADE DELETE: Deleted ${turfsDeleted.deletedCount} turfs`);
+
+      // Step 5: Delete the owner user account
+      await User.findByIdAndDelete(ownerId);
+      console.log(`🗑️ CASCADE DELETE: Deleted owner account ${ownerId}`);
+
+      return NextResponse.json({
+        success: true,
+        message: 'Owner permanently revoked and all data deleted',
+        deletionSummary: {
+          turfsDeleted: turfsDeleted.deletedCount,
+          bookingsDeleted: bookingsDeleted.deletedCount,
+          reservationsDeleted: reservationsDeleted.deletedCount,
+          ownerDeleted: true
+        }
+      });
     }
-
-    owner.updatedAt = new Date();
-    await owner.save();
-
-    return NextResponse.json({
-      success: true,
-      message: `Owner membership ${action === 'suspend' ? 'suspended' : 'revoked'} successfully`,
-      owner: {
-        _id: owner._id,
-        name: owner.name,
-        email: owner.email,
-        verificationStatus: owner.verificationStatus,
-        rejectionReason: owner.rejectionReason
-      }
-    });
 
   } catch (error: any) {
     console.error('Error revoking owner:', error);

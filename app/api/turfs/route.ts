@@ -95,16 +95,61 @@ export async function GET(request: NextRequest) {
     console.log('📄 Page:', page, 'Limit:', limit, 'Skip:', skip);
 
     try {
-      // Get turfs with pagination
-      const turfs = await Turf.find(query)
-        .sort(sortOptions)
-        .skip(skip)
-        .limit(limit)
-        .select('-paymentInfo.upiQrCode') // Don't send UPI QR codes in browse
-        .lean();
+      // Use aggregation to filter turfs by owner verification status
+      // This ensures turfs from revoked/rejected owners don't appear
+      const turfsAggregation = await Turf.aggregate([
+        { $match: query },
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'ownerId',
+            foreignField: '_id',
+            as: 'owner'
+          }
+        },
+        { $unwind: '$owner' },
+        {
+          $match: {
+            'owner.role': 'owner',
+            'owner.isVerifiedByAdmin': true,
+            'owner.verificationStatus': 'approved'
+          }
+        },
+        { $sort: sortOptions },
+        { $skip: skip },
+        { $limit: limit },
+        {
+          $project: {
+            'paymentInfo.upiQrCode': 0,
+            'owner': 0
+          }
+        }
+      ]);
 
-      // Get total count
-      const total = await Turf.countDocuments(query);
+      // Get total count with owner filter
+      const totalAggregation = await Turf.aggregate([
+        { $match: query },
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'ownerId',
+            foreignField: '_id',
+            as: 'owner'
+          }
+        },
+        { $unwind: '$owner' },
+        {
+          $match: {
+            'owner.role': 'owner',
+            'owner.isVerifiedByAdmin': true,
+            'owner.verificationStatus': 'approved'
+          }
+        },
+        { $count: 'total' }
+      ]);
+
+      const turfs = turfsAggregation;
+      const total = totalAggregation[0]?.total || 0;
 
       // 🔍 DEBUG: Log results
       console.log('✅ Found turfs:', turfs.length, '/', total, 'total');
