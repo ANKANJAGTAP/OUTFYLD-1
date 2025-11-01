@@ -92,18 +92,24 @@ export async function PATCH(
         }
 
         // Send SMS notification to customer
+        console.log('📱 BOOKING STATUS API: Checking customer phone for SMS...');
+        console.log('📱 BOOKING STATUS API: Customer phone:', customerData.phone);
+        
         if (customerData.phone) {
           try {
+            console.log(`📱 BOOKING STATUS API: Calling sendBookingStatusSMS with status: ${status}`);
             await sendBookingStatusSMS(
               customerData.phone,
               customerData.name,
               turfData.name || turfData.contactInfo?.businessName,
               status as 'confirmed' | 'rejected'
             );
-            console.log(`✅ ${status} SMS sent to customer`);
+            console.log(`✅ BOOKING STATUS API: ${status} SMS sent to customer`);
           } catch (smsError) {
-            console.error('❌ Failed to send SMS to customer:', smsError);
+            console.error('❌ BOOKING STATUS API: Failed to send SMS to customer:', smsError);
           }
+        } else {
+          console.warn('⚠️ BOOKING STATUS API: Customer phone not available, skipping SMS');
         }
       } catch (notificationError) {
         console.error('Error sending customer notifications:', notificationError);

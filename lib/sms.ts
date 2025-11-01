@@ -20,18 +20,38 @@ interface BookingSMSDetails {
 let twilioClient: any = null;
 
 function getTwilioClient() {
-  if (!twilioClient && process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
+  console.log('📱 TWILIO INIT: Checking Twilio client...');
+  
+  if (!process.env.TWILIO_ACCOUNT_SID) {
+    console.warn('⚠️ TWILIO INIT: TWILIO_ACCOUNT_SID not found in environment');
+    return null;
+  }
+  
+  if (!process.env.TWILIO_AUTH_TOKEN) {
+    console.warn('⚠️ TWILIO INIT: TWILIO_AUTH_TOKEN not found in environment');
+    return null;
+  }
+  
+  if (!twilioClient) {
     try {
+      console.log('📱 TWILIO INIT: Initializing Twilio client...');
+      console.log('📱 TWILIO INIT: Account SID:', process.env.TWILIO_ACCOUNT_SID?.substring(0, 10) + '...');
+      
       const twilio = require('twilio');
       twilioClient = twilio(
         process.env.TWILIO_ACCOUNT_SID,
         process.env.TWILIO_AUTH_TOKEN
       );
-      console.log('Twilio client initialized successfully');
-    } catch (error) {
-      console.error('Failed to initialize Twilio client:', error);
+      console.log('✅ TWILIO INIT: Twilio client initialized successfully');
+    } catch (error: any) {
+      console.error('❌ TWILIO INIT: Failed to initialize Twilio client');
+      console.error('❌ TWILIO INIT: Error:', error?.message);
+      return null;
     }
+  } else {
+    console.log('✅ TWILIO INIT: Using existing Twilio client');
   }
+  
   return twilioClient;
 }
 
@@ -44,23 +64,34 @@ export async function sendBookingNotificationSMS(
   bookingDetails: BookingSMSDetails
 ): Promise<void> {
   try {
+    console.log('📱 SMS SERVICE: Starting to send booking notification SMS');
+    console.log('📱 SMS SERVICE: Owner phone:', ownerPhone);
+    console.log('📱 SMS SERVICE: Owner name:', ownerName);
+    console.log('📱 SMS SERVICE: Booking ID:', bookingDetails.bookingId);
+    
     const client = getTwilioClient();
     
     if (!client) {
-      console.warn('Twilio client not configured. Skipping SMS notification.');
+      console.warn('⚠️ SMS SERVICE: Twilio client not configured. Skipping SMS notification.');
+      console.warn('⚠️ SMS SERVICE: Check TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN environment variables');
       return;
     }
+    
+    console.log('✅ SMS SERVICE: Twilio client initialized');
 
     if (!process.env.TWILIO_PHONE_NUMBER) {
-      console.warn('TWILIO_PHONE_NUMBER not configured. Skipping SMS notification.');
+      console.warn('⚠️ SMS SERVICE: TWILIO_PHONE_NUMBER not configured. Skipping SMS notification.');
       return;
     }
+    
+    console.log('✅ SMS SERVICE: Twilio phone number configured:', process.env.TWILIO_PHONE_NUMBER);
 
     // Format phone number (ensure it has country code)
     const formattedPhone = formatPhoneNumber(ownerPhone);
+    console.log('📱 SMS SERVICE: Formatted phone:', formattedPhone);
 
     if (!formattedPhone) {
-      console.warn('Invalid phone number format. Skipping SMS notification.');
+      console.warn('⚠️ SMS SERVICE: Invalid phone number format. Original:', ownerPhone);
       return;
     }
 
@@ -86,15 +117,26 @@ Please log in to your OutFyld dashboard to review and approve this booking.
 - OutFyld Team
     `.trim();
 
+    console.log('📱 SMS SERVICE: Sending message to owner...');
+    console.log('📱 SMS SERVICE: From:', process.env.TWILIO_PHONE_NUMBER);
+    console.log('📱 SMS SERVICE: To:', formattedPhone);
+    console.log('📱 SMS SERVICE: Message length:', message.length);
+
     const response = await client.messages.create({
       body: message,
       from: process.env.TWILIO_PHONE_NUMBER,
       to: formattedPhone,
     });
 
-    console.log('SMS sent successfully:', response.sid);
-  } catch (error) {
-    console.error('Error sending SMS notification:', error);
+    console.log('✅ SMS SERVICE: Booking notification SMS sent successfully!');
+    console.log('✅ SMS SERVICE: Message SID:', response.sid);
+    console.log('✅ SMS SERVICE: Status:', response.status);
+  } catch (error: any) {
+    console.error('❌ SMS SERVICE: Error sending booking notification SMS');
+    console.error('❌ SMS SERVICE: Error type:', error?.constructor?.name);
+    console.error('❌ SMS SERVICE: Error message:', error?.message);
+    console.error('❌ SMS SERVICE: Error code:', error?.code);
+    console.error('❌ SMS SERVICE: Error details:', JSON.stringify(error, null, 2));
     // Don't throw error to prevent booking creation from failing if SMS fails
     // SMS is a nice-to-have, not critical
   }
@@ -110,17 +152,31 @@ export async function sendBookingStatusSMS(
   status: 'confirmed' | 'rejected'
 ): Promise<void> {
   try {
+    console.log(`📱 SMS SERVICE: Starting to send ${status} SMS to customer`);
+    console.log('📱 SMS SERVICE: Customer phone:', customerPhone);
+    console.log('📱 SMS SERVICE: Customer name:', customerName);
+    console.log('📱 SMS SERVICE: Turf name:', turfName);
+    
     const client = getTwilioClient();
     
-    if (!client || !process.env.TWILIO_PHONE_NUMBER) {
-      console.warn('Twilio not configured. Skipping SMS notification.');
+    if (!client) {
+      console.warn('⚠️ SMS SERVICE: Twilio client not configured. Skipping SMS notification.');
+      console.warn('⚠️ SMS SERVICE: Check TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN environment variables');
       return;
     }
+    
+    if (!process.env.TWILIO_PHONE_NUMBER) {
+      console.warn('⚠️ SMS SERVICE: TWILIO_PHONE_NUMBER not configured. Skipping SMS notification.');
+      return;
+    }
+    
+    console.log('✅ SMS SERVICE: Twilio configured');
 
     const formattedPhone = formatPhoneNumber(customerPhone);
+    console.log('📱 SMS SERVICE: Formatted phone:', formattedPhone);
 
     if (!formattedPhone) {
-      console.warn('Invalid phone number format. Skipping SMS notification.');
+      console.warn('⚠️ SMS SERVICE: Invalid phone number format. Original:', customerPhone);
       return;
     }
 
@@ -128,15 +184,26 @@ export async function sendBookingStatusSMS(
       ? `✅ Great news ${customerName}! Your booking for ${turfName} has been CONFIRMED. See you on the turf! - OutFyld`
       : `❌ Hi ${customerName}, your booking for ${turfName} has been rejected. Refund will be processed in 5-7 days. - OutFyld`;
 
+    console.log('📱 SMS SERVICE: Sending status SMS...');
+    console.log('📱 SMS SERVICE: From:', process.env.TWILIO_PHONE_NUMBER);
+    console.log('📱 SMS SERVICE: To:', formattedPhone);
+    console.log('📱 SMS SERVICE: Status:', status);
+
     const response = await client.messages.create({
       body: message,
       from: process.env.TWILIO_PHONE_NUMBER,
       to: formattedPhone,
     });
 
-    console.log('Status SMS sent successfully:', response.sid);
-  } catch (error) {
-    console.error('Error sending status SMS:', error);
+    console.log(`✅ SMS SERVICE: ${status} SMS sent successfully!`);
+    console.log('✅ SMS SERVICE: Message SID:', response.sid);
+    console.log('✅ SMS SERVICE: Status:', response.status);
+  } catch (error: any) {
+    console.error(`❌ SMS SERVICE: Error sending ${status} SMS to customer`);
+    console.error('❌ SMS SERVICE: Error type:', error?.constructor?.name);
+    console.error('❌ SMS SERVICE: Error message:', error?.message);
+    console.error('❌ SMS SERVICE: Error code:', error?.code);
+    console.error('❌ SMS SERVICE: Error details:', JSON.stringify(error, null, 2));
   }
 }
 
@@ -145,28 +212,40 @@ export async function sendBookingStatusSMS(
  * Example: +919876543210
  */
 function formatPhoneNumber(phone: string): string | null {
-  if (!phone) return null;
+  console.log('📱 FORMAT PHONE: Input:', phone);
+  
+  if (!phone) {
+    console.warn('⚠️ FORMAT PHONE: Phone is empty or undefined');
+    return null;
+  }
 
   // Remove all non-digit characters
   let cleanPhone = phone.replace(/\D/g, '');
+  console.log('📱 FORMAT PHONE: Clean phone (digits only):', cleanPhone);
 
   // If it starts with country code, keep it
   if (cleanPhone.startsWith('91') && cleanPhone.length === 12) {
-    return '+' + cleanPhone;
+    const formatted = '+' + cleanPhone;
+    console.log('✅ FORMAT PHONE: Formatted with existing country code:', formatted);
+    return formatted;
   }
 
   // If it's 10 digits, assume Indian number and add +91
   if (cleanPhone.length === 10) {
-    return '+91' + cleanPhone;
+    const formatted = '+91' + cleanPhone;
+    console.log('✅ FORMAT PHONE: Added +91 to 10-digit number:', formatted);
+    return formatted;
   }
 
   // If it already has +, return as is
   if (phone.startsWith('+')) {
+    console.log('✅ FORMAT PHONE: Already has + prefix, using as-is:', phone);
     return phone;
   }
 
   // Unable to format
-  console.warn('Unable to format phone number:', phone);
+  console.warn('⚠️ FORMAT PHONE: Unable to format phone number:', phone);
+  console.warn('⚠️ FORMAT PHONE: Clean phone length:', cleanPhone.length);
   return null;
 }
 

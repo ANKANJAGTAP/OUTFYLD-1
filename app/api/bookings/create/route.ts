@@ -241,17 +241,23 @@ export async function POST(request: NextRequest) {
         }
 
         // Send SMS notification
+        console.log('📱 BOOKING API: Checking owner phone for SMS...');
+        console.log('📱 BOOKING API: Owner phone:', ownerData.phone);
+        
         if (ownerData.phone) {
           try {
+            console.log('📱 BOOKING API: Calling sendBookingNotificationSMS...');
             await sendBookingNotificationSMS(
               ownerData.phone,
               ownerData.name || 'Owner',
               bookingDetails
             );
-            console.log('✅ SMS notification sent to owner');
+            console.log('✅ BOOKING API: SMS notification sent to owner');
           } catch (smsError) {
-            console.error('❌ Failed to send SMS notification:', smsError);
+            console.error('❌ BOOKING API: Failed to send SMS notification:', smsError);
           }
+        } else {
+          console.warn('⚠️ BOOKING API: Owner phone not available, skipping SMS');
         }
 
         console.log('17. Notifications processing completed');
