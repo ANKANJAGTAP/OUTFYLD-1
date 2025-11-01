@@ -40,7 +40,7 @@ export default function RoleRedirect({ children }: RoleRedirectProps) {
           router.push('/owner/dashboard');
           return;
         } else if (user.role === 'customer') {
-          router.push('/dashboard/player');
+          router.push('/');
           return;
         }
       }
@@ -51,7 +51,7 @@ export default function RoleRedirect({ children }: RoleRedirectProps) {
         if (user.role === 'owner') {
           router.push('/owner/dashboard');
         } else if (user.role === 'customer') {
-          router.push('/dashboard/player');
+          router.push('/');
         } else {
           router.push('/');
         }
@@ -64,7 +64,7 @@ export default function RoleRedirect({ children }: RoleRedirectProps) {
         if (user.role === 'admin') {
           router.push('/admin/dashboard');
         } else if (user.role === 'customer') {
-          router.push('/dashboard/player');
+          router.push('/');
         } else {
           router.push('/');
         }
