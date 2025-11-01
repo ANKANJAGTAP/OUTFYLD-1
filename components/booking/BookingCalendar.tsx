@@ -32,9 +32,33 @@ export function BookingCalendar({
     const selectedDateStr = selectedDate.toISOString().split('T')[0]; // YYYY-MM-DD format
     const dayName = selectedDate.toLocaleDateString('en-US', { weekday: 'long' });
     
+    // Check if selected date is today
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+    const isToday = selectedDateStr === todayStr;
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    
     // Filter slots that match the selected date and day
     const slotsForThisDate = turf.availableSlots.filter((slot: any) => {
-      return slot.day === dayName && slot.date === selectedDateStr;
+      if (slot.day !== dayName || slot.date !== selectedDateStr) {
+        return false;
+      }
+      
+      // If it's today, filter out past time slots
+      if (isToday) {
+        // Parse the slot start time (format: "HH:MM")
+        const [slotHour, slotMinute] = slot.startTime.split(':').map(Number);
+        
+        // Convert to minutes for easier comparison
+        const currentTimeInMinutes = currentHour * 60 + currentMinute;
+        const slotTimeInMinutes = slotHour * 60 + slotMinute;
+        
+        // Only show slots that haven't started yet (or starting within next 30 mins as buffer)
+        return slotTimeInMinutes > currentTimeInMinutes;
+      }
+      
+      return true;
     });
     
     // Sort slots by start time

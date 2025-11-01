@@ -391,8 +391,29 @@ const TurfDetailsPage = memo(function TurfDetailsPage({ turfId }: TurfDetailsPag
     const dayName = format(selectedDate, 'EEEE'); // Monday, Tuesday, etc.
     const dateString = format(selectedDate, 'yyyy-MM-dd');
     
+    // Check if selected date is today
+    const now = new Date();
+    const todayStr = format(now, 'yyyy-MM-dd');
+    const isToday = dateString === todayStr;
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    const currentTimeInMinutes = currentHour * 60 + currentMinute;
+    
     // Get all slots for this day of the week
-    const daySlots = turf.availableSlots.filter(slot => slot.day === dayName);
+    const daySlots = turf.availableSlots.filter(slot => {
+      if (slot.day !== dayName) return false;
+      
+      // If it's today, filter out past time slots
+      if (isToday) {
+        const [slotHour, slotMinute] = slot.startTime.split(':').map(Number);
+        const slotTimeInMinutes = slotHour * 60 + slotMinute;
+        
+        // Only show slots that haven't started yet
+        return slotTimeInMinutes > currentTimeInMinutes;
+      }
+      
+      return true;
+    });
     
     // Remove duplicates by creating a Map with unique time combinations
     const uniqueSlots = new Map();
