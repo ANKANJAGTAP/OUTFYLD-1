@@ -60,6 +60,7 @@ export default function AdminDashboard() {
   const [owners, setOwners] = useState<TurfOwner[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [selectedOwner, setSelectedOwner] = useState<TurfOwner | null>(null);
   const [showVerifyDialog, setShowVerifyDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
@@ -150,10 +151,17 @@ export default function AdminDashboard() {
 
   // Handle reject owner
   const handleRejectOwner = async () => {
-    if (!selectedOwner || !rejectionReason.trim()) return;
+    if (!selectedOwner || !rejectionReason.trim()) {
+      setError('Please provide a rejection reason');
+      return;
+    }
     
     setActionLoading(true);
+    setError(null);
+    
     try {
+      console.log('Rejecting owner:', selectedOwner._id, 'Reason:', rejectionReason);
+      
       const response = await fetch('/api/admin/reject-owner', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -163,14 +171,30 @@ export default function AdminDashboard() {
         }),
       });
 
-      if (!response.ok) throw new Error('Failed to reject owner');
+      const data = await response.json();
+      console.log('Reject response:', data);
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to reject owner');
+      }
       
+      // Show success message
+      console.log('✅ Owner rejected successfully:', data.message);
+      setSuccess(`${selectedOwner.name}'s application has been rejected successfully`);
+      
+      // Refresh the owners list
       await fetchOwners();
+      
+      // Close dialog and reset
       setShowRejectDialog(false);
       setSelectedOwner(null);
       setRejectionReason('');
+      
+      // Clear success message after 5 seconds
+      setTimeout(() => setSuccess(null), 5000);
     } catch (err: any) {
-      setError(err.message);
+      console.error('❌ Error rejecting owner:', err);
+      setError(err.message || 'Failed to reject owner');
     } finally {
       setActionLoading(false);
     }
@@ -296,6 +320,12 @@ export default function AdminDashboard() {
         {error && (
           <Alert variant="destructive" className="mb-6">
             <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        {success && (
+          <Alert className="mb-6 bg-green-50 border-green-200">
+            <AlertDescription className="text-green-800">{success}</AlertDescription>
           </Alert>
         )}
 
@@ -607,6 +637,12 @@ export default function AdminDashboard() {
           </DialogHeader>
           
           <div className="space-y-4 py-4">
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            
             <div className="space-y-2">
               <Label htmlFor="reason">Rejection Reason</Label>
               <Textarea
@@ -617,10 +653,20 @@ export default function AdminDashboard() {
                 rows={4}
               />
             </div>
+            
+            <Alert className="bg-yellow-50 border-yellow-200">
+              <AlertDescription className="text-sm text-yellow-800">
+                ⚠️ This will delete all turfs, bookings, and reservations for this owner.
+              </AlertDescription>
+            </Alert>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowRejectDialog(false)} disabled={actionLoading}>
+            <Button variant="outline" onClick={() => {
+              setShowRejectDialog(false);
+              setRejectionReason('');
+              setError(null);
+            }} disabled={actionLoading}>
               Cancel
             </Button>
             <Button 

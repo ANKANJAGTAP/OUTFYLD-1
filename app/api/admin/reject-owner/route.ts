@@ -10,10 +10,15 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('🔍 REJECT OWNER API: Request received');
+    
     const body = await request.json();
     const { ownerId, rejectionReason } = body;
+    
+    console.log('📝 REJECT OWNER API: Data received:', { ownerId, rejectionReason: rejectionReason?.substring(0, 50) });
 
     if (!ownerId) {
+      console.error('❌ REJECT OWNER API: Missing ownerId');
       return NextResponse.json(
         { error: 'Owner ID is required' },
         { status: 400 }
@@ -21,6 +26,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!rejectionReason || !rejectionReason.trim()) {
+      console.error('❌ REJECT OWNER API: Missing rejectionReason');
       return NextResponse.json(
         { error: 'Rejection reason is required' },
         { status: 400 }
@@ -28,18 +34,26 @@ export async function POST(request: NextRequest) {
     }
 
     // Connect to MongoDB
+    console.log('🔗 REJECT OWNER API: Connecting to MongoDB...');
     await connectMongoDB();
+    console.log('✅ REJECT OWNER API: Connected to MongoDB');
 
     // Find the owner
+    console.log('🔍 REJECT OWNER API: Finding owner with ID:', ownerId);
     const owner = await User.findById(ownerId);
+    
     if (!owner) {
+      console.error('❌ REJECT OWNER API: Owner not found:', ownerId);
       return NextResponse.json(
         { error: 'Owner not found' },
         { status: 404 }
       );
     }
+    
+    console.log('✅ REJECT OWNER API: Owner found:', { id: owner._id, name: owner.name, role: owner.role });
 
     if (owner.role !== 'owner') {
+      console.error('❌ REJECT OWNER API: User is not an owner:', owner.role);
       return NextResponse.json(
         { error: 'User is not a turf owner' },
         { status: 400 }
@@ -73,12 +87,15 @@ export async function POST(request: NextRequest) {
     console.log(`🗑️ CASCADE DELETE (REJECT): Deleted ${turfsDeleted.deletedCount} turfs`);
 
     // Step 5: Update the owner's verification status (keep the user account but mark as rejected)
+    console.log('👤 REJECT OWNER API: Updating owner status...');
     owner.isVerifiedByAdmin = false;
     owner.paymentVerified = false;
     owner.verificationStatus = 'rejected';
     owner.rejectionReason = rejectionReason;
     await owner.save();
+    console.log('✅ REJECT OWNER API: Owner status updated successfully');
 
+    console.log('🎉 REJECT OWNER API: Rejection completed successfully');
     return NextResponse.json({
       success: true,
       message: 'Owner application rejected and all turfs deleted',
@@ -97,9 +114,18 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('Error rejecting owner:', error);
+    console.error('❌ REJECT OWNER API: Critical error occurred');
+    console.error('Error type:', error?.constructor?.name);
+    console.error('Error message:', error?.message);
+    console.error('Error stack:', error?.stack);
+    console.error('Full error object:', JSON.stringify(error, null, 2));
+    
     return NextResponse.json(
-      { error: 'Internal server error', details: error?.message || 'Unknown error' },
+      { 
+        error: 'Internal server error', 
+        details: error?.message || 'Unknown error',
+        type: error?.constructor?.name || 'Unknown'
+      },
       { status: 500 }
     );
   }
