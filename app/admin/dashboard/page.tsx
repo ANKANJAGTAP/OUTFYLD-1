@@ -263,6 +263,12 @@ export default function AdminDashboard() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
+            <Link href="/admin/settings">
+              <Button variant="outline" size="sm" className="text-xs sm:text-sm">
+                <IndianRupee className="w-4 h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Payment </span>QR
+              </Button>
+            </Link>
             <Link href="/admin/manage-admins">
               <Button variant="outline" size="sm" className="text-xs sm:text-sm">
                 <Shield className="w-4 h-4 mr-1 sm:mr-2" />
