@@ -13,6 +13,11 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: 'OutFyld - Sports Turf Booking Platform | Sangli & Miraj',
   description: 'Book sports turfs instantly in Sangli and Miraj. Find cricket, football, and other sports facilities with real-time availability and secure payments.',
+  icons: {
+    icon: '/images/logo.png',
+    shortcut: '/images/logo.png',
+    apple: '/images/logo.png',
+  },
 };
 
 export default function RootLayout({
