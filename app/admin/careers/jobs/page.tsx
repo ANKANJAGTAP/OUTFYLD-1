@@ -309,7 +309,7 @@ export default function ManageJobsPage() {
       location: job.location,
       employmentType: job.employmentType,
       description: job.description,
-      responsibilities: job.responsibilities.join('\n'),
+      responsibilities: job.responsibilities ? job.responsibilities.join('\n') : '',
       requirements: job.requirements.join('\n'),
       stipendAmount: job.stipend.amount,
       stipendType: job.stipend.type,
