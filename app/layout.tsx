@@ -11,8 +11,8 @@ import { Analytics } from "@vercel/analytics/next"
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'OutFyld - Sports Turf Booking Platform | Sangli & Miraj',
-  description: 'Book sports turfs instantly in Sangli and Miraj. Find cricket, football, and other sports facilities with real-time availability and secure payments.',
+  title: 'OutFyld - Sports Turf Booking Platform',
+  description: 'Book sports turfs instantly. Find cricket, football, and other sports facilities with real-time availability and secure payments.',
   icons: {
     icon: '/images/logo.png',
     shortcut: '/images/logo.png',

@@ -51,7 +51,7 @@ export function FeaturesSection() {
     {
       icon: MapPin,
       title: 'Location-based Search',
-      description: 'Find turfs near you in Sangli and Miraj with accurate location and directions.',
+      description: 'Find turfs near you with accurate location and directions.',
       color: 'text-green-600'
     },
     {

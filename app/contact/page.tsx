@@ -61,12 +61,12 @@ export default function ContactPage() {
     name: 'OutFyld',
     email: 'admin@outfyld.in',
     phone: '+91 7058526196',
-    address: 'Walchand College of Engineering, Sangli, Maharashtra, India',
+    address: 'Sangli, Maharashtra, India',
   };
 
   const team = [
-    { id: 1, name: 'Support Team', email: 'admin@outfyld.in', phone: '+91 7058526196', hours: '9:00 AM – 6:00 PM' },
-    { id: 2, name: 'Sales & Partnerships', email: 'admin@outfyld.in', phone: '+91 7058526196', hours: '10:00 AM – 6:00 PM' },
+    { id: 1, name: 'Support Team', email: 'admin@outfyld.in', phone: '+91 8830099646', hours: '9:00 AM – 6:00 PM' },
+    { id: 2, name: 'Sales & Partnerships', email: 'admin@outfyld.in', phone: '+91 9975585475', hours: '10:00 AM – 6:00 PM' },
     { id: 3, name: 'Technical Support', email: 'admin@outfyld.in', phone: '+91 7058526196', hours: 'Mon–Fri 9:00 AM – 6:00 PM' }
   ];
 

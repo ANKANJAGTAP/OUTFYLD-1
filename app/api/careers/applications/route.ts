@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 // import connectDB from '@/lib/mongodb';
 import JobApplication from '@/app/models/JobApplication';
 import Job from '@/app/models/Job';
+// Import User model to ensure it's registered for population
+import '@/app/models/User';
 import { sendApplicationConfirmationEmail, sendNewApplicationNotificationToAdmin } from '@/lib/careerEmails';
 
 // Tell Next.js this route should be dynamic

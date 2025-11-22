@@ -32,8 +32,8 @@ export default function AboutPage() {
 
   const team = [
     { id: 1, name: 'Ankan Jagtap', role: 'Founder & CTO', bio: 'Full‑stack developer focused on reliable backend systems and simple UX.' },
-    { id: 2, name: 'Madhuri Jagtap', role: 'Head of Operations', bio: 'Operations & partnerships — keeps turfs happy and schedules sane.' },
-    { id: 3, name: 'Sahil Patil', role: 'Product Designer', bio: 'Designs pixel-perfect admin and player experiences.' }
+    { id: 2, name: 'Naresh Adhe', role: 'Head of Operations', bio: 'Operations & partnerships — keeps turfs happy and schedules sane.' },
+    { id: 3, name: 'Hanamant Halsangi', role: 'Product Designer', bio: 'Designs pixel-perfect admin and player experiences.' }
   ];
 
   const faqs = [
@@ -192,7 +192,7 @@ export default function AboutPage() {
                   <div className="p-2 bg-indigo-50 rounded"><MapPin className="h-5 w-5 text-indigo-600"/></div>
                   <div>
                     <div className="font-medium">Office</div>
-                    <div className="text-sm text-gray-600">Walchand College of Engineering, Sangli</div>
+                    <div className="text-sm text-gray-600">Sangli,Maharashtra,India</div>
                   </div>
                 </div>
 

@@ -46,7 +46,7 @@ export default function LoginPage() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-green-600">OutFyld</h1>
-              <p className="text-xs text-gray-500">Sangli & Miraj</p>
+              {/* <p className="text-xs text-gray-500">Sangli & Miraj</p> */}
             </div>
           </Link>
           <h2 className="text-3xl font-bold text-gray-900">Welcome Back</h2>

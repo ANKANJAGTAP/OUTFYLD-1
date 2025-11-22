@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Menu, X, MapPin, User, LogOut, Shield } from 'lucide-react';
@@ -24,12 +25,18 @@ export function LandingHeader() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-3 md:py-4">
           <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
-            <div className="bg-green-500 rounded-lg p-1.5 md:p-2 mr-2 md:mr-3">
-              <MapPin className="h-5 w-5 md:h-6 md:w-6 text-white" />
+            <div className="mr-2 md:mr-3">
+              <Image 
+                src="/images/logo.png" 
+                alt="OutFyld Logo" 
+                width={48} 
+                height={48} 
+                className="h-10 w-10 md:h-12 md:w-12 object-contain"
+              />
             </div>
             <div>
               <h1 className="text-xl md:text-2xl font-bold text-green-600">OutFyld</h1>
-              <p className="text-xs text-gray-500 hidden sm:block">Sangli & Miraj</p>
+              {/* <p className="text-xs text-gray-500 hidden sm:block">Sangli & Miraj</p> */}
             </div>
           </Link>
 

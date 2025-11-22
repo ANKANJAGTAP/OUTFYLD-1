@@ -103,7 +103,7 @@ export function PopularTurfs() {
             Popular Turfs in Your Area
           </h3>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Discover the most loved sports facilities in Sangli and Miraj, 
+            Discover the most loved sports facilities in India, 
             rated by our community of players.
           </p>
         </div>

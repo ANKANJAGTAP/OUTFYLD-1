@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -31,8 +32,14 @@ export function BrowseHeader({ searchQuery, onSearchChange, sortBy, onSortChange
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between py-4">
           <Link href="/" className="flex items-center">
-            <div className="bg-green-500 rounded-lg p-2 mr-3">
-              <MapPin className="h-6 w-6 text-white" />
+            <div className="mr-3">
+              <Image 
+                src="/images/logo.png" 
+                alt="OutFyld Logo" 
+                width={48} 
+                height={48} 
+                className="h-12 w-12 object-contain"
+              />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-green-600">OutFyld</h1>

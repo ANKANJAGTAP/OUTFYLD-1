@@ -218,7 +218,7 @@ export default function JobDetailsPage() {
             <ul className="space-y-2">
               <li className="flex items-start">
                 <span className="text-green-600 mr-2">✓</span>
-                <span className="text-gray-700">Competitive compensation and equity</span>
+                <span className="text-gray-700">Performance-Based Stipend</span>
               </li>
               <li className="flex items-start">
                 <span className="text-green-600 mr-2">✓</span>
@@ -226,19 +226,15 @@ export default function JobDetailsPage() {
               </li>
               <li className="flex items-start">
                 <span className="text-green-600 mr-2">✓</span>
-                <span className="text-gray-700">Learning and development budget</span>
+                <span className="text-gray-700">Completion Certificate</span>
               </li>
               <li className="flex items-start">
                 <span className="text-green-600 mr-2">✓</span>
-                <span className="text-gray-700">Health insurance coverage</span>
+                <span className="text-gray-700">Real-World Experience</span>
               </li>
               <li className="flex items-start">
                 <span className="text-green-600 mr-2">✓</span>
-                <span className="text-gray-700">Team outings and sports activities</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-green-600 mr-2">✓</span>
-                <span className="text-gray-700">Free access to partner turfs</span>
+                <span className="text-gray-700">Mentorship Program</span>
               </li>
             </ul>
           </CardContent>

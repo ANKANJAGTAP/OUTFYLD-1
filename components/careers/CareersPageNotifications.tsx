@@ -36,7 +36,7 @@ export default function CareersPageNotifications() {
       setNotification({
         type: 'error',
         title: 'Application Not Found',
-        message: 'We could not find your application. Please contact us at careers@outfyld.in for assistance.'
+        message: 'We could not find your application. Please contact us at admin@outfyld.in for assistance.'
       });
     } else if (error === 'offer-not-available') {
       setNotification({
@@ -48,7 +48,7 @@ export default function CareersPageNotifications() {
       setNotification({
         type: 'error',
         title: 'Server Error',
-        message: 'Something went wrong. Please try again or contact us at careers@outfyld.in.'
+        message: 'Something went wrong. Please try again or contact us at admin@outfyld.in.'
       });
     }
 

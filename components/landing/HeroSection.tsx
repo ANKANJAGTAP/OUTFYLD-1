@@ -40,7 +40,7 @@ export function HeroSection() {
             </h2>
             
             <p className="text-base sm:text-lg md:text-xl text-gray-600 mb-6 md:mb-8 leading-relaxed">
-              The first centralized platform for booking sports turfs in Sangli and Miraj. 
+              The first centralized platform for booking sports turfs in India.
               Real-time availability, instant confirmation, and secure payments.
             </p>
 

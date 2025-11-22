@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { MapPin, Mail, Phone, Facebook, Instagram, Twitter } from 'lucide-react';
 
 export function Footer() {
@@ -8,16 +9,22 @@ export function Footer() {
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
           <div>
             <div className="flex items-center mb-6">
-              <div className="bg-green-500 rounded-lg p-2 mr-3">
-                <MapPin className="h-6 w-6 text-white" />
+              <div className="mr-3">
+                <Image 
+                  src="/images/logo.png" 
+                  alt="OutFyld Logo" 
+                  width={48} 
+                  height={48} 
+                  className="h-12 w-12 object-contain"
+                />
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-green-400">OutFyld</h1>
-                <p className="text-xs text-gray-400">Sangli & Miraj</p>
+                {/* <p className="text-xs text-gray-400">Sangli & Miraj</p> */}
               </div>
             </div>
             <p className="text-gray-400 mb-6 leading-relaxed">
-              The first centralized platform for booking sports turfs in Sangli and Miraj region.
+              The first centralized platform for booking sports turfs in India region.
               Making sports more accessible for everyone.
             </p>
             <div className="flex space-x-4">
@@ -75,7 +82,7 @@ export function Footer() {
         <div className="border-t border-gray-800 mt-12 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-400 text-sm">
-              © 2024 OutFyld. All rights reserved.
+              © 2025 OutFyld. All rights reserved.
             </p>
             <div className="flex space-x-6 mt-4 md:mt-0">
               <Link href="/about" className="text-gray-400 hover:text-white text-sm transition-colors">

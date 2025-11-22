@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Briefcase, Users, TrendingUp, Award, MapPin, Clock } from 'lucide-react';
+import { Briefcase, Users, TrendingUp, Award, MapPin, Clock, Lightbulb, HandshakeIcon, BookOpen } from 'lucide-react';
 import CareersPageNotifications from '@/components/careers/CareersPageNotifications';
 import { Suspense } from 'react';
 
@@ -53,7 +53,7 @@ export default function CareersPage() {
               </div>
               <h3 className="text-xl font-semibold mb-2">Great Team</h3>
               <p className="text-gray-600">
-                Work with passionate, talented people who love sports
+                Work with passionate, talented people
               </p>
             </div>
 
@@ -63,7 +63,7 @@ export default function CareersPage() {
               </div>
               <h3 className="text-xl font-semibold mb-2">Impact</h3>
               <p className="text-gray-600">
-                Make a real difference in India&apos;s sports ecosystem
+               Bring real change to Indian sports
               </p>
             </div>
 
@@ -88,23 +88,32 @@ export default function CareersPage() {
           </h2>
           
           <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-white p-8 rounded-lg shadow-md">
-              <h3 className="text-2xl font-semibold mb-4 text-green-600">🚀 Innovation First</h3>
-              <p className="text-gray-700">
+            <div className="text-center p-6 rounded-lg bg-white shadow-md hover:shadow-xl transition-shadow">
+              <div className="w-16 h-16 mx-auto mb-4 bg-yellow-100 rounded-full flex items-center justify-center">
+                <Lightbulb className="w-8 h-8 text-yellow-600" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Innovation First</h3>
+              <p className="text-gray-600">
                 We encourage creative thinking and aren&apos;t afraid to try new approaches. Your ideas matter here.
               </p>
             </div>
 
-            <div className="bg-white p-8 rounded-lg shadow-md">
-              <h3 className="text-2xl font-semibold mb-4 text-blue-600">🤝 Collaboration</h3>
-              <p className="text-gray-700">
+            <div className="text-center p-6 rounded-lg bg-white shadow-md hover:shadow-xl transition-shadow">
+              <div className="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center">
+                <HandshakeIcon className="w-8 h-8 text-blue-600" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Collaboration</h3>
+              <p className="text-gray-600">
                 We believe in teamwork. Every voice is heard, and every contribution is valued.
               </p>
             </div>
 
-            <div className="bg-white p-8 rounded-lg shadow-md">
-              <h3 className="text-2xl font-semibold mb-4 text-purple-600">📚 Learning</h3>
-              <p className="text-gray-700">
+            <div className="text-center p-6 rounded-lg bg-white shadow-md hover:shadow-xl transition-shadow">
+              <div className="w-16 h-16 mx-auto mb-4 bg-indigo-100 rounded-full flex items-center justify-center">
+                <BookOpen className="w-8 h-8 text-indigo-600" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Learning</h3>
+              <p className="text-gray-600">
                 Continuous learning is part of our DNA. We invest in your growth through training and mentorship.
               </p>
             </div>
@@ -123,16 +132,16 @@ export default function CareersPage() {
             <div className="flex items-start space-x-4 p-4">
               <div className="w-3 h-3 bg-green-600 rounded-full mt-2"></div>
               <div>
-                <h4 className="font-semibold text-lg">Competitive Compensation</h4>
-                <p className="text-gray-600">Industry-leading salaries and equity options</p>
+                <h4 className="font-semibold text-lg">Performance-Based Stipend</h4>
+                <p className="text-gray-600">Competitive internship stipends based on your contribution</p>
               </div>
             </div>
 
             <div className="flex items-start space-x-4 p-4">
               <div className="w-3 h-3 bg-green-600 rounded-full mt-2"></div>
               <div>
-                <h4 className="font-semibold text-lg">Health Insurance</h4>
-                <p className="text-gray-600">Comprehensive health coverage for you and family</p>
+                <h4 className="font-semibold text-lg">Completion Certificate</h4>
+                <p className="text-gray-600">Official certificate upon successful internship completion</p>
               </div>
             </div>
 
@@ -147,16 +156,16 @@ export default function CareersPage() {
             <div className="flex items-start space-x-4 p-4">
               <div className="w-3 h-3 bg-green-600 rounded-full mt-2"></div>
               <div>
-                <h4 className="font-semibold text-lg">Learning Budget</h4>
-                <p className="text-gray-600">Annual budget for courses, books, and conferences</p>
+                <h4 className="font-semibold text-lg">Real-World Experience</h4>
+                <p className="text-gray-600">Work on live projects that impact thousands of users</p>
               </div>
             </div>
 
             <div className="flex items-start space-x-4 p-4">
               <div className="w-3 h-3 bg-green-600 rounded-full mt-2"></div>
               <div>
-                <h4 className="font-semibold text-lg">Team Outings</h4>
-                <p className="text-gray-600">Regular team events and sports activities</p>
+                <h4 className="font-semibold text-lg">Mentorship Program</h4>
+                <p className="text-gray-600">Direct guidance from experienced team leads and founders</p>
               </div>
             </div>
 
@@ -196,7 +205,7 @@ export default function CareersPage() {
           <p className="text-gray-600 mb-6">
             We&apos;re always looking for talented people. Send us your resume at{' '}
             <a href="mailto:careers@outfyld.in" className="text-green-600 hover:underline">
-              careers@outfyld.in
+              admin@outfyld.in
             </a>
           </p>
         </div>

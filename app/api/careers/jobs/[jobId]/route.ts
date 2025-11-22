@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 // import connectDB from '@/lib/mongodb';
 import Job from '@/app/models/Job';
+// Import User model to ensure it's registered for population
+import '@/app/models/User';
 
 // Tell Next.js this route should be dynamic
 export const dynamic = 'force-dynamic';

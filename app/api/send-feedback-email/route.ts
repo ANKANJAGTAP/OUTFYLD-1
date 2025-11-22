@@ -122,7 +122,7 @@ export async function POST(req: NextRequest) {
           </div>
           <div class="footer">
             <p>OutFyld - Your Premier Turf Booking Platform</p>
-            <p>Sangli & Miraj</p>
+            <p>India</p>
             <p>This is an automated email. Please do not reply directly to this email.</p>
           </div>
         </div>
