@@ -289,7 +289,7 @@ export default function AcceptOfferForm({ application, applicationId }: AcceptOf
               <input
                 type="text"
                 value={verificationData.offerLetterId}
-                onChange={(e) => setVerificationData({ ...verificationData, offerLetterId: e.target.value.toUpperCase() })}
+                onChange={(e) => setVerificationData({ ...verificationData, offerLetterId: e.target.value.trim().toUpperCase() })}
                 placeholder="OUTFYLD-INF-2025-XXXXXX"
                 required
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"

@@ -82,43 +82,94 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Generate CSV
+    // Generate CSV with ALL fields
     const csvHeaders = [
       'Application Date',
       'Job Title',
       'Department',
       'Employment Type',
+      'Job Location',
       'Full Name',
       'Email',
       'Phone',
       'College',
+      'Branch',
+      'Graduation Year',
       'Availability',
+      'Resume URL',
+      'Resume File Name',
+      'Cover Letter',
       'LinkedIn',
       'GitHub',
       'Portfolio',
-      'Resume URL',
+      'Gender',
+      'Disability Status',
+      'Veteran Status',
+      'Work Experience',
       'Status',
-      'Applied Via'
+      'Applied Via',
+      'Offer Letter ID',
+      'Offer Accepted',
+      'Offer Accepted At',
+      'Offer Expiry Date',
+      'Signature Data URL',
+      'Payment Status',
+      'Payment Amount',
+      'Payment Transaction ID',
+      'Payment Date',
+      'Admin Notes',
+      'Reviewed By',
+      'Reviewed At'
     ];
 
     const csvRows = applications.map((app: any) => {
       const job = app.jobId || {};
+      
+      // Format work experience if exists
+      let workExpStr = '';
+      if (app.workExperience && Array.isArray(app.workExperience) && app.workExperience.length > 0) {
+        workExpStr = app.workExperience.map((exp: any) => 
+          `${exp.company || 'N/A'} - ${exp.role || 'N/A'} (${exp.duration || 'N/A'}): ${exp.description || ''}`
+        ).join(' | ');
+      }
+      
       return [
-        format(new Date(app.appliedDate), 'dd/MM/yyyy HH:mm'),
-        job.title || 'N/A',
-        job.department || 'N/A',
-        job.employmentType || 'N/A',
+        app.appliedDate ? format(new Date(app.appliedDate), 'dd/MM/yyyy HH:mm') : '',
+        job.title || '',
+        job.department || '',
+        job.employmentType || '',
+        job.location || '',
         app.fullName || '',
         app.email || '',
         app.phone || '',
         app.college || '',
+        app.branch || '',
+        app.graduationYear || '',
         app.availability || '',
+        app.resume?.url || '',
+        app.resume?.fileName || '',
+        app.coverLetter || '',
         app.linkedinUrl || '',
         app.githubUrl || '',
         app.portfolioUrl || '',
-        app.resume?.url || '',
+        app.gender || '',
+        app.disabilityStatus || '',
+        app.veteranStatus || '',
+        workExpStr,
         app.status || '',
-        app.source || 'website'
+        app.source || '',
+        app.offerLetterId || '',
+        app.offerAccepted ? 'Yes' : 'No',
+        app.offerAcceptedAt ? format(new Date(app.offerAcceptedAt), 'dd/MM/yyyy HH:mm') : '',
+        app.offerExpiryDate ? format(new Date(app.offerExpiryDate), 'dd/MM/yyyy') : '',
+        app.signatureDataUrl ? 'Yes' : 'No',
+        app.paymentStatus || '',
+        app.paymentAmount || '',
+        app.paymentTransactionId || '',
+        app.paymentDate ? format(new Date(app.paymentDate), 'dd/MM/yyyy HH:mm') : '',
+        app.adminNotes || '',
+        app.reviewedBy?.name || '',
+        app.reviewedAt ? format(new Date(app.reviewedAt), 'dd/MM/yyyy HH:mm') : ''
       ].map(field => {
         // Escape double quotes and wrap in quotes if contains comma
         const escaped = String(field).replace(/"/g, '""');
