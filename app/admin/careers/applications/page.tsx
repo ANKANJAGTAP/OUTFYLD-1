@@ -112,6 +112,8 @@ export default function ManageApplicationsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
+  const [otherApplications, setOtherApplications] = useState<Application[]>([]);
+  const [loadingOtherApps, setLoadingOtherApps] = useState(false);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -280,6 +282,35 @@ export default function ManageApplicationsPage() {
       adminNotes: application.adminNotes || ''
     });
     setShowDetailDialog(true);
+    // Fetch other applications by the same email or phone
+    fetchOtherApplications(application.email, application.phone, application._id);
+  };
+
+  const fetchOtherApplications = async (email: string, phone: string, currentApplicationId: string) => {
+    try {
+      setLoadingOtherApps(true);
+      const token = await firebaseUser?.getIdToken();
+      
+      const response = await fetch(`/api/admin/careers/applications?email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Filter out the current application
+        const others = data.applications.filter((app: Application) => app._id !== currentApplicationId);
+        setOtherApplications(others);
+      } else {
+        setOtherApplications([]);
+      }
+    } catch (err) {
+      console.error('Error fetching other applications:', err);
+      setOtherApplications([]);
+    } finally {
+      setLoadingOtherApps(false);
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -660,6 +691,82 @@ export default function ManageApplicationsPage() {
                     )}
                   </div>
                 </div>
+
+                {/* Other Applications by Same Candidate */}
+                {loadingOtherApps ? (
+                  <div className="flex items-center justify-center p-4 bg-gray-50 rounded-lg">
+                    <Loader2 className="w-5 h-5 animate-spin text-gray-400 mr-2" />
+                    <span className="text-sm text-gray-600">Loading other applications...</span>
+                  </div>
+                ) : otherApplications.length > 0 && (
+                  <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
+                    <h3 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
+                      <FileText className="w-5 h-5" />
+                      This candidate has also applied to:
+                    </h3>
+                    <div className="space-y-2">
+                      {otherApplications.map((app) => (
+                        <div 
+                          key={app._id} 
+                          className="flex items-center justify-between bg-white p-3 rounded border border-blue-200 hover:border-blue-300 transition-colors"
+                        >
+                          <div className="flex-1">
+                            <p className="font-medium text-gray-900">{app.jobId?.title}</p>
+                            <div className="flex gap-2 mt-1">
+                              <Badge variant="outline" className="text-xs">{app.jobId?.department}</Badge>
+                              <Badge variant="outline" className="text-xs">{app.jobId?.employmentType}</Badge>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="text-right">
+                              <Badge className={`
+                                ${app.status === 'hired' || app.status === 'shortlisted' 
+                                  ? 'bg-green-600' 
+                                  : app.status === 'under_review' 
+                                  ? 'bg-blue-600' 
+                                  : app.status === 'submitted'
+                                  ? 'bg-gray-600'
+                                  : 'bg-red-600'}
+                              `}>
+                                {app.status === 'hired' && '✅ Hired'}
+                                {app.status === 'shortlisted' && '⭐ Shortlisted'}
+                                {app.status === 'under_review' && '🔍 Under Review'}
+                                {app.status === 'submitted' && '📋 Submitted'}
+                                {app.status === 'rejected' && '❌ Rejected'}
+                              </Badge>
+                              <p className="text-xs text-gray-500 mt-1">
+                                {format(new Date(app.appliedDate), 'dd MMM yyyy')}
+                              </p>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setShowDetailDialog(false);
+                                setTimeout(() => openDetailDialog(app), 100);
+                              }}
+                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-100"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {otherApplications.some(app => app.status === 'hired' || app.status === 'shortlisted') && (
+                      <div className="mt-3 p-3 bg-yellow-50 border border-yellow-300 rounded">
+                        <p className="text-sm text-yellow-800">
+                          <strong>⚠️ Note:</strong> This candidate is already {' '}
+                          {otherApplications.find(app => app.status === 'hired') 
+                            ? `hired for "${otherApplications.find(app => app.status === 'hired')?.jobId?.title}"` 
+                            : `shortlisted for "${otherApplications.find(app => app.status === 'shortlisted')?.jobId?.title}"`
+                          }. 
+                          Please consider this before making a decision.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Offer Acceptance Status */}
                 {selectedApplication.status === 'shortlisted' && (

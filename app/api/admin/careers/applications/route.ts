@@ -63,6 +63,8 @@ export async function GET(request: NextRequest) {
     const jobId = searchParams.get('jobId');
     const status = searchParams.get('status');
     const search = searchParams.get('search'); // Search by name or email
+    const email = searchParams.get('email'); // Filter by email (OR logic with phone)
+    const phone = searchParams.get('phone'); // Filter by phone (OR logic with email)
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '50');
 
@@ -71,11 +73,37 @@ export async function GET(request: NextRequest) {
     if (jobId) query.jobId = jobId;
     if (status) query.status = status;
     
-    if (search) {
+    // If both email and phone are provided, match either (OR logic)
+    if (email && phone) {
       query.$or = [
-        { fullName: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } }
+        { email: email },
+        { phone: phone }
       ];
+    } else if (email) {
+      query.email = email; // Exact email match
+    } else if (phone) {
+      query.phone = phone; // Exact phone match
+    }
+    
+    if (search) {
+      // If we already have $or from email/phone, we need to handle it differently
+      if (query.$or) {
+        query.$and = [
+          { $or: query.$or },
+          {
+            $or: [
+              { fullName: { $regex: search, $options: 'i' } },
+              { email: { $regex: search, $options: 'i' } }
+            ]
+          }
+        ];
+        delete query.$or;
+      } else {
+        query.$or = [
+          { fullName: { $regex: search, $options: 'i' } },
+          { email: { $regex: search, $options: 'i' } }
+        ];
+      }
     }
 
     // Calculate pagination
