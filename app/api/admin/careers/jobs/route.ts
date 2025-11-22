@@ -139,10 +139,10 @@ export async function POST(request: NextRequest) {
       location,
       employmentType,
       description,
+      responsibilities,
       requirements,
       stipend,
       internshipYear,
-      openings,
       deadline
     } = body;
 
@@ -150,6 +150,13 @@ export async function POST(request: NextRequest) {
     if (!title || !department || !location || !employmentType || !description) {
       return NextResponse.json(
         { success: false, error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+
+    if (!responsibilities || !Array.isArray(responsibilities) || responsibilities.length === 0) {
+      return NextResponse.json(
+        { success: false, error: 'At least one responsibility is required' },
         { status: 400 }
       );
     }
@@ -175,10 +182,10 @@ export async function POST(request: NextRequest) {
       location,
       employmentType,
       description,
+      responsibilities,
       requirements,
       stipend,
       internshipYear: internshipYear || undefined,
-      openings: openings || 1,
       deadline: deadline ? new Date(deadline) : undefined,
       status: 'open', // Always create as open
       postedBy: user._id

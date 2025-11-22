@@ -19,7 +19,6 @@ interface Job {
     amount: string;
     type: string;
   };
-  openings: number;
   deadline?: string;
   createdAt: string;
 }
@@ -157,7 +156,7 @@ export default function JobsPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Briefcase className="w-4 h-4" />
-                      <span>{job.openings} {job.openings === 1 ? 'opening' : 'openings'}</span>
+                      <span>{job.employmentType}</span>
                     </div>
                     <div className="flex items-center gap-2 font-semibold text-green-600">
                       💰 <span>{job.stipend.amount} ({job.stipend.type})</span>

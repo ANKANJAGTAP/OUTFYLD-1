@@ -207,9 +207,41 @@ export default function AcceptOfferForm({ application, applicationId }: AcceptOf
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       {/* Error Display */}
+      {/* Error Alert */}
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-6">
-          {error}
+        <div className="bg-red-50 border-2 border-red-300 text-red-900 px-6 py-4 rounded-lg mb-6">
+          <h3 className="font-bold text-lg mb-2">❌ Error Occurred</h3>
+          <p className="mb-3">{error}</p>
+          <div className="text-sm bg-white border border-red-200 rounded p-3 space-y-2">
+            <p className="font-semibold">What to do next:</p>
+            <ul className="list-disc list-inside ml-2 space-y-1">
+              <li>Check your internet connection and try again</li>
+              <li>If payment was deducted, DO NOT pay again - Contact us immediately</li>
+              <li>Keep your Application ID handy: <strong>{application?._id}</strong></li>
+              <li>Email us at <strong>admin@outfyld.in</strong> with the error details</li>
+            </ul>
+          </div>
+        </div>
+      )}
+
+      {/* Processing Warning */}
+      {(loading || paymentProcessing) && (
+        <div className="bg-yellow-50 border-2 border-yellow-400 text-yellow-900 px-6 py-4 rounded-lg mb-6">
+          <div className="flex items-start gap-3">
+            <svg className="animate-spin h-6 w-6 text-yellow-600 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <div>
+              <h3 className="font-bold text-lg mb-1">⚠️ Processing - Please Wait!</h3>
+              <p className="font-semibold mb-2">DO NOT close this window, press back, or refresh the page!</p>
+              <ul className="text-sm space-y-1">
+                <li>• Payment is being processed...</li>
+                <li>• This usually takes 10-30 seconds</li>
+                <li>• You will see a confirmation once complete</li>
+              </ul>
+            </div>
+          </div>
         </div>
       )}
 
@@ -403,8 +435,20 @@ export default function AcceptOfferForm({ application, applicationId }: AcceptOf
 
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
               <p className="text-sm text-yellow-800">
-                <strong>Note:</strong> This is a one-time payment. You will receive a digital joining letter after successful payment.
+                <strong>Note:</strong> This is a one-time payment. You will receive a digital joining letter and receipt after successful payment.
               </p>
+            </div>
+
+            {/* Critical Payment Instructions */}
+            <div className="bg-blue-50 border-2 border-blue-400 rounded-lg p-4">
+              <h4 className="font-semibold text-blue-900 mb-3">🔐 Important Payment Instructions:</h4>
+              <ul className="text-sm text-blue-800 space-y-2 list-disc list-inside">
+                <li><strong>Do NOT close this window</strong> during or after payment</li>
+                <li><strong>Do NOT press the back button</strong> or refresh the page</li>
+                <li>Wait patiently for 10-30 seconds after payment</li>
+                <li><strong>Do NOT pay twice</strong> if you see an error - contact us first</li>
+                <li>Save your Razorpay transaction ID for reference</li>
+              </ul>
             </div>
 
             <div className="flex gap-4">

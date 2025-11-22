@@ -43,13 +43,13 @@ interface Job {
   location: string;
   employmentType: 'Internship' | 'Full-time' | 'Part-time';
   description: string;
+  responsibilities: string[];
   requirements: string[];
   stipend: {
     amount: string;
     type: string;
   };
   internshipYear?: string;
-  openings: number;
   deadline?: string;
   status: 'open' | 'closed';
   postedBy: {
@@ -66,11 +66,11 @@ interface JobFormData {
   location: string;
   employmentType: string;
   description: string;
+  responsibilities: string;
   requirements: string;
   stipendAmount: string;
   stipendType: string;
   internshipYear: string;
-  openings: number;
   deadline: string;
 }
 
@@ -95,11 +95,11 @@ export default function ManageJobsPage() {
     location: '',
     employmentType: '',
     description: '',
+    responsibilities: '',
     requirements: '',
     stipendAmount: '',
     stipendType: '',
     internshipYear: '',
-    openings: 1,
     deadline: ''
   });
 
@@ -148,11 +148,11 @@ export default function ManageJobsPage() {
       location: '',
       employmentType: '',
       description: '',
+      responsibilities: '',
       requirements: '',
       stipendAmount: '',
       stipendType: '',
       internshipYear: '',
-      openings: 1,
       deadline: ''
     });
   };
@@ -186,13 +186,13 @@ export default function ManageJobsPage() {
           location: formData.location,
           employmentType: formData.employmentType,
           description: formData.description,
+          responsibilities: formData.responsibilities.split('\n').filter(r => r.trim()),
           requirements: formData.requirements.split('\n').filter(r => r.trim()),
           stipend: {
             amount: formData.stipendAmount,
             type: formData.stipendType
           },
           internshipYear: formData.internshipYear || undefined,
-          openings: formData.openings,
           deadline: formData.deadline || undefined
         })
       });
@@ -237,13 +237,13 @@ export default function ManageJobsPage() {
           location: formData.location,
           employmentType: formData.employmentType,
           description: formData.description,
+          responsibilities: formData.responsibilities.split('\n').filter(r => r.trim()),
           requirements: formData.requirements.split('\n').filter(r => r.trim()),
           stipend: {
             amount: formData.stipendAmount,
             type: formData.stipendType
           },
           internshipYear: formData.internshipYear || undefined,
-          openings: formData.openings,
           deadline: formData.deadline || null
         })
       });
@@ -309,11 +309,11 @@ export default function ManageJobsPage() {
       location: job.location,
       employmentType: job.employmentType,
       description: job.description,
+      responsibilities: job.responsibilities.join('\n'),
       requirements: job.requirements.join('\n'),
       stipendAmount: job.stipend.amount,
       stipendType: job.stipend.type,
       internshipYear: job.internshipYear || '',
-      openings: job.openings,
       deadline: job.deadline ? job.deadline.split('T')[0] : ''
     });
     setShowEditDialog(true);
@@ -460,7 +460,6 @@ export default function ManageJobsPage() {
                       <TableHead>Department</TableHead>
                       <TableHead>Type</TableHead>
                       <TableHead>Location</TableHead>
-                      <TableHead>Openings</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Posted</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
@@ -480,7 +479,6 @@ export default function ManageJobsPage() {
                             {job.location}
                           </div>
                         </TableCell>
-                        <TableCell>{job.openings}</TableCell>
                         <TableCell>
                           <Badge 
                             variant={job.status === 'open' ? 'default' : 'secondary'}
@@ -596,26 +594,14 @@ export default function ManageJobsPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="openings">Number of Openings *</Label>
+                  <Label htmlFor="deadline">Application Deadline (Optional)</Label>
                   <Input
-                    id="openings"
-                    type="number"
-                    min="1"
-                    value={formData.openings}
-                    onChange={(e) => setFormData({ ...formData, openings: parseInt(e.target.value) })}
-                    required
+                    id="deadline"
+                    type="date"
+                    value={formData.deadline}
+                    onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
                   />
                 </div>
-              </div>
-
-              <div>
-                <Label htmlFor="deadline">Application Deadline (Optional)</Label>
-                <Input
-                  id="deadline"
-                  type="date"
-                  value={formData.deadline}
-                  onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
-                />
               </div>
 
               <div>
@@ -628,6 +614,19 @@ export default function ManageJobsPage() {
                   rows={5}
                   required
                 />
+              </div>
+
+              <div>
+                <Label htmlFor="responsibilities">Responsibilities *</Label>
+                <Textarea
+                  id="responsibilities"
+                  value={formData.responsibilities}
+                  onChange={(e) => setFormData({ ...formData, responsibilities: e.target.value })}
+                  placeholder="Enter each responsibility on a new line&#10;- Design and develop user interfaces&#10;- Collaborate with backend team&#10;- Write clean, maintainable code"
+                  rows={5}
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">Enter each responsibility on a new line</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -758,26 +757,14 @@ export default function ManageJobsPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="edit-openings">Number of Openings *</Label>
+                  <Label htmlFor="edit-deadline">Application Deadline (Optional)</Label>
                   <Input
-                    id="edit-openings"
-                    type="number"
-                    min="1"
-                    value={formData.openings}
-                    onChange={(e) => setFormData({ ...formData, openings: parseInt(e.target.value) })}
-                    required
+                    id="edit-deadline"
+                    type="date"
+                    value={formData.deadline}
+                    onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
                   />
                 </div>
-              </div>
-
-              <div>
-                <Label htmlFor="edit-deadline">Application Deadline (Optional)</Label>
-                <Input
-                  id="edit-deadline"
-                  type="date"
-                  value={formData.deadline}
-                  onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
-                />
               </div>
 
               <div>
@@ -789,6 +776,18 @@ export default function ManageJobsPage() {
                   rows={5}
                   required
                 />
+              </div>
+
+              <div>
+                <Label htmlFor="edit-responsibilities">Responsibilities *</Label>
+                <Textarea
+                  id="edit-responsibilities"
+                  value={formData.responsibilities}
+                  onChange={(e) => setFormData({ ...formData, responsibilities: e.target.value })}
+                  rows={5}
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">Enter each responsibility on a new line</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">

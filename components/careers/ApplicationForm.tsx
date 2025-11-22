@@ -326,10 +326,41 @@ export default function ApplicationForm({ job, onBack }: ApplicationFormProps) {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Processing Warning */}
+              {(submitting || uploading) && (
+                <Alert className="bg-yellow-50 border-yellow-400 border-2">
+                  <div className="flex items-start gap-3">
+                    <Loader2 className="w-5 h-5 mt-0.5 text-yellow-600 animate-spin flex-shrink-0" />
+                    <div>
+                      <h3 className="font-semibold text-yellow-900 mb-1">⚠️ Please Wait - Do Not Close This Page!</h3>
+                      <p className="text-sm text-yellow-800">
+                        {uploading ? 'Uploading your resume...' : 'Submitting your application...'}
+                      </p>
+                      <p className="text-xs text-yellow-700 mt-1">
+                        This may take a few moments. Closing this page will cancel your submission.
+                      </p>
+                    </div>
+                  </div>
+                </Alert>
+              )}
+
               {/* Error Alert */}
               {error && (
                 <Alert variant="destructive">
-                  <AlertDescription>{error}</AlertDescription>
+                  <AlertDescription>
+                    <div className="space-y-2">
+                      <p className="font-semibold">{error}</p>
+                      <div className="text-sm space-y-1">
+                        <p>What you can do:</p>
+                        <ul className="list-disc list-inside ml-2 space-y-1">
+                          <li>Check your internet connection</li>
+                          <li>Make sure your resume file is under 5MB</li>
+                          <li>Try submitting again</li>
+                          <li>If the problem persists, contact support at admin@outfyld.in</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </AlertDescription>
                 </Alert>
               )}
 
@@ -647,29 +678,42 @@ export default function ApplicationForm({ job, onBack }: ApplicationFormProps) {
               </div>
 
               {/* Submit Button */}
-              <div className="flex gap-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={onBack}
-                  disabled={submitting}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={submitting || uploading}
-                  className="flex-1 bg-green-600 hover:bg-green-700"
-                >
-                  {submitting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      {uploading ? 'Uploading Resume...' : 'Submitting Application...'}
-                    </>
-                  ) : (
-                    'Submit Application'
-                  )}
-                </Button>
+              <div className="space-y-4">
+                {/* Critical Warning Note */}
+                <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-4">
+                  <h4 className="font-semibold text-blue-900 mb-2">📌 Before You Submit:</h4>
+                  <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+                    <li>Review all your information carefully</li>
+                    <li>Ensure your resume is attached and under 5MB</li>
+                    <li><strong>Do NOT close this window or refresh the page during submission</strong></li>
+                    <li>Wait for the confirmation message before leaving</li>
+                  </ul>
+                </div>
+
+                <div className="flex gap-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={onBack}
+                    disabled={submitting}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={submitting || uploading}
+                    className="flex-1 bg-green-600 hover:bg-green-700"
+                  >
+                    {submitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        {uploading ? 'Uploading Resume...' : 'Submitting Application...'}
+                      </>
+                    ) : (
+                      'Submit Application'
+                    )}
+                  </Button>
+                </div>
               </div>
             </form>
           </CardContent>

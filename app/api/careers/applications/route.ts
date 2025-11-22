@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-// import connectDB from '@/lib/mongodb';
+import { connectMongoDB } from '@/lib/mongodb';
 import JobApplication from '@/app/models/JobApplication';
 import Job from '@/app/models/Job';
 // Import User model to ensure it's registered for population
@@ -15,7 +15,8 @@ export const dynamic = 'force-dynamic';
  */
 export async function POST(request: NextRequest) {
   try {
-    // connectDB(); // Mongoose models handle connection automatically
+    // Connect to MongoDB first
+    await connectMongoDB();
 
     const body = await request.json();
     const {
@@ -166,7 +167,8 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
-    // connectDB(); // Mongoose models handle connection automatically
+    // Connect to MongoDB first
+    await connectMongoDB();
 
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');

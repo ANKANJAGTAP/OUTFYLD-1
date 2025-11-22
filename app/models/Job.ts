@@ -7,13 +7,13 @@ export interface IJob extends Document {
   location: string;
   employmentType: 'Internship' | 'Full-time' | 'Part-time';
   description: string;
+  responsibilities: string[]; // Array of job responsibilities
   requirements: string[]; // Required field - array of job requirements
   stipend: {
     amount: string; // e.g., "10k", "15-20k"
     type: string; // e.g., "Performance based", "Fixed", "Unpaid"
   };
   internshipYear?: string; // Year for which internship is open (e.g., "2025", "2026")
-  openings: number;
   deadline?: Date;
   status: 'open' | 'closed'; // Removed 'draft' - jobs post directly as 'open'
   postedBy: mongoose.Types.ObjectId; // Admin who posted
@@ -50,6 +50,19 @@ const JobSchema = new Schema(
       required: [true, 'Job description is required'],
       minlength: [50, 'Description must be at least 50 characters']
     },
+    responsibilities: {
+      type: [{
+        type: String,
+        trim: true
+      }],
+      required: [true, 'Responsibilities are required'],
+      validate: {
+        validator: function(arr: string[]) {
+          return arr && arr.length > 0;
+        },
+        message: 'At least one responsibility must be specified'
+      }
+    },
     requirements: {
       type: [{
         type: String,
@@ -78,12 +91,6 @@ const JobSchema = new Schema(
     internshipYear: {
       type: String,
       trim: true
-    },
-    openings: {
-      type: Number,
-      required: [true, 'Number of openings is required'],
-      min: [1, 'Must have at least 1 opening'],
-      default: 1
     },
     deadline: {
       type: Date

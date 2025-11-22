@@ -17,12 +17,12 @@ interface Job {
   location: string;
   employmentType: string;
   description: string;
+  responsibilities: string[];
   requirements: string[];
   stipend: {
     amount: string;
     type: string;
   };
-  openings: number;
   deadline?: string;
   createdAt: string;
 }
@@ -161,7 +161,7 @@ export default function JobDetailsPage() {
               </div>
               <div className="flex items-center gap-2">
                 <Briefcase className="w-4 h-4" />
-                <span>{job.openings} {job.openings === 1 ? 'opening' : 'openings'}</span>
+                <span>{job.employmentType}</span>
               </div>
               <div className="flex items-center gap-2 font-semibold text-green-600">
                 💰 <span>{job.stipend.amount} ({job.stipend.type})</span>
@@ -189,6 +189,25 @@ export default function JobDetailsPage() {
             <p className="text-gray-700 whitespace-pre-line">{job.description}</p>
           </CardContent>
         </Card>
+
+        {/* Responsibilities */}
+        {job.responsibilities && job.responsibilities.length > 0 && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Responsibilities</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-2">
+                {job.responsibilities.map((responsibility, index) => (
+                  <li key={index} className="flex items-start gap-2">
+                    <span className="text-green-600 mt-1">✓</span>
+                    <span className="text-gray-700">{responsibility}</span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Requirements */}
         {job.requirements && job.requirements.length > 0 && (

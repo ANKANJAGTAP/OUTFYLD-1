@@ -125,10 +125,10 @@ export async function PUT(
       location,
       employmentType,
       description,
+      responsibilities,
       requirements,
       stipend,
       internshipYear,
-      openings,
       deadline,
       status
     } = body;
@@ -143,6 +143,13 @@ export async function PUT(
     }
 
     // Validation
+    if (responsibilities && (!Array.isArray(responsibilities) || responsibilities.length === 0)) {
+      return NextResponse.json(
+        { success: false, error: 'At least one responsibility is required' },
+        { status: 400 }
+      );
+    }
+
     if (requirements && (!Array.isArray(requirements) || requirements.length === 0)) {
       return NextResponse.json(
         { success: false, error: 'At least one requirement is required' },
@@ -159,10 +166,10 @@ export async function PUT(
         ...(location && { location }),
         ...(employmentType && { employmentType }),
         ...(description && { description }),
+        ...(responsibilities && { responsibilities }),
         ...(requirements && { requirements }),
         ...(stipend && { stipend }),
         ...(internshipYear !== undefined && { internshipYear: internshipYear || undefined }),
-        ...(openings && { openings }),
         ...(deadline !== undefined && { deadline: deadline ? new Date(deadline) : null }),
         ...(status && { status })
       },

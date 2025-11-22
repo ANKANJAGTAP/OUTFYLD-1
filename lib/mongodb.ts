@@ -39,13 +39,19 @@ export const connectMongoDB = async () => {
     console.log('URI exists:', !!uri);
     console.log('DB Name:', dbName);
     
+    // Connection options with better timeout settings
+    const options = {
+      dbName: dbName,
+      serverSelectionTimeoutMS: 30000, // 30 seconds to select a server
+      connectTimeoutMS: 30000, // 30 seconds to establish connection
+      socketTimeoutMS: 45000, // 45 seconds for socket operations
+    };
+    
     if (process.env.NODE_ENV === "development") {
       if (!global._mongoose) {
         console.log('🆕 Creating new Mongoose connection...');
         // Ensure we're connecting to the correct database
-        global._mongoose = mongoose.connect(uri, {
-          dbName: dbName
-        });
+        global._mongoose = mongoose.connect(uri, options);
       } else {
         console.log('♻️ Reusing existing Mongoose connection...');
       }
@@ -55,9 +61,7 @@ export const connectMongoDB = async () => {
       return connection;
     } else {
       console.log('🚀 Production Mongoose connection...');
-      const connection = await mongoose.connect(uri, {
-        dbName: dbName
-      });
+      const connection = await mongoose.connect(uri, options);
       console.log('✅ MongoDB connected successfully via Mongoose (production)');
       return connection;
     }
