@@ -4,7 +4,7 @@ import JobApplication from '@/app/models/JobApplication';
 import Job from '@/app/models/Job';
 // Import User model to ensure it's registered for population
 import '@/app/models/User';
-import { sendApplicationConfirmationEmail, sendNewApplicationNotificationToAdmin } from '@/lib/careerEmails';
+import { sendApplicationConfirmationEmail } from '@/lib/careerEmails';
 
 // Tell Next.js this route should be dynamic
 export const dynamic = 'force-dynamic';
@@ -126,19 +126,6 @@ export async function POST(request: NextRequest) {
       );
     } catch (emailError) {
       console.error('Failed to send confirmation email:', emailError);
-      // Don't fail the application if email fails
-    }
-
-    // Send notification email to admin
-    try {
-      await sendNewApplicationNotificationToAdmin(
-        job.title,
-        fullName,
-        email,
-        application._id.toString()
-      );
-    } catch (emailError) {
-      console.error('Failed to send admin notification email:', emailError);
       // Don't fail the application if email fails
     }
 
