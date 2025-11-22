@@ -43,21 +43,28 @@ export async function POST(request: NextRequest) {
     // Store original role before promotion
     const originalRole = userToPromote.role;
 
-    // Promote to admin
-    userToPromote.role = 'admin';
-    userToPromote.isVerifiedByAdmin = true;
-    userToPromote.verificationStatus = 'approved';
-    
-    await userToPromote.save();
+    // Promote to admin using findByIdAndUpdate to avoid validation issues
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      {
+        role: 'admin',
+        isVerifiedByAdmin: true,
+        verificationStatus: 'approved',
+      },
+      { 
+        new: true, // Return the updated document
+        runValidators: false, // Skip validation to avoid uid issues
+      }
+    );
 
     return NextResponse.json({
       success: true,
       message: `User promoted to admin successfully`,
       user: {
-        _id: userToPromote._id,
-        name: userToPromote.name,
-        email: userToPromote.email,
-        role: userToPromote.role,
+        _id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        role: updatedUser.role,
         previousRole: originalRole,
       },
     });

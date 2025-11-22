@@ -51,20 +51,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Demote to customer (default role)
-    // If you want to restore original role, you'd need to store it during promotion
-    adminToDemote.role = 'customer';
-    
-    await adminToDemote.save();
+    // Demote to customer using findByIdAndUpdate to avoid validation issues
+    const updatedUser = await User.findByIdAndUpdate(
+      adminId,
+      { role: 'customer' },
+      { 
+        new: true, // Return the updated document
+        runValidators: false, // Skip validation to avoid uid issues
+      }
+    );
 
     return NextResponse.json({
       success: true,
       message: `Admin demoted successfully`,
       user: {
-        _id: adminToDemote._id,
-        name: adminToDemote.name,
-        email: adminToDemote.email,
-        role: adminToDemote.role,
+        _id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        role: updatedUser.role,
       },
     });
 

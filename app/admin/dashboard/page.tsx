@@ -26,7 +26,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Shield, CheckCircle, XCircle, Clock, IndianRupee, User, Building, Mail, Phone, LogOut } from 'lucide-react';
+import { Shield, CheckCircle, XCircle, Clock, IndianRupee, User, Building, Mail, Phone, LogOut, Briefcase, FileText } from 'lucide-react';
 import Link from 'next/link';
 
 interface TurfOwner {
@@ -297,6 +297,18 @@ export default function AdminDashboard() {
               <Button variant="outline" size="sm" className="text-xs sm:text-sm">
                 <Shield className="w-4 h-4 mr-1 sm:mr-2" />
                 <span className="hidden sm:inline">Manage </span>Admins
+              </Button>
+            </Link>
+            <Link href="/admin/careers/jobs">
+              <Button variant="outline" size="sm" className="text-xs sm:text-sm">
+                <Briefcase className="w-4 h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Manage </span>Jobs
+              </Button>
+            </Link>
+            <Link href="/admin/careers/applications">
+              <Button variant="outline" size="sm" className="text-xs sm:text-sm">
+                <FileText className="w-4 h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">View </span>Applications
               </Button>
             </Link>
             <Link href="/">
