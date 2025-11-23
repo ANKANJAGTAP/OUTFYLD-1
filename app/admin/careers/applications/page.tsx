@@ -105,6 +105,9 @@ export default function ManageApplicationsPage() {
   const router = useRouter();
   
   const [applications, setApplications] = useState<Application[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -131,17 +134,25 @@ export default function ManageApplicationsPage() {
 
   useEffect(() => {
     if (user?.role === 'admin') {
-      fetchApplications();
+      setCurrentPage(1); // Reset to page 1 when filter changes
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, statusFilter]);
+  }, [statusFilter]);
+
+  useEffect(() => {
+    if (user?.role === 'admin') {
+      fetchApplications();
+      window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll to top on page change
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, currentPage, statusFilter]);
 
   const fetchApplications = async () => {
     try {
       setLoading(true);
       const token = await firebaseUser?.getIdToken();
       
-      let url = '/api/admin/careers/applications?limit=100';
+      let url = `/api/admin/careers/applications?limit=100&page=${currentPage}`;
       if (statusFilter !== 'all') {
         url += `&status=${statusFilter}`;
       }
@@ -156,6 +167,8 @@ export default function ManageApplicationsPage() {
       
       if (data.success) {
         setApplications(data.applications);
+        setTotalCount(data.pagination?.total || data.applications.length);
+        setTotalPages(data.pagination?.pages || 1);
       } else {
         setError(data.error || 'Failed to fetch applications');
       }
@@ -401,7 +414,7 @@ export default function ManageApplicationsPage() {
               <CardTitle className="text-sm font-medium text-gray-600">Total Applications</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-gray-900">{applications.length}</div>
+              <div className="text-3xl font-bold text-gray-900">{totalCount}</div>
             </CardContent>
           </Card>
           
@@ -573,6 +586,59 @@ export default function ManageApplicationsPage() {
                     ))}
                   </TableBody>
                 </Table>
+              </div>
+            )}
+            
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-6 pt-6 border-t">
+                <div className="text-sm text-gray-600">
+                  Showing {((currentPage - 1) * 100) + 1} to {Math.min(currentPage * 100, totalCount)} of {totalCount} applications
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1 || loading}
+                  >
+                    Previous
+                  </Button>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum: number;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={currentPage === pageNum ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCurrentPage(pageNum)}
+                          disabled={loading}
+                          className="w-10"
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages || loading}
+                  >
+                    Next
+                  </Button>
+                </div>
               </div>
             )}
           </CardContent>
