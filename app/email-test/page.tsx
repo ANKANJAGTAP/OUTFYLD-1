@@ -58,11 +58,11 @@ export default function EmailTestPage() {
               <div className="space-y-2 text-sm">
                 <div><strong>Required Environment Variables:</strong></div>
                 <ul className="list-disc list-inside ml-4">
-                  <li>EMAIL_HOST (e.g., smtp.resend.com)</li>
+                  <li>EMAIL_HOST (e.g., smtp-relay.brevo.com)</li>
                   <li>EMAIL_PORT (e.g., 587)</li>
-                  <li>EMAIL_USER (e.g., resend)</li>
-                  <li>EMAIL_PASSWORD (your API key)</li>
-                  <li>EMAIL_FROM (e.g., onboarding@resend.dev)</li>
+                  <li>EMAIL_USER (e.g., your-brevo-login@email.com)</li>
+                  <li>EMAIL_PASSWORD (your Brevo SMTP key)</li>
+                  <li>EMAIL_FROM (e.g., admin@outfyld.in)</li>
                   <li>ENABLE_EMAIL_NOTIFICATIONS=true</li>
                 </ul>
               </div>
@@ -155,10 +155,10 @@ export default function EmailTestPage() {
               <h3 className="font-semibold mb-2">🔧 Troubleshooting</h3>
               <ul className="list-disc list-inside ml-4 space-y-1">
                 <li>Check server console logs for email errors</li>
-                <li>Verify EMAIL_FROM uses verified domain (Resend: onboarding@resend.dev)</li>
+                <li>Verify EMAIL_FROM uses verified domain on Brevo</li>
                 <li>Check ENABLE_EMAIL_NOTIFICATIONS=true in .env.local</li>
-                <li>For Resend: Use &apos;resend&apos; as EMAIL_USER</li>
-                <li>Check email password/API key is correct</li>
+                <li>For Brevo: Use your Brevo login email as EMAIL_USER</li>
+                <li>Check email password/SMTP key is correct</li>
                 <li>Look for SMTP connection errors in logs</li>
               </ul>
             </div>
@@ -166,35 +166,35 @@ export default function EmailTestPage() {
         </CardContent>
       </Card>
 
-      {/* Resend Specific Instructions */}
+      {/* Brevo Specific Instructions */}
       <Card>
         <CardHeader>
-          <CardTitle>🚀 Resend SMTP Configuration</CardTitle>
+          <CardTitle>🚀 Brevo SMTP Configuration</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-2 text-sm">
-            <p className="font-semibold">Current Configuration (Resend.com SMTP):</p>
+            <p className="font-semibold">Current Configuration (Brevo.com SMTP):</p>
             <pre className="bg-gray-100 p-3 rounded overflow-auto">
-{`EMAIL_HOST=smtp.resend.com
+{`EMAIL_HOST=smtp-relay.brevo.com
 EMAIL_PORT=587
 EMAIL_SECURE=false
-EMAIL_USER=resend
-EMAIL_PASSWORD=re_YourAPIKeyHere
+EMAIL_USER=your-brevo-login@email.com
+EMAIL_PASSWORD=xsmtpsib-YourSMTPKeyHere
 EMAIL_FROM=admin@outfyld.in
 EMAIL_SENDER_NAME=OutFyld
 ENABLE_EMAIL_NOTIFICATIONS=true`}
             </pre>
             <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded">
-              <p className="text-sm font-semibold text-green-800">✅ Using Verified Domain</p>
+              <p className="text-sm font-semibold text-green-800">✅ Using Brevo (300 emails/day FREE)</p>
               <p className="text-xs text-green-700 mt-1">
-                Your domain <strong>admin@outfyld.in</strong> is verified on Resend. All emails will be sent from this address.
+                Your domain <strong>admin@outfyld.in</strong> should be verified on Brevo. All emails will be sent from this address.
               </p>
               <p className="text-xs text-green-700 mt-1">
                 <strong>Note:</strong> EMAIL_FROM should be just the email address (no angle brackets or quotes).
               </p>
             </div>
             <p className="text-xs text-gray-600 mt-2">
-              * Get your API key from: <a href="https://resend.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">https://resend.com/api-keys</a>
+              * Get your SMTP key from: <a href="https://app.brevo.com/settings/keys/smtp" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Brevo SMTP Settings</a>
             </p>
           </div>
         </CardContent>
