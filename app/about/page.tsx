@@ -182,7 +182,7 @@ export default function AboutPage() {
                   <div className="p-2 bg-indigo-50 rounded"><Phone className="h-5 w-5 text-indigo-600"/></div>
                   <div>
                     <div className="font-medium">Phone</div>
-                    <div className="text-sm text-gray-600">+91 7058526196</div>
+                    <div className="text-sm text-gray-600">+91 7058526789</div>
                   </div>
                 </div>
 

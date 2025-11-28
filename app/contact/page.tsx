@@ -60,14 +60,14 @@ export default function ContactPage() {
   const company = {
     name: 'OutFyld',
     email: 'admin@outfyld.in',
-    phone: '+91 7058526196',
+    phone: '+91 7058526789',
     address: 'Sangli, Maharashtra, India',
   };
 
   const team = [
-    { id: 1, name: 'Support Team', email: 'admin@outfyld.in', phone: '+91 8830099646', hours: '9:00 AM – 6:00 PM' },
-    { id: 2, name: 'Sales & Partnerships', email: 'admin@outfyld.in', phone: '+91 9975585475', hours: '10:00 AM – 6:00 PM' },
-    { id: 3, name: 'Technical Support', email: 'admin@outfyld.in', phone: '+91 7058526196', hours: 'Mon–Fri 9:00 AM – 6:00 PM' }
+    { id: 1, name: 'Support Team', email: 'admin@outfyld.in', phone: '+91 883009789', hours: '9:00 AM – 6:00 PM' },
+    { id: 2, name: 'Sales & Partnerships', email: 'admin@outfyld.in', phone: '+91 9975585789', hours: '10:00 AM – 6:00 PM' },
+    { id: 3, name: 'Technical Support', email: 'admin@outfyld.in', phone: '+91 7058526789', hours: 'Mon–Fri 9:00 AM – 6:00 PM' }
   ];
 
   return (

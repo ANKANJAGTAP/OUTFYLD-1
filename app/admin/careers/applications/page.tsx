@@ -52,7 +52,8 @@ import {
   Globe,
   GraduationCap,
   Clock,
-  CheckCircle2
+  CheckCircle2,
+  Users
 } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
@@ -79,7 +80,7 @@ interface Application {
   linkedinUrl: string;
   githubUrl: string;
   portfolioUrl?: string;
-  status: 'submitted' | 'under_review' | 'shortlisted' | 'rejected' | 'hired';
+  status: 'submitted' | 'under_review' | 'shortlisted_email_sent' | 'offer_sent' | 'offer_accepted' | 'rejected' | 'hired';
   appliedDate: string;
   offerAccepted?: boolean;
   offerAcceptedAt?: string;
@@ -105,12 +106,13 @@ export default function ManageApplicationsPage() {
   const router = useRouter();
   
   const [applications, setApplications] = useState<Application[]>([]);
-  const [totalCount, setTotalCount] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  
+  const [totalCount, setTotalCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -120,6 +122,19 @@ export default function ManageApplicationsPage() {
   const [showDetailDialog, setShowDetailDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [sendingEmail, setSendingEmail] = useState<string | null>(null); // Track which application is sending email
+  
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
+  const [duplicatePositions, setDuplicatePositions] = useState<{id: string, title: string}[]>([]);
+  const [selectedPosition, setSelectedPosition] = useState<string[]>([]);
+  const [removingDuplicates, setRemovingDuplicates] = useState(false);
+  
+  // Bulk email states
+  const [showBulkShortlistDialog, setShowBulkShortlistDialog] = useState(false);
+  const [showBulkOfferDialog, setShowBulkOfferDialog] = useState(false);
+  const [bulkEmailProgress, setBulkEmailProgress] = useState({ current: 0, total: 0 });
+  const [bulkEmailResults, setBulkEmailResults] = useState<{ success: number; failed: number; errors: string[] }>({ success: 0, failed: 0, errors: [] });
+  const [isBulkSending, setIsBulkSending] = useState(false);
   
   const [updateForm, setUpdateForm] = useState({
     status: '',
@@ -134,18 +149,17 @@ export default function ManageApplicationsPage() {
 
   useEffect(() => {
     if (user?.role === 'admin') {
+      fetchApplications();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, currentPage]);
+
+  useEffect(() => {
+    if (user?.role === 'admin') {
       setCurrentPage(1); // Reset to page 1 when filter changes
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter]);
-
-  useEffect(() => {
-    if (user?.role === 'admin') {
-      fetchApplications();
-      window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll to top on page change
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, currentPage, statusFilter]);
 
   const fetchApplications = async () => {
     try {
@@ -253,6 +267,228 @@ export default function ManageApplicationsPage() {
     }
   };
 
+  const handleSendShortlistEmail = async (applicationId: string) => {
+    setSendingEmail(applicationId);
+    setError(null);
+    
+    try {
+      const token = await firebaseUser?.getIdToken();
+      
+      const response = await fetch(`/api/admin/careers/applications/${applicationId}/send-shortlist`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setSuccess(data.message || 'Shortlist notification email sent successfully!');
+        fetchApplications(); // Refresh the list
+        setTimeout(() => setSuccess(null), 5000);
+      } else {
+        setError(data.error || 'Failed to send shortlist email');
+      }
+    } catch (err: any) {
+      setError(err.message || 'An error occurred');
+    } finally {
+      setSendingEmail(null);
+    }
+  };
+
+  const handleSendOfferEmail = async (applicationId: string) => {
+    setSendingEmail(applicationId);
+    setError(null);
+    
+    try {
+      const token = await firebaseUser?.getIdToken();
+      
+      const response = await fetch(`/api/admin/careers/applications/${applicationId}/send-offer`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setSuccess(data.message || 'Offer letter email sent successfully!');
+        fetchApplications(); // Refresh the list
+        setTimeout(() => setSuccess(null), 5000);
+      } else {
+        setError(data.error || 'Failed to send offer letter');
+      }
+    } catch (err: any) {
+      setError(err.message || 'An error occurred');
+    } finally {
+      setSendingEmail(null);
+    }
+  };
+
+  const handleOpenDuplicateDialog = async () => {
+    try {
+      setError(null);
+      setShowDuplicateDialog(true);
+      
+      const token = await firebaseUser?.getIdToken();
+      
+      const response = await fetch('/api/admin/careers/applications/duplicate-positions', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setDuplicatePositions(data.positions);
+        if (data.positions.length === 0) {
+          setError('No duplicate candidates found');
+          setShowDuplicateDialog(false);
+        }
+      } else {
+        setError(data.error || 'Failed to fetch duplicate positions');
+        setShowDuplicateDialog(false);
+      }
+    } catch (err: any) {
+      setError(err.message || 'An error occurred');
+      setShowDuplicateDialog(false);
+    }
+  };
+
+  const handleRemoveDuplicates = async () => {
+    if (selectedPosition.length === 0) {
+      setError('Please select at least one position to keep');
+      return;
+    }
+
+    try {
+      setRemovingDuplicates(true);
+      setError(null);
+      
+      const token = await firebaseUser?.getIdToken();
+      
+      const response = await fetch('/api/admin/careers/applications/remove-duplicates', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          targetJobIds: selectedPosition
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setSuccess(`${data.message}`);
+        setTimeout(() => setSuccess(null), 5000);
+        setShowDuplicateDialog(false);
+        setSelectedPosition([]);
+        fetchApplications();
+      } else {
+        setError(data.error || 'Failed to remove duplicates');
+      }
+    } catch (err: any) {
+      setError(err.message || 'An error occurred');
+    } finally {
+      setRemovingDuplicates(false);
+    }
+  };
+
+  const handleBulkShortlistConfirm = () => {
+    const eligibleApps = applications; // All applications on current page
+    setBulkEmailProgress({ current: 0, total: eligibleApps.length });
+    setBulkEmailResults({ success: 0, failed: 0, errors: [] });
+    setShowBulkShortlistDialog(true);
+  };
+
+  const handleBulkShortlist = async () => {
+    setIsBulkSending(true);
+    const eligibleApps = applications;
+    let successCount = 0;
+    let failedCount = 0;
+    const errors: string[] = [];
+
+    for (let i = 0; i < eligibleApps.length; i++) {
+      const app = eligibleApps[i];
+      setBulkEmailProgress({ current: i + 1, total: eligibleApps.length });
+
+      try {
+        const token = await firebaseUser?.getIdToken();
+        const response = await fetch(`/api/admin/careers/applications/${app._id}/send-shortlist`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          successCount++;
+        } else {
+          failedCount++;
+          errors.push(`${app.fullName}: ${data.error || 'Unknown error'}`);
+        }
+      } catch (err: any) {
+        failedCount++;
+        errors.push(`${app.fullName}: ${err.message || 'Network error'}`);
+      }
+    }
+
+    setBulkEmailResults({ success: successCount, failed: failedCount, errors });
+    setIsBulkSending(false);
+    fetchApplications(); // Refresh the list
+  };
+
+  const handleBulkOfferConfirm = () => {
+    const eligibleApps = applications.filter(app => app.status === 'shortlisted_email_sent');
+    setBulkEmailProgress({ current: 0, total: eligibleApps.length });
+    setBulkEmailResults({ success: 0, failed: 0, errors: [] });
+    setShowBulkOfferDialog(true);
+  };
+
+  const handleBulkOffer = async () => {
+    setIsBulkSending(true);
+    const eligibleApps = applications.filter(app => app.status === 'shortlisted_email_sent');
+    let successCount = 0;
+    let failedCount = 0;
+    const errors: string[] = [];
+
+    for (let i = 0; i < eligibleApps.length; i++) {
+      const app = eligibleApps[i];
+      setBulkEmailProgress({ current: i + 1, total: eligibleApps.length });
+
+      try {
+        const token = await firebaseUser?.getIdToken();
+        const response = await fetch(`/api/admin/careers/applications/${app._id}/send-offer`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          successCount++;
+        } else {
+          failedCount++;
+          errors.push(`${app.fullName}: ${data.error || 'Unknown error'}`);
+        }
+      } catch (err: any) {
+        failedCount++;
+        errors.push(`${app.fullName}: ${err.message || 'Network error'}`);
+      }
+    }
+
+    setBulkEmailResults({ success: successCount, failed: failedCount, errors });
+    setIsBulkSending(false);
+    fetchApplications(); // Refresh the list
+  };
+
   const handleExportCSV = async () => {
     try {
       const token = await firebaseUser?.getIdToken();
@@ -332,8 +568,12 @@ export default function ManageApplicationsPage() {
         return 'bg-blue-100 text-blue-700';
       case 'under_review':
         return 'bg-yellow-100 text-yellow-700';
-      case 'shortlisted':
+      case 'shortlisted_email_sent':
+        return 'bg-cyan-100 text-cyan-700';
+      case 'offer_sent':
         return 'bg-green-100 text-green-700';
+      case 'offer_accepted':
+        return 'bg-emerald-100 text-emerald-700';
       case 'rejected':
         return 'bg-red-100 text-red-700';
       case 'hired':
@@ -388,10 +628,24 @@ export default function ManageApplicationsPage() {
               </div>
             </div>
           </div>
-          <Button onClick={handleExportCSV} variant="outline">
-            <Download className="w-4 h-4 mr-2" />
-            Export CSV
-          </Button>
+          <div className="flex gap-3">
+            <Button onClick={handleBulkShortlistConfirm} variant="outline">
+              <Mail className="w-4 h-4 mr-2" />
+              Send Shortlist to All
+            </Button>
+            <Button onClick={handleBulkOfferConfirm} variant="outline">
+              <CheckCircle2 className="w-4 h-4 mr-2" />
+              Send Offer to All
+            </Button>
+            <Button onClick={handleOpenDuplicateDialog} variant="outline">
+              <Users className="w-4 h-4 mr-2" />
+              Remove Duplicates
+            </Button>
+            <Button onClick={handleExportCSV} variant="outline">
+              <Download className="w-4 h-4 mr-2" />
+              Export CSV
+            </Button>
+          </div>
         </div>
 
         {/* Alerts */}
@@ -440,13 +694,24 @@ export default function ManageApplicationsPage() {
             </CardContent>
           </Card>
           
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setStatusFilter('shortlisted')}>
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setStatusFilter('shortlisted_email_sent')}>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-gray-600">Shortlisted</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-600">Shortlist Sent</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-cyan-600">
+                {applications.filter(a => a.status === 'shortlisted_email_sent').length}
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setStatusFilter('offer_sent')}>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-gray-600">Offer Sent</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-green-600">
-                {applications.filter(a => a.status === 'shortlisted').length}
+                {applications.filter(a => a.status === 'offer_sent').length}
               </div>
             </CardContent>
           </Card>
@@ -488,7 +753,9 @@ export default function ManageApplicationsPage() {
                     <SelectItem value="all">All Status</SelectItem>
                     <SelectItem value="submitted">Submitted</SelectItem>
                     <SelectItem value="under_review">Under Review</SelectItem>
-                    <SelectItem value="shortlisted">Shortlisted</SelectItem>
+                    <SelectItem value="shortlisted_email_sent">Shortlist Email Sent</SelectItem>
+                    <SelectItem value="offer_sent">Offer Sent</SelectItem>
+                    <SelectItem value="offer_accepted">Offer Accepted</SelectItem>
                     <SelectItem value="rejected">Rejected</SelectItem>
                     <SelectItem value="hired">Hired</SelectItem>
                   </SelectContent>
@@ -552,7 +819,7 @@ export default function ManageApplicationsPage() {
                             <Badge className={getStatusColor(application.status)}>
                               {getStatusLabel(application.status)}
                             </Badge>
-                            {application.status === 'shortlisted' && application.offerAccepted && (
+                            {application.status === 'offer_accepted' && (
                               <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">
                                 ✓ Offer Accepted
                               </Badge>
@@ -565,7 +832,43 @@ export default function ManageApplicationsPage() {
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-2">
+                          <div className="flex items-center justify-end gap-2 flex-wrap">
+                            {/* Send Shortlist Email Button - visible if not yet shortlisted */}
+                            {!['shortlisted_email_sent', 'offer_sent', 'offer_accepted', 'hired'].includes(application.status) && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleSendShortlistEmail(application._id)}
+                                disabled={sendingEmail === application._id}
+                                className="bg-cyan-50 border-cyan-300 hover:bg-cyan-100 text-cyan-700"
+                              >
+                                {sendingEmail === application._id ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <Mail className="w-4 h-4" />
+                                )}
+                                <span className="ml-1">Shortlist</span>
+                              </Button>
+                            )}
+                            
+                            {/* Send Offer Letter Button - visible only for 'shortlisted_email_sent' status */}
+                            {application.status === 'shortlisted_email_sent' && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleSendOfferEmail(application._id)}
+                                disabled={sendingEmail === application._id}
+                                className="bg-green-50 border-green-300 hover:bg-green-100 text-green-700"
+                              >
+                                {sendingEmail === application._id ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <CheckCircle2 className="w-4 h-4" />
+                                )}
+                                <span className="ml-1">Send Offer</span>
+                              </Button>
+                            )}
+                            
                             <Button
                               variant="outline"
                               size="sm"
@@ -588,23 +891,31 @@ export default function ManageApplicationsPage() {
                 </Table>
               </div>
             )}
-            
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between mt-6 pt-6 border-t">
+          </CardContent>
+        </Card>
+
+        {/* Pagination */}
+        {!loading && totalPages > 1 && (
+          <Card className="mt-6">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
                 <div className="text-sm text-gray-600">
-                  Showing {((currentPage - 1) * 100) + 1} to {Math.min(currentPage * 100, totalCount)} of {totalCount} applications
+                  Showing {applications.length > 0 ? ((currentPage - 1) * 100) + 1 : 0} to {Math.min(currentPage * 100, totalCount)} of {totalCount} applications
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                    disabled={currentPage === 1 || loading}
+                    onClick={() => {
+                      setCurrentPage(prev => Math.max(1, prev - 1));
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    disabled={currentPage === 1}
                   >
                     Previous
                   </Button>
-                  <div className="flex items-center gap-1">
+                  
+                  <div className="flex gap-1">
                     {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                       let pageNum: number;
                       if (totalPages <= 5) {
@@ -616,13 +927,16 @@ export default function ManageApplicationsPage() {
                       } else {
                         pageNum = currentPage - 2 + i;
                       }
+                      
                       return (
                         <Button
                           key={pageNum}
-                          variant={currentPage === pageNum ? "default" : "outline"}
+                          variant={currentPage === pageNum ? 'default' : 'outline'}
                           size="sm"
-                          onClick={() => setCurrentPage(pageNum)}
-                          disabled={loading}
+                          onClick={() => {
+                            setCurrentPage(pageNum);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }}
                           className="w-10"
                         >
                           {pageNum}
@@ -630,19 +944,23 @@ export default function ManageApplicationsPage() {
                       );
                     })}
                   </div>
+                  
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                    disabled={currentPage === totalPages || loading}
+                    onClick={() => {
+                      setCurrentPage(prev => Math.min(totalPages, prev + 1));
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    disabled={currentPage === totalPages}
                   >
                     Next
                   </Button>
                 </div>
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Application Detail Dialog */}
         <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
@@ -786,8 +1104,12 @@ export default function ManageApplicationsPage() {
                           <div className="flex items-center gap-3">
                             <div className="text-right">
                               <Badge className={`
-                                ${app.status === 'hired' || app.status === 'shortlisted' 
+                                ${app.status === 'hired' || app.status === 'offer_accepted' 
                                   ? 'bg-green-600' 
+                                  : app.status === 'offer_sent'
+                                  ? 'bg-emerald-600'
+                                  : app.status === 'shortlisted_email_sent'
+                                  ? 'bg-cyan-600'
                                   : app.status === 'under_review' 
                                   ? 'bg-blue-600' 
                                   : app.status === 'submitted'
@@ -795,7 +1117,9 @@ export default function ManageApplicationsPage() {
                                   : 'bg-red-600'}
                               `}>
                                 {app.status === 'hired' && '✅ Hired'}
-                                {app.status === 'shortlisted' && '⭐ Shortlisted'}
+                                {app.status === 'offer_accepted' && '✅ Offer Accepted'}
+                                {app.status === 'offer_sent' && '📧 Offer Sent'}
+                                {app.status === 'shortlisted_email_sent' && '⭐ Shortlisted'}
                                 {app.status === 'under_review' && '🔍 Under Review'}
                                 {app.status === 'submitted' && '📋 Submitted'}
                                 {app.status === 'rejected' && '❌ Rejected'}
@@ -819,13 +1143,17 @@ export default function ManageApplicationsPage() {
                         </div>
                       ))}
                     </div>
-                    {otherApplications.some(app => app.status === 'hired' || app.status === 'shortlisted') && (
+                    {otherApplications.some(app => app.status === 'hired' || app.status === 'offer_accepted' || app.status === 'offer_sent' || app.status === 'shortlisted_email_sent') && (
                       <div className="mt-3 p-3 bg-yellow-50 border border-yellow-300 rounded">
                         <p className="text-sm text-yellow-800">
                           <strong>⚠️ Note:</strong> This candidate is already {' '}
                           {otherApplications.find(app => app.status === 'hired') 
                             ? `hired for "${otherApplications.find(app => app.status === 'hired')?.jobId?.title}"` 
-                            : `shortlisted for "${otherApplications.find(app => app.status === 'shortlisted')?.jobId?.title}"`
+                            : otherApplications.find(app => app.status === 'offer_accepted')
+                            ? `has accepted offer for "${otherApplications.find(app => app.status === 'offer_accepted')?.jobId?.title}"`
+                            : otherApplications.find(app => app.status === 'offer_sent')
+                            ? `has been sent an offer for "${otherApplications.find(app => app.status === 'offer_sent')?.jobId?.title}"`
+                            : `shortlisted for "${otherApplications.find(app => app.status === 'shortlisted_email_sent')?.jobId?.title}"`
                           }. 
                           Please consider this before making a decision.
                         </p>
@@ -835,21 +1163,23 @@ export default function ManageApplicationsPage() {
                 )}
 
                 {/* Offer Acceptance Status */}
-                {selectedApplication.status === 'shortlisted' && (
+                {(selectedApplication.status === 'offer_sent' || selectedApplication.status === 'offer_accepted') && (
                   <div className={`p-4 rounded-lg border-2 ${
-                    selectedApplication.offerAccepted 
+                    selectedApplication.offerAccepted || selectedApplication.status === 'offer_accepted'
                       ? 'bg-green-50 border-green-300' 
                       : 'bg-yellow-50 border-yellow-300'
                   }`}>
                     <Label className="text-gray-600">Offer Status</Label>
-                    {selectedApplication.offerAccepted ? (
+                    {selectedApplication.offerAccepted || selectedApplication.status === 'offer_accepted' ? (
                       <div className="flex items-center gap-2 mt-2">
                         <CheckCircle2 className="w-5 h-5 text-green-600" />
                         <div>
                           <p className="font-semibold text-green-700">Offer Accepted ✓</p>
-                          <p className="text-sm text-green-600">
-                            Accepted on {format(new Date(selectedApplication.offerAcceptedAt!), 'dd MMM yyyy, HH:mm')}
-                          </p>
+                          {selectedApplication.offerAcceptedAt && (
+                            <p className="text-sm text-green-600">
+                              Accepted on {format(new Date(selectedApplication.offerAcceptedAt!), 'dd MMM yyyy, HH:mm')}
+                            </p>
+                          )}
                         </div>
                       </div>
                     ) : (
@@ -1030,7 +1360,9 @@ export default function ManageApplicationsPage() {
                       <SelectContent>
                         <SelectItem value="submitted">Submitted</SelectItem>
                         <SelectItem value="under_review">Under Review</SelectItem>
-                        <SelectItem value="shortlisted">Shortlisted</SelectItem>
+                        <SelectItem value="shortlisted_email_sent">Shortlist Email Sent</SelectItem>
+                        <SelectItem value="offer_sent">Offer Sent</SelectItem>
+                        <SelectItem value="offer_accepted">Offer Accepted</SelectItem>
                         <SelectItem value="rejected">Rejected</SelectItem>
                         <SelectItem value="hired">Hired</SelectItem>
                       </SelectContent>
@@ -1092,6 +1424,269 @@ export default function ManageApplicationsPage() {
                 {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}
                 Delete Application
               </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Remove Duplicates Dialog */}
+        <Dialog open={showDuplicateDialog} onOpenChange={setShowDuplicateDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Remove Duplicate Applications</DialogTitle>
+              <DialogDescription>
+                Select which job position to keep for candidates who applied to multiple positions. 
+                All other applications from the same candidate (matched by email or phone) will be permanently deleted.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Positions to Keep</Label>
+                <div className="border rounded-lg p-4 space-y-3 max-h-64 overflow-y-auto">
+                  {duplicatePositions.map((position) => (
+                    <div key={position.id} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={`position-${position.id}`}
+                        checked={selectedPosition.includes(position.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedPosition([...selectedPosition, position.id]);
+                          } else {
+                            setSelectedPosition(selectedPosition.filter(id => id !== position.id));
+                          }
+                        }}
+                        className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <label
+                        htmlFor={`position-${position.id}`}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                      >
+                        {position.title}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-sm text-gray-500">
+                  {duplicatePositions.length} position(s) have duplicate candidates • {selectedPosition.length} selected
+                </p>
+              </div>
+              
+              {selectedPosition.length > 0 && (
+                <Alert>
+                  <AlertDescription>
+                    All applications from candidates who applied to multiple positions will be removed, 
+                    except for their applications to the selected position(s).
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowDuplicateDialog(false);
+                  setSelectedPosition([]);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={handleRemoveDuplicates} 
+                disabled={removingDuplicates || selectedPosition.length === 0}
+              >
+                {removingDuplicates ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    Removing...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Remove Duplicates
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Bulk Shortlist Dialog */}
+        <Dialog open={showBulkShortlistDialog} onOpenChange={(open) => {
+          if (!isBulkSending) setShowBulkShortlistDialog(open);
+        }}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Send Shortlist Email to All</DialogTitle>
+              <DialogDescription>
+                {!isBulkSending && bulkEmailProgress.current === 0 ? (
+                  <>Send shortlist notification emails to all <strong>{applications.length}</strong> applications on this page?</>
+                ) : (
+                  'Sending shortlist emails...'
+                )}
+              </DialogDescription>
+            </DialogHeader>
+
+            {isBulkSending && (
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Progress</span>
+                    <span className="font-medium">{bulkEmailProgress.current} / {bulkEmailProgress.total}</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2.5">
+                    <div 
+                      className="bg-blue-600 h-2.5 rounded-full transition-all duration-300" 
+                      style={{ width: `${(bulkEmailProgress.current / bulkEmailProgress.total) * 100}%` }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {!isBulkSending && bulkEmailProgress.current > 0 && (
+              <div className="space-y-4 py-4">
+                <Alert className={bulkEmailResults.failed === 0 ? "bg-green-50 border-green-200" : "bg-yellow-50 border-yellow-200"}>
+                  <AlertDescription>
+                    <div className="font-medium mb-2">Summary:</div>
+                    <div className="space-y-1">
+                      <div className="text-green-700">✓ Successfully sent: {bulkEmailResults.success}</div>
+                      {bulkEmailResults.failed > 0 && (
+                        <div className="text-red-700">✗ Failed: {bulkEmailResults.failed}</div>
+                      )}
+                    </div>
+                  </AlertDescription>
+                </Alert>
+
+                {bulkEmailResults.errors.length > 0 && (
+                  <div className="max-h-48 overflow-y-auto space-y-1">
+                    <div className="font-medium text-sm text-red-700 mb-2">Errors:</div>
+                    {bulkEmailResults.errors.map((error, index) => (
+                      <div key={index} className="text-xs text-red-600 bg-red-50 p-2 rounded">
+                        {error}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <DialogFooter>
+              {!isBulkSending && bulkEmailProgress.current === 0 ? (
+                <>
+                  <Button variant="outline" onClick={() => setShowBulkShortlistDialog(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleBulkShortlist}>
+                    <Mail className="w-4 h-4 mr-2" />
+                    Send to {applications.length} Applicants
+                  </Button>
+                </>
+              ) : !isBulkSending ? (
+                <Button onClick={() => {
+                  setShowBulkShortlistDialog(false);
+                  setBulkEmailProgress({ current: 0, total: 0 });
+                  setBulkEmailResults({ success: 0, failed: 0, errors: [] });
+                }}>
+                  Close
+                </Button>
+              ) : (
+                <Button disabled>
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  Sending...
+                </Button>
+              )}
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Bulk Offer Dialog */}
+        <Dialog open={showBulkOfferDialog} onOpenChange={(open) => {
+          if (!isBulkSending) setShowBulkOfferDialog(open);
+        }}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Send Offer Letter to All</DialogTitle>
+              <DialogDescription>
+                {!isBulkSending && bulkEmailProgress.current === 0 ? (
+                  <>Send offer letter emails to <strong>{applications.filter(app => app.status === 'shortlisted_email_sent').length}</strong> applications with status "Shortlisted Email Sent"?</>
+                ) : (
+                  'Sending offer letters...'
+                )}
+              </DialogDescription>
+            </DialogHeader>
+
+            {isBulkSending && (
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Progress</span>
+                    <span className="font-medium">{bulkEmailProgress.current} / {bulkEmailProgress.total}</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2.5">
+                    <div 
+                      className="bg-green-600 h-2.5 rounded-full transition-all duration-300" 
+                      style={{ width: `${(bulkEmailProgress.current / bulkEmailProgress.total) * 100}%` }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {!isBulkSending && bulkEmailProgress.current > 0 && (
+              <div className="space-y-4 py-4">
+                <Alert className={bulkEmailResults.failed === 0 ? "bg-green-50 border-green-200" : "bg-yellow-50 border-yellow-200"}>
+                  <AlertDescription>
+                    <div className="font-medium mb-2">Summary:</div>
+                    <div className="space-y-1">
+                      <div className="text-green-700">✓ Successfully sent: {bulkEmailResults.success}</div>
+                      {bulkEmailResults.failed > 0 && (
+                        <div className="text-red-700">✗ Failed: {bulkEmailResults.failed}</div>
+                      )}
+                    </div>
+                  </AlertDescription>
+                </Alert>
+
+                {bulkEmailResults.errors.length > 0 && (
+                  <div className="max-h-48 overflow-y-auto space-y-1">
+                    <div className="font-medium text-sm text-red-700 mb-2">Errors:</div>
+                    {bulkEmailResults.errors.map((error, index) => (
+                      <div key={index} className="text-xs text-red-600 bg-red-50 p-2 rounded">
+                        {error}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <DialogFooter>
+              {!isBulkSending && bulkEmailProgress.current === 0 ? (
+                <>
+                  <Button variant="outline" onClick={() => setShowBulkOfferDialog(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleBulkOffer} disabled={applications.filter(app => app.status === 'shortlisted_email_sent').length === 0}>
+                    <CheckCircle2 className="w-4 h-4 mr-2" />
+                    Send to {applications.filter(app => app.status === 'shortlisted_email_sent').length} Applicants
+                  </Button>
+                </>
+              ) : !isBulkSending ? (
+                <Button onClick={() => {
+                  setShowBulkOfferDialog(false);
+                  setBulkEmailProgress({ current: 0, total: 0 });
+                  setBulkEmailResults({ success: 0, failed: 0, errors: [] });
+                }}>
+                  Close
+                </Button>
+              ) : (
+                <Button disabled>
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  Sending...
+                </Button>
+              )}
             </DialogFooter>
           </DialogContent>
         </Dialog>

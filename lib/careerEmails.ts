@@ -490,17 +490,15 @@ export async function sendApplicationStatusUpdateEmail(
 }
 
 /**
- * Send shortlisted email to applicant (like offer letter format)
+ * Send shortlist notification email (Stage 1 - without accept button)
+ * Informs candidate they're shortlisted and offer details will follow in 24-72 hours
  */
-export async function sendShortlistedEmail(
+export async function sendShortlistNotificationEmail(
   applicantEmail: string,
   applicantName: string,
   jobTitle: string,
   jobDepartment: string,
   jobLocation: string,
-  stipendAmount: string,
-  stipendType: string,
-  applicationId: string,
   offerLetterId: string
 ): Promise<void> {
   if (process.env.ENABLE_EMAIL_NOTIFICATIONS !== 'true' || !isEmailConfigured) {
@@ -620,6 +618,202 @@ export async function sendShortlistedEmail(
               <div style="background-color: #dbeafe; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0; border-radius: 4px;">
                 <p style="margin: 0; color: #1e40af; font-weight: 600;">🎯 Your Offer Letter ID</p>
                 <p style="margin: 5px 0 0 0; color: #1e40af; font-size: 18px;"><strong>${offerLetterId}</strong></p>
+                <p style="margin: 5px 0 0 0; color: #1e40af; font-size: 12px;">Please save this ID - you will need it for the offer acceptance process</p>
+              </div>
+              
+              <div class="info-box">
+                <h3>Position Details:</h3>
+                <div class="detail-item">
+                  <strong>Position:</strong> ${jobTitle}
+                </div>
+                <div class="detail-item">
+                  <strong>Department:</strong> ${jobDepartment}
+                </div>
+                <div class="detail-item">
+                  <strong>Location:</strong> ${jobLocation}
+                </div>
+                <div class="detail-item">
+                  <strong>Offer Letter ID:</strong> ${offerLetterId}
+                </div>
+              </div>
+              
+              <div class="note">
+                <p style="margin: 0;"><strong>📋 What's Next?</strong></p>
+                <p style="margin: 10px 0 0 0;">
+                  We will send you the complete offer acceptance details and instructions within the next <strong>24-72 hours</strong>. 
+                  This will include your stipend details, start date, and the steps to formally accept the offer.
+                </p>
+              </div>
+              
+              <div style="background-color: #e0f2fe; border-left: 4px solid #0ea5e9; padding: 15px; margin: 20px 0; border-radius: 4px;">
+                <p style="margin: 0; color: #075985; font-weight: 600;">💬 Have Questions?</p>
+                <p style="margin: 5px 0 0 0; color: #075985;">
+                  If you have any questions in the meantime, please feel free to reach out to us at 
+                  <a href="mailto:admin@outfyld.in" style="color: #0ea5e9;">admin@outfyld.in</a>. 
+                  We're here to help!
+                </p>
+              </div>
+              
+              <p style="margin-top: 30px;">We look forward to having you on our team!</p>
+              
+              <p>Warm regards,<br>
+              <strong>HR Manager</strong><br>
+              OutFyld<br>
+              <a href="mailto:admin@outfyld.in" style="color: #16a34a;">admin@outfyld.in</a><br>
+              <a href="https://www.outfyld.in" style="color: #16a34a;">www.outfyld.in</a></p>
+            </div>
+            
+            <div class="footer">
+              <p>This is an automated message from OutFyld Careers</p>
+              <p>© ${new Date().getFullYear()} OutFyld. All rights reserved.</p>
+              <p>© Copyright & Trademark Registered in India OutFyld | All Rights Reserved</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+      attachments: logoAttachment ? [logoAttachment] : []
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log(`✅ Shortlist notification email sent to ${applicantEmail}`);
+  } catch (error) {
+    console.error('❌ Error sending shortlist notification email:', error);
+    throw error;
+  }
+}
+
+/**
+ * Send offer letter email with accept button (Stage 2)
+ */
+export async function sendOfferLetterEmail(
+  applicantEmail: string,
+  applicantName: string,
+  jobTitle: string,
+  jobDepartment: string,
+  jobLocation: string,
+  stipendAmount: string,
+  stipendType: string,
+  applicationId: string,
+  offerLetterId: string
+): Promise<void> {
+  if (process.env.ENABLE_EMAIL_NOTIFICATIONS !== 'true' || !isEmailConfigured) {
+    console.log('📧 Email notifications disabled or not configured');
+    return;
+  }
+
+  try {
+    const senderName = process.env.EMAIL_SENDER_NAME || 'OutFyld Careers';
+    const fromEmail = process.env.EMAIL_FROM || process.env.EMAIL_USER || 'admin@outfyld.in';
+    const logoAttachment = getLogoAttachment();
+
+    const mailOptions = {
+      from: `"${senderName}" <${fromEmail}>`,
+      to: applicantEmail,
+      subject: `🎉 Offer Letter - Accept Your Offer for ${jobTitle} at OutFyld`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body {
+              font-family: 'Arial', sans-serif;
+              line-height: 1.6;
+              color: #333;
+              background-color: #f4f4f4;
+              margin: 0;
+              padding: 0;
+            }
+            .container {
+              max-width: 600px;
+              margin: 20px auto;
+              background-color: #ffffff;
+              border-radius: 8px;
+              overflow: hidden;
+              box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+            .header {
+              background-color: #ffffff;
+              padding: 40px 30px 30px 30px;
+              text-align: center;
+              border-bottom: 2px solid #e5e7eb;
+            }
+            .logo {
+              max-width: 180px;
+              height: auto;
+              margin-bottom: 15px;
+            }
+            .header h1 {
+              margin: 0;
+              font-size: 32px;
+              color: #16a34a;
+              font-weight: bold;
+            }
+            .header .company-name {
+              font-size: 24px;
+              color: #16a34a;
+              font-weight: bold;
+              margin: 10px 0 15px 0;
+              letter-spacing: 1px;
+            }
+            .content {
+              padding: 30px;
+            }
+            .info-box {
+              background-color: #f0fdf4;
+              border-left: 4px solid #16a34a;
+              padding: 20px;
+              margin: 20px 0;
+            }
+            .info-box h3 {
+              margin-top: 0;
+              color: #16a34a;
+            }
+            .detail-item {
+              padding: 8px 0;
+              border-bottom: 1px solid #e5e7eb;
+            }
+            .detail-item:last-child {
+              border-bottom: none;
+            }
+            .detail-item strong {
+              display: inline-block;
+              width: 120px;
+              color: #374151;
+            }
+            .footer {
+              background-color: #f9fafb;
+              padding: 20px;
+              text-align: center;
+              font-size: 12px;
+              color: #6b7280;
+            }
+            .note {
+              background-color: #fef3c7;
+              border-left: 4px solid #f59e0b;
+              padding: 15px;
+              margin: 20px 0;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <img src="cid:outfyld-logo" alt="OutFyld Logo" class="logo" />
+              <div class="company-name">OUTFYLD</div>
+              <h1>Congratulations! 🎉</h1>
+            </div>
+            
+            <div class="content">
+              <p>Dear <strong>${applicantName}</strong>,</p>
+              
+              <p>🎉 <strong>Congratulations!</strong> We are delighted to formally offer you the position of <strong>${jobTitle}</strong> at OutFyld.</p>
+              
+              <p>This email contains your official offer letter details and the steps to accept this offer.</p>
+              
+              <div style="background-color: #dbeafe; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0; border-radius: 4px;">
+                <p style="margin: 0; color: #1e40af; font-weight: 600;">🎯 Your Offer Letter ID</p>
+                <p style="margin: 5px 0 0 0; color: #1e40af; font-size: 18px;"><strong>${offerLetterId}</strong></p>
                 <p style="margin: 5px 0 0 0; color: #1e40af; font-size: 12px;">You will need this ID in the acceptance process</p>
               </div>
               
@@ -644,7 +838,7 @@ export async function sendShortlistedEmail(
               
               <div class="note">
                 <p style="margin: 0;"><strong>📋 Next Steps:</strong></p>
-                <p style="margin: 10px 0;">Click the button below to accept this offer and complete the onboarding process.</p>
+                <p style="margin: 10px 0;"><strong>Click the "Start Acceptance Process" button below</strong> to accept this offer and complete the onboarding process.</p>
               </div>
               
               <div style="background-color: #fee2e2; border-left: 4px solid #ef4444; padding: 15px; margin: 20px 0; border-radius: 4px;">
@@ -688,9 +882,9 @@ export async function sendShortlistedEmail(
     };
 
     await transporter.sendMail(mailOptions);
-    console.log(`✅ Shortlisted email sent to ${applicantEmail}`);
+    console.log(`✅ Offer letter email sent to ${applicantEmail}`);
   } catch (error) {
-    console.error('❌ Error sending shortlisted email:', error);
+    console.error('❌ Error sending offer letter email:', error);
     throw error;
   }
 }

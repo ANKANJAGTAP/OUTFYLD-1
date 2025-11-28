@@ -62,7 +62,7 @@ export interface IJobApplication extends Document {
   };
   
   // Application Status
-  status: 'submitted' | 'under_review' | 'shortlisted' | 'rejected' | 'hired';
+  status: 'submitted' | 'under_review' | 'shortlisted_email_sent' | 'offer_sent' | 'offer_accepted' | 'rejected' | 'hired';
   appliedDate: Date;
   
   // Offer Letter & Acceptance
@@ -238,7 +238,7 @@ const JobApplicationSchema = new Schema<IJobApplication>(
     // Application Status
     status: {
       type: String,
-      enum: ['submitted', 'under_review', 'shortlisted', 'rejected', 'hired'],
+      enum: ['submitted', 'under_review', 'shortlisted_email_sent', 'offer_sent', 'offer_accepted', 'rejected', 'hired'],
       default: 'submitted'
     },
     appliedDate: {

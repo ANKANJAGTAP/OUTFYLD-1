@@ -5,8 +5,7 @@ import User from '@/app/models/User';
 import { getAuth } from 'firebase-admin/auth';
 import admin from 'firebase-admin';
 import { v2 as cloudinary } from 'cloudinary';
-import { sendShortlistedEmail, sendRejectionEmail } from '@/lib/careerEmails';
-import { generateOfferLetterPDF, generateOfferLetterId } from '@/lib/pdfGenerator';
+import { sendRejectionEmail } from '@/lib/careerEmails';
 import { format } from 'date-fns';
 
 // Initialize Firebase Admin if not already initialized
@@ -171,70 +170,9 @@ export async function PUT(
       }
     }
 
-    // If status changed to 'shortlisted', send shortlisted email
-    if (status === 'shortlisted' && previousStatus !== 'shortlisted') {
-      try {
-        const job = updatedApplication.jobId as any;
-        
-        // Generate Offer Letter ID
-        const offerLetterId = generateOfferLetterId();
-        
-        // Set expiry date (7 days from now)
-        const expiryDate = new Date();
-        expiryDate.setDate(expiryDate.getDate() + 7);
-        
-        // Calculate internship duration (example: 2 months from now)
-        const startDate = new Date();
-        startDate.setDate(startDate.getDate() + 14); // Start in 2 weeks
-        const endDate = new Date(startDate);
-        endDate.setMonth(endDate.getMonth() + 2); // 2 months duration
-        
-        // Generate Offer Letter PDF
-        const offerLetterPdf = await generateOfferLetterPDF({
-          candidateName: application.fullName,
-          offerLetterId: offerLetterId,
-          jobTitle: job.title,
-          department: job.department,
-          employmentType: job.employmentType,
-          location: job.location,
-          stipendAmount: job.stipend.amount,
-          stipendType: job.stipend.type,
-          startDate: format(startDate, 'dd MMM yyyy'),
-          endDate: format(endDate, 'dd MMM yyyy'),
-          issueDate: format(new Date(), 'dd/MM/yyyy')
-        });
-        
-        // Update application with offer letter details
-        await JobApplication.findByIdAndUpdate(params.id, {
-          offerLetterId: offerLetterId,
-          offerLetterGeneratedAt: new Date(),
-          offerLetterPdfUrl: offerLetterPdf.url,
-          offerAcceptanceStatus: 'pending',
-          offerExpiryDate: expiryDate,
-          internshipStartDate: startDate,
-          internshipEndDate: endDate
-        });
-        
-        // Send shortlisted email with offer letter ID
-        await sendShortlistedEmail(
-          application.email,
-          application.fullName,
-          job.title,
-          job.department,
-          job.location,
-          job.stipend.amount,
-          job.stipend.type,
-          application._id.toString(),
-          offerLetterId
-        );
-        
-        console.log(`✅ Offer letter generated: ${offerLetterId}`);
-        
-      } catch (emailError) {
-        console.error('❌ Failed to send shortlisted email or generate offer letter:', emailError);
-        // Don't fail the entire request, but log the error
-      }
-    }
+    // Note: Shortlist and offer letter emails are now sent via separate endpoints
+    // /api/admin/careers/applications/[id]/send-shortlist
+    // /api/admin/careers/applications/[id]/send-offer
 
     return NextResponse.json({
       success: true,
