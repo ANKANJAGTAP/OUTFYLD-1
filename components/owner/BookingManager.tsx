@@ -192,7 +192,7 @@ export default function BookingManager({ ownerId, turfId, turfName }: BookingMan
           <div>
             <CardTitle className="text-lg flex items-center gap-2">
               <User className="w-5 h-5" />
-              {booking.customerId.name}
+              {booking.customerId?.name || 'Unknown Customer'}
               {booking.status === 'pending' && (
                 <Bell className="w-4 h-4 text-orange-500" />
               )}
@@ -200,9 +200,9 @@ export default function BookingManager({ ownerId, turfId, turfName }: BookingMan
             <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
               <div className="flex items-center gap-1">
                 <Mail className="w-4 h-4" />
-                {booking.customerId.email}
+                {booking.customerId?.email || 'N/A'}
               </div>
-              {booking.customerId.phone && (
+              {booking.customerId?.phone && (
                 <div className="flex items-center gap-1">
                   <Phone className="w-4 h-4" />
                   {booking.customerId.phone}
@@ -455,7 +455,7 @@ export default function BookingManager({ ownerId, turfId, turfName }: BookingMan
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-gray-600">Customer:</span>
-                    <span className="ml-2 font-medium">{selectedBooking.customerId.name}</span>
+                    <span className="ml-2 font-medium">{selectedBooking.customerId?.name || 'Unknown Customer'}</span>
                   </div>
                   <div>
                     <span className="text-gray-600">Amount:</span>
