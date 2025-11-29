@@ -299,18 +299,18 @@ export default function AdminDashboard() {
                 <span className="hidden sm:inline">Manage </span>Admins
               </Button>
             </Link>
-            {/* <Link href="/admin/careers/jobs">
+            <Link href="/admin/careers/jobs">
               <Button variant="outline" size="sm" className="text-xs sm:text-sm">
                 <Briefcase className="w-4 h-4 mr-1 sm:mr-2" />
                 <span className="hidden sm:inline">Manage </span>Jobs
               </Button>
-            </Link> */}
-            {/* <Link href="/admin/careers/applications">
+            </Link>
+            <Link href="/admin/careers/applications">
               <Button variant="outline" size="sm" className="text-xs sm:text-sm">
                 <FileText className="w-4 h-4 mr-1 sm:mr-2" />
                 <span className="hidden sm:inline">View </span>Applications
               </Button>
-            </Link> */}
+            </Link>
             <Link href="/">
               <Button variant="outline" size="sm" className="text-xs sm:text-sm">
                 <User className="w-4 h-4 mr-1 sm:mr-2" />
