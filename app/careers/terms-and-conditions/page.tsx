@@ -223,17 +223,37 @@ export default function TermsAndConditionsPage() {
             </p>
           </section>
 
+          {/* Stipend Clarification */}
+          <section>
+            <h2 className="text-base font-semibold text-gray-900 mb-2">14. Stipend Clarification</h2>
+            <p className="text-gray-700 leading-relaxed mb-2 font-semibold">
+              Outfyld does not guarantee any stipend, salary, or monetary compensation as part of the internship program.
+            </p>
+            <p className="text-gray-700 leading-relaxed mb-2">
+              Any mention of stipend is purely for promotional or motivational purposes to encourage learning interest, 
+              and should not be interpreted as an assured payment or financial benefit.
+            </p>
+            <p className="text-gray-700 leading-relaxed mb-2">
+              We are a very small student-led startup, and currently we are not in a position to provide stipends to 
+              interns. Participants enrolling in the internship acknowledge and agree that:
+            </p>
+            <ul className="list-disc list-inside text-gray-700 space-y-1 ml-4">
+              <li>The internship is unpaid.</li>
+              <li>The ₹249 fee is only for processing, training access, and certificate generation, not for stipend distribution.</li>
+              <li>Outfyld shall not be liable for expectations of monetary rewards, payouts, or financial incentives.</li>
+            </ul>
+            <p className="text-gray-700 leading-relaxed mt-2 font-semibold">
+              By enrolling and making the payment, participants fully understand and accept that this is a learning-based 
+              internship only, without any guaranteed stipend.
+            </p>
+          </section>
+
           {/* Footer Note */}
           <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
             <p className="text-xs text-green-900">
               <strong>Important:</strong> By clicking &quot;I Agree&quot; and digitally signing the offer acceptance form, 
               you acknowledge that you have read, understood, and agree to be bound by these Terms and Conditions.
             </p>
-          </div>
-
-          {/* Last Updated */}
-          <div className="text-center text-xs text-gray-500 pt-4 border-t border-gray-200">
-            Last Updated: November 22, 2025
           </div>
 
         </div>

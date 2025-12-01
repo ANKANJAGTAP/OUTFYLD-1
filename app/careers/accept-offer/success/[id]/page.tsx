@@ -155,7 +155,7 @@ export default function OfferAcceptanceSuccessPage() {
 
         {/* Contact Support */}
         <div className="mt-8 text-center text-gray-600">
-          <p>Need help? Contact us at <a href="mailto:hr@outfyld.in" className="text-green-600 hover:underline">hr@outfyld.in</a></p>
+          <p>Need help? Contact us at <a href="mailto:admin@outfyld.in" className="text-green-600 hover:underline">admin@outfyld.in</a></p>
         </div>
       </div>
     </div>

@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
                     </a>
                   </div>
                   
-                  <p>If you have any questions or need assistance, please contact us at <a href="mailto:hr@outfyld.in">hr@outfyld.in</a></p>
+                  <p>If you have any questions or need assistance, please contact us at <a href="mailto:admin@outfyld.in">admin@outfyld.in</a></p>
                   
                   <p>Best regards,<br>
                   <strong>HR Team</strong><br>

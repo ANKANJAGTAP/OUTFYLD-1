@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
     const currentAttempts = application.paymentAttempts || 0;
     if (currentAttempts >= 20) {
       return NextResponse.json(
-        { error: 'Maximum payment attempts (20) exceeded. Please contact HR at hr@outfyld.in for assistance.' },
+        { error: 'Maximum payment attempts (20) exceeded. Please contact HR at admin@outfyld.in for assistance.' },
         { status: 403 }
       );
     }
