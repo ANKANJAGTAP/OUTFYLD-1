@@ -99,6 +99,7 @@ interface Application {
   paymentReceiptUrl?: string;
   joiningLetterPdfUrl?: string;
   offerLetterId?: string;
+  offerLetterGeneratedAt?: string; // Track when offer was successfully sent
 }
 
 export default function ManageApplicationsPage() {
@@ -445,7 +446,10 @@ export default function ManageApplicationsPage() {
   };
 
   const handleBulkOfferConfirm = () => {
-    const eligibleApps = applications.filter(app => app.status === 'shortlisted_email_sent');
+    // Only include applications that are shortlisted but haven't had offer letters generated yet
+    const eligibleApps = applications.filter(app => 
+      app.status === 'shortlisted_email_sent' && !app.offerLetterGeneratedAt
+    );
     setBulkEmailProgress({ current: 0, total: eligibleApps.length });
     setBulkEmailResults({ success: 0, failed: 0, errors: [] });
     setShowBulkOfferDialog(true);
@@ -453,7 +457,10 @@ export default function ManageApplicationsPage() {
 
   const handleBulkOffer = async () => {
     setIsBulkSending(true);
-    const eligibleApps = applications.filter(app => app.status === 'shortlisted_email_sent');
+    // Only process applications that haven't had offer letters generated yet
+    const eligibleApps = applications.filter(app => 
+      app.status === 'shortlisted_email_sent' && !app.offerLetterGeneratedAt
+    );
     let successCount = 0;
     let failedCount = 0;
     const errors: string[] = [];
@@ -633,9 +640,16 @@ export default function ManageApplicationsPage() {
               <Mail className="w-4 h-4 mr-2" />
               Send Shortlist to All
             </Button>
-            <Button onClick={handleBulkOfferConfirm} variant="outline">
+            <Button 
+              onClick={handleBulkOfferConfirm} 
+              variant="outline"
+              disabled={applications.filter(app => app.status === 'shortlisted_email_sent' && !app.offerLetterGeneratedAt).length === 0}
+            >
               <CheckCircle2 className="w-4 h-4 mr-2" />
               Send Offer to All
+              {applications.filter(app => app.status === 'shortlisted_email_sent' && !app.offerLetterGeneratedAt).length > 0 && (
+                <span className="ml-1">({applications.filter(app => app.status === 'shortlisted_email_sent' && !app.offerLetterGeneratedAt).length})</span>
+              )}
             </Button>
             <Button onClick={handleOpenDuplicateDialog} variant="outline">
               <Users className="w-4 h-4 mr-2" />
@@ -1611,7 +1625,7 @@ export default function ManageApplicationsPage() {
               <DialogTitle>Send Offer Letter to All</DialogTitle>
               <DialogDescription>
                 {!isBulkSending && bulkEmailProgress.current === 0 ? (
-                  <>Send offer letter emails to <strong>{applications.filter(app => app.status === 'shortlisted_email_sent').length}</strong> applications with status "Shortlisted Email Sent"?</>
+                  <>Send offer letter emails to <strong>{applications.filter(app => app.status === 'shortlisted_email_sent' && !app.offerLetterGeneratedAt).length}</strong> remaining applications with status "Shortlisted Email Sent"?</>
                 ) : (
                   'Sending offer letters...'
                 )}
@@ -1668,9 +1682,9 @@ export default function ManageApplicationsPage() {
                   <Button variant="outline" onClick={() => setShowBulkOfferDialog(false)}>
                     Cancel
                   </Button>
-                  <Button onClick={handleBulkOffer} disabled={applications.filter(app => app.status === 'shortlisted_email_sent').length === 0}>
+                  <Button onClick={handleBulkOffer} disabled={applications.filter(app => app.status === 'shortlisted_email_sent' && !app.offerLetterGeneratedAt).length === 0}>
                     <CheckCircle2 className="w-4 h-4 mr-2" />
-                    Send to {applications.filter(app => app.status === 'shortlisted_email_sent').length} Applicants
+                    Send to {applications.filter(app => app.status === 'shortlisted_email_sent' && !app.offerLetterGeneratedAt).length} Applicants
                   </Button>
                 </>
               ) : !isBulkSending ? (

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { connectMongoDB } from '@/lib/mongodb';
 import JobApplication from '@/app/models/JobApplication';
 import Job from '@/app/models/Job';
 import User from '@/app/models/User';
@@ -56,6 +57,9 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
+    // Ensure MongoDB connection
+    await connectMongoDB();
+    
     const authResult = await verifyAdmin(request);
     if (authResult.error) {
       return NextResponse.json(
