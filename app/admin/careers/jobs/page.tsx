@@ -646,7 +646,7 @@ export default function ManageJobsPage() {
                     id="stipendType"
                     value={formData.stipendType}
                     onChange={(e) => setFormData({ ...formData, stipendType: e.target.value })}
-                    placeholder="e.g., Performance based, Fixed, Unpaid"
+                    placeholder="e.g., Performance based*, Fixed, Unpaid"
                     required
                   />
                 </div>
@@ -807,7 +807,7 @@ export default function ManageJobsPage() {
                     id="edit-stipendType"
                     value={formData.stipendType}
                     onChange={(e) => setFormData({ ...formData, stipendType: e.target.value })}
-                    placeholder="e.g., Performance based, Fixed, Unpaid"
+                    placeholder="e.g., Performance based*, Fixed, Unpaid"
                     required
                   />
                 </div>

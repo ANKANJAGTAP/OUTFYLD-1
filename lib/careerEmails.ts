@@ -829,10 +829,13 @@ export async function sendOfferLetterEmail(
                   <strong>Department:</strong> ${jobDepartment}
                 </div>
                 <div class="detail-item">
-                  <strong>Location:</strong> ${jobLocation}
+                  <strong>Location:</strong> Remote
                 </div>
                 <div class="detail-item">
-                  <strong>Stipend:</strong> ${stipendAmount} (${stipendType})
+                  <strong>Start Date:</strong> 7th December 2025
+                </div>
+                <div class="detail-item">
+                  <strong>Stipend:</strong> ${stipendAmount} (${stipendType}${stipendType.toLowerCase().includes('performance') ? '*' : ''})
                 </div>
               </div>
               

@@ -98,9 +98,8 @@ export async function POST(
     const expiryDate = new Date();
     expiryDate.setDate(expiryDate.getDate() + 7);
     
-    // Calculate internship duration (example: 2 months from now)
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() + 14); // Start in 2 weeks
+    // Set fixed internship start date: December 7, 2025
+    const startDate = new Date('2025-12-07');
     const endDate = new Date(startDate);
     endDate.setMonth(endDate.getMonth() + 2); // 2 months duration
     

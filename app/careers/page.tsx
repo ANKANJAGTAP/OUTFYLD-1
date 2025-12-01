@@ -132,7 +132,7 @@ export default function CareersPage() {
             <div className="flex items-start space-x-4 p-4">
               <div className="w-3 h-3 bg-green-600 rounded-full mt-2"></div>
               <div>
-                <h4 className="font-semibold text-lg">Performance-Based Stipend</h4>
+                <h4 className="font-semibold text-lg">Performance-Based Stipend*</h4>
                 <p className="text-gray-600">Competitive internship stipends based on your contribution</p>
               </div>
             </div>
