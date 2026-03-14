@@ -1,12 +1,26 @@
 # Stage 1: Dependencies
-FROM node:18-alpine AS dependencies
+FROM node:22-bookworm-slim AS dependencies
 WORKDIR /app
+
+# Install build dependencies for canvas and other native modules
+RUN apt-get update && apt-get install -y \
+    python3 \
+    make \
+    g++ \
+    build-essential \
+    libcairo2-dev \
+    libpango1.0-dev \
+    libjpeg-dev \
+    libgif-dev \
+    librsvg2-dev \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy package files
 COPY package.json package-lock.json* yarn.lock* ./
 
 # Install dependencies
-RUN npm ci --only=production
+RUN npm ci --omit=dev
 
 # Copy production dependencies aside
 RUN cp -R node_modules /prod_node_modules
@@ -15,7 +29,7 @@ RUN cp -R node_modules /prod_node_modules
 RUN npm ci
 
 # Stage 2: Build
-FROM node:18-alpine AS builder
+FROM node:22-bookworm-slim AS builder
 WORKDIR /app
 
 # Copy dependencies from previous stage
@@ -28,14 +42,21 @@ COPY . .
 RUN npm run build
 
 # Stage 3: Runtime
-FROM node:18-alpine AS runtime
+FROM node:22-bookworm-slim AS runtime
 WORKDIR /app
 
 # Set environment to production
 ENV NODE_ENV=production
 
-# Install dumb-init to handle signals properly
-RUN apk add --no-cache dumb-init
+# Install dumb-init to handle signals properly and canvas runtime deps
+RUN apt-get update && apt-get install -y \
+    dumb-init \
+    libcairo2 \
+    libpango-1.0-0 \
+    libjpeg62-turbo \
+    libgif7 \
+    librsvg2-2 \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy production dependencies from dependencies stage
 COPY --from=dependencies /prod_node_modules ./node_modules
@@ -47,8 +68,8 @@ COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/next.config.js ./next.config.js
 
 # Create non-root user for security
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nextjs -u 1001
+RUN groupadd -g 1001 nodejs && \
+    useradd -s /bin/bash -u 1001 -g nodejs nextjs
 
 # Change ownership
 RUN chown -R nextjs:nodejs /app

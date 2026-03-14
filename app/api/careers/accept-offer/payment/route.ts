@@ -1,13 +1,8 @@
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import JobApplication from '@/app/models/JobApplication';
 import { connectMongoDB } from '@/lib/mongodb';
 import Razorpay from 'razorpay';
-
-// Initialize Razorpay
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID!,
-  key_secret: process.env.RAZORPAY_KEY_SECRET!,
-});
 
 /**
  * POST /api/careers/accept-offer/payment
@@ -84,6 +79,12 @@ export async function POST(request: NextRequest) {
         purpose: 'Onboarding Fee + Digital Certificate'
       }
     };
+    
+    // Initialize Razorpay
+    const razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID!,
+      key_secret: process.env.RAZORPAY_KEY_SECRET!,
+    });
 
     const order = await razorpay.orders.create(options);
 

@@ -4,10 +4,6 @@ import mongoose from "mongoose";
 const uri = process.env.MONGODB_URI;
 const dbName = process.env.MONGODB_DB || 'turf_booking';
 
-if (!uri) {
-  throw new Error("Please add MONGODB_URI to your .env.local file");
-}
-
 let client: MongoClient;
 let clientPromise: Promise<MongoClient>;
 
@@ -18,19 +14,30 @@ declare global {
   var _mongoose: any;
 }
 
-// MongoDB Client Connection (for direct MongoDB operations)
-if (process.env.NODE_ENV === "development") {
-  // In development, use a global variable so the client is not recreated on every file change
-  if (!global._mongoClientPromise) {
-    client = new MongoClient(uri);
-    global._mongoClientPromise = client.connect();
+// Lazy initialization function for MongoDB Client
+function getMongoClientPromise() {
+  if (!uri) {
+    if (process.env.NODE_ENV === "production" && process.env.NEXT_PHASE !== "phase-production-build") {
+       throw new Error("Please add MONGODB_URI to your .env.local file");
+    }
+    return Promise.resolve(null as unknown as MongoClient);
   }
-  clientPromise = global._mongoClientPromise;
-} else {
-  // In production, create a new MongoClient instance
-  client = new MongoClient(uri);
-  clientPromise = client.connect();
+
+  if (process.env.NODE_ENV === "development") {
+    if (!global._mongoClientPromise) {
+      client = new MongoClient(uri);
+      global._mongoClientPromise = client.connect();
+    }
+    return global._mongoClientPromise;
+  } else {
+    client = new MongoClient(uri);
+    return client.connect();
+  }
 }
+
+clientPromise = new Proxy({} as Promise<MongoClient>, {
+  get: (target, prop) => getMongoClientPromise()[prop as keyof Promise<MongoClient>]
+});
 
 // Mongoose Connection (for schema-based operations)
 export const connectMongoDB = async () => {
@@ -51,7 +58,7 @@ export const connectMongoDB = async () => {
       if (!global._mongoose) {
         console.log('🆕 Creating new Mongoose connection...');
         // Ensure we're connecting to the correct database
-        global._mongoose = mongoose.connect(uri, options);
+        global._mongoose = mongoose.connect(uri as string, options);
       } else {
         console.log('♻️ Reusing existing Mongoose connection...');
       }
@@ -61,7 +68,7 @@ export const connectMongoDB = async () => {
       return connection;
     } else {
       console.log('🚀 Production Mongoose connection...');
-      const connection = await mongoose.connect(uri, options);
+      const connection = await mongoose.connect(uri as string, options);
       console.log('✅ MongoDB connected successfully via Mongoose (production)');
       return connection;
     }

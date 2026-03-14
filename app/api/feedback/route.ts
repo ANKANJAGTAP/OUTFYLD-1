@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 const MONGODB_URI = process.env.MONGODB_URI!;
 
-if (!MONGODB_URI) {
+if (!MONGODB_URI && process.env.NODE_ENV !== "production") {
   throw new Error('Please define MONGODB_URI in .env.local');
 }
 
