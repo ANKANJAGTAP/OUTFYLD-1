@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { toast } from 'react-toastify';
 
 export default function TestingPage() {
   const [turfId, setTurfId] = useState('');
@@ -12,7 +13,7 @@ export default function TestingPage() {
 
   const testBookingDates = async () => {
     if (!turfId.trim()) {
-      alert('Please enter a turf ID');
+      toast.error('Please enter a turf ID');
       return;
     }
 

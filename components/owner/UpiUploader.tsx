@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Upload, X, Image as ImageIcon } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 interface CloudinaryImage {
   url: string;
@@ -52,12 +53,12 @@ export function UpiUploader({ value, onChange }: UpiUploaderProps) {
 
   const handleFileSelect = async (file: File) => {
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
+      toast.error('Please select an image file');
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) { // 5MB limit
-      alert('File size must be less than 5MB');
+      toast.error('File size must be less than 5MB');
       return;
     }
 
@@ -65,8 +66,9 @@ export function UpiUploader({ value, onChange }: UpiUploaderProps) {
     try {
       const uploadedImage = await uploadToCloudinary(file);
       onChange(uploadedImage);
+      toast.success('Upload successful!');
     } catch (error) {
-      alert('Upload failed. Please try again.');
+      toast.error('Upload failed. Please try again.');
     } finally {
       setUploading(false);
     }

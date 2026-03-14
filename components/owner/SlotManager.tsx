@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Clock, Plus, Trash2, Calendar, Zap } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 interface TimeSlot {
   day: string;
@@ -38,7 +39,7 @@ export function SlotManager({ value, onChange }: SlotManagerProps) {
   // Generate 1-hour slots automatically
   const generateHourlySlots = () => {
     if (!selectedDay || !startTime || !endTime) {
-      alert('Please select day, start time, and end time');
+      toast.error('Please select day, start time, and end time');
       return;
     }
 
@@ -46,7 +47,7 @@ export function SlotManager({ value, onChange }: SlotManagerProps) {
     const end = parseInt(endTime.split(':')[0]);
     
     if (end <= start) {
-      alert('End time must be after start time');
+      toast.error('End time must be after start time');
       return;
     }
 

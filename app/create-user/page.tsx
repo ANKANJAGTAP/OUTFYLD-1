@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useState } from 'react';
+import { toast } from 'react-toastify';
 
 export default function CreateUser() {
   const { firebaseUser } = useAuth();
@@ -10,7 +11,7 @@ export default function CreateUser() {
 
   const createUser = async () => {
     if (!firebaseUser) {
-      alert('Please log in first');
+      toast.error('Please log in first');
       return;
     }
 
@@ -36,13 +37,13 @@ export default function CreateUser() {
       setResult(data);
       
       if (response.ok) {
-        alert('User created successfully! You can now use the owner dashboard.');
+        toast.success('User created successfully! You can now use the owner dashboard.');
       } else {
-        alert('Error: ' + data.error);
+        toast.error('Error: ' + data.error);
       }
     } catch (error: any) {
       console.error('Error:', error);
-      alert('Error: ' + error.message);
+      toast.error('Error: ' + error.message);
     } finally {
       setLoading(false);
     }

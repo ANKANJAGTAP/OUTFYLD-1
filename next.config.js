@@ -9,6 +9,23 @@ const nextConfig = {
   // Ensure dynamic routes work properly
   trailingSlash: false,
   skipTrailingSlashRedirect: false,
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'Cross-Origin-Opener-Policy',
+            value: 'unsafe-none',
+          },
+          {
+            key: 'Cross-Origin-Embedder-Policy',
+            value: 'unsafe-none',
+          },
+        ],
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;

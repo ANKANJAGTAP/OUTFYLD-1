@@ -8,10 +8,14 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   sendEmailVerification,
-  updateProfile
+  updateProfile,
+  sendPasswordResetEmail,
+  GoogleAuthProvider,
+  signInWithPopup
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
+import { toast } from 'react-toastify';
 
 // User interface based on MongoDB schema
 interface User {
@@ -56,8 +60,10 @@ interface AuthContextType {
   
   // Authentication methods
   login: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: (role?: 'customer' | 'owner') => Promise<void>;
   register: (userData: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
   
   // User data methods
   refreshUserData: () => Promise<void>;
@@ -206,9 +212,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       // Show success message or redirect to email verification page
       if (userData.role === 'owner') {
-        alert('Registration successful! Please check your email to verify your account. Note: Your account will need to be verified by an administrator before you can list your turf.');
+        toast.success('Registration successful! Please check your email to verify your account. Note: Your account will need to be verified by an administrator before you can list your turf.', { autoClose: 8000 });
       } else {
-        alert('Registration successful! Please check your email to verify your account before logging in.');
+        toast.success('Registration successful! Please check your email to verify your account before logging in.', { autoClose: 6000 });
       }
       
     } catch (error: any) {
@@ -246,15 +252,85 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  // Login with Google
+  const loginWithGoogle = async (role: 'customer' | 'owner' = 'customer') => {
+    setLoading(true);
+    try {
+      const provider = new GoogleAuthProvider();
+      // Optional: prompt user to select account if they have multiple
+      provider.setCustomParameters({ prompt: 'select_account' });
+      
+      const userCredential = await signInWithPopup(auth, provider);
+      const firebaseUser = userCredential.user;
+
+      // Check if user exists in the database
+      const existingUserData = await fetchUserData(firebaseUser.uid);
+      
+      // If user doesn't exist in MongoDB, create them
+      if (!existingUserData) {
+        const mongoUser = {
+          uid: firebaseUser.uid,
+          name: firebaseUser.displayName || 'Google User',
+          email: firebaseUser.email,
+          role: role, // Default to passed role
+          phone: firebaseUser.phoneNumber || undefined,
+          emailVerified: true, // Google emails are verified
+        };
+
+        console.log('Creating new MongoDB user for Google sign-in:', mongoUser);
+        const response = await fetch('/api/users', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(mongoUser),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          // Clean up Firebase auth if mongo creation fails
+          await firebaseUser.delete();
+          throw new Error(errorData.error || 'Failed to create user profile');
+        }
+      }
+
+      // Successful, onAuthStateChanged will fetch data
+    } catch (error: any) {
+      console.error('Google login error:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Logout user
   const logout = async () => {
     setLoading(true);
     try {
       await signOut(auth);
+      setFirebaseUser(null);
       setUser(null);
       router.push('/');
     } catch (error) {
       console.error('Logout error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Reset Password
+  const resetPassword = async (email: string) => {
+    setLoading(true);
+    try {
+      console.log('Attempting to send reset password email to:', email);
+      
+      // Sending without actionCodeSettings to bypass continue-URL domain restrictions
+      await sendPasswordResetEmail(auth, email);
+      console.log('Password reset email sent successfully');
+    } catch (error: any) {
+      console.error('Reset password error:', error);
+      console.error('Error details:', { code: error.code, message: error.message });
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -333,8 +409,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     loading,
     initialLoading,
     login,
+    loginWithGoogle,
     register,
     logout,
+    resetPassword,
     refreshUserData,
     isOwner,
     isCustomer,

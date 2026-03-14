@@ -1,6 +1,7 @@
 'use client';
 
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'react-toastify';
 
 export default function AuthTest() {
   const { firebaseUser, user, loading } = useAuth();
@@ -40,10 +41,10 @@ export default function AuthTest() {
               
               const data = await response.json();
               console.log('API Response:', data);
-              alert(JSON.stringify(data, null, 2));
+              toast.info(JSON.stringify(data, null, 2));
             } catch (error: any) {
               console.error('Error:', error);
-              alert('Error: ' + (error?.message || 'Unknown error'));
+              toast.error('Error: ' + (error?.message || 'Unknown error'));
             }
           }}>
             Test API Call

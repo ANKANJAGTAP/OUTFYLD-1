@@ -8,6 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, CreditCard, Tag } from 'lucide-react';
 import { useState, useRef } from 'react';
+import { toast } from 'react-toastify';
 
 interface BookingSummaryProps {
   turf: {
@@ -92,7 +93,7 @@ export function BookingSummary({
 
   const handleBooking = async () => {
     if (selectedSlots.length === 0) {
-      alert('Please select at least one time slot');
+      toast.error('Please select at least one time slot');
       return;
     }
 

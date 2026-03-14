@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { toast } from 'react-toastify';
 
 interface Turf {
   _id: string;
@@ -135,12 +136,13 @@ function OwnerDashboard() {
 
       if (response.ok) {
         setTurfs(turfs.filter(turf => turf._id !== turfId));
+        toast.success('Turf deleted successfully');
       } else {
-        alert('Failed to delete turf');
+        toast.error('Failed to delete turf');
       }
     } catch (error) {
       console.error('Error deleting turf:', error);
-      alert('Error deleting turf');
+      toast.error('Error deleting turf');
     } finally {
       setDeleting(null);
     }
@@ -164,13 +166,13 @@ function OwnerDashboard() {
 
         if (data.subscription.verificationStatus === 'pending') {
           // Plan selected but not approved yet
-          alert('Your subscription is pending admin approval. You will be able to add turfs once approved.');
+          toast.info('Your subscription is pending admin approval. You will be able to add turfs once approved.');
           return;
         }
 
         if (data.subscription.verificationStatus === 'rejected') {
           // Plan rejected
-          alert(`Your subscription was rejected. Reason: ${data.subscription.rejectionReason || 'No reason provided'}. Please contact support.`);
+          toast.error(`Your subscription was rejected. Reason: ${data.subscription.rejectionReason || 'No reason provided'}. Please contact support.`);
           return;
         }
 

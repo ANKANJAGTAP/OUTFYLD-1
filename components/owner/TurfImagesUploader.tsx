@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Upload, X, Images, Plus } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 interface CloudinaryImage {
   url: string;
@@ -50,11 +51,11 @@ export function TurfImagesUploader({ value, onChange }: TurfImagesUploaderProps)
   const handleFileSelect = async (files: FileList) => {
     const validFiles = Array.from(files).filter(file => {
       if (!file.type.startsWith('image/')) {
-        alert(`${file.name} is not an image file`);
+        toast.error(`${file.name} is not an image file`);
         return false;
       }
       if (file.size > 5 * 1024 * 1024) {
-        alert(`${file.name} is too large (max 5MB)`);
+        toast.error(`${file.name} is too large (max 5MB)`);
         return false;
       }
       return true;
@@ -63,7 +64,7 @@ export function TurfImagesUploader({ value, onChange }: TurfImagesUploaderProps)
     if (validFiles.length === 0) return;
 
     if (value.length + validFiles.length > 10) {
-      alert('Maximum 10 images allowed');
+      toast.error('Maximum 10 images allowed');
       return;
     }
 
@@ -72,8 +73,9 @@ export function TurfImagesUploader({ value, onChange }: TurfImagesUploaderProps)
       const uploadPromises = validFiles.map(file => uploadToCloudinary(file));
       const uploadedImages = await Promise.all(uploadPromises);
       onChange([...value, ...uploadedImages]);
+      toast.success('Images uploaded successfully!');
     } catch (error) {
-      alert('Upload failed. Please try again.');
+      toast.error('Upload failed. Please try again.');
     } finally {
       setUploading(false);
     }

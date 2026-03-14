@@ -22,6 +22,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import Image from 'next/image';
+import { toast } from 'react-toastify';
 
 interface BookingData {
   _id: string;
@@ -131,10 +132,10 @@ export default function BookingManager({ ownerId, turfId, turfName }: BookingMan
       await fetchBookings();
       
       // Show success message
-      alert(`Booking ${newStatus} successfully!`);
+      toast.success(`Booking ${newStatus} successfully!`);
     } catch (error) {
       console.error('Error updating booking status:', error);
-      alert(error instanceof Error ? error.message : 'Failed to update booking status');
+      toast.error(error instanceof Error ? error.message : 'Failed to update booking status');
     } finally {
       setProcessingBooking(null);
     }

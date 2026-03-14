@@ -2,6 +2,7 @@ import './globals.css';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { Toaster } from '@/components/ui/toaster';
+import { ToastProvider } from '@/components/providers/ToastProvider';
 import { AuthProvider } from '@/contexts/AuthContext';
 import RoleRedirect from '@/components/RoleRedirect';
 import { SpeedInsights } from "@vercel/speed-insights/next"
@@ -37,6 +38,7 @@ export default function RootLayout({
             {children}
           </RoleRedirect>
           <Toaster />
+          <ToastProvider />
         </AuthProvider>
         <SpeedInsights />
         <Analytics />
