@@ -42,6 +42,7 @@ interface User {
   rejectionReason?: string;
   verifiedBy?: string;
   verifiedAt?: Date;
+  subscriptionPlan?: string;
   
   createdAt: Date;
   updatedAt: Date;
