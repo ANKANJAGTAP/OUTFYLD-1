@@ -63,7 +63,14 @@ export async function POST(request: NextRequest) {
       phone: phone || null,
       businessName: businessName || null,
       emailVerified: true,
-      isActive: true
+      isActive: true,
+      loyaltyPoints: 1000,
+      loyaltyHistory: [{
+        amount: 1000,
+        type: 'earned',
+        description: 'Welcome Bonus!',
+        date: new Date()
+      }]
     });
 
     await newUser.save();

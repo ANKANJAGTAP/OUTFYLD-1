@@ -11,12 +11,41 @@ interface IBooking extends Document {
     endTime: string;
     date: string; // YYYY-MM-DD format
   };
-  status: 'pending' | 'confirmed' | 'rejected';
-  paymentScreenshot: {
+  status: 'pending_payment' | 'confirmed' | 'cancelled' | 'refunded' | 'partially_refunded';
+  totalAmount: number;
+  
+  // Razorpay payment fields
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
+  razorpaySignature?: string;
+  paymentStatus: 'pending' | 'paid' | 'refunded' | 'partially_refunded';
+  
+  // Payment split details
+  platformCommission?: number;
+  ownerShare?: number;
+  gatewayFee?: number;
+  razorpayTransferId?: string;
+  
+  // Cancellation & Refund fields
+  cancelledBy?: 'player' | 'owner';
+  cancelledAt?: Date;
+  cancellationReason?: string;
+  refundAmount?: number;
+  refundId?: string;
+  refundStatus?: 'pending' | 'processed' | 'failed';
+  refundProcessedAt?: Date;
+
+  // Loyalty attributes
+  appliedLoyaltyPoints?: number;
+  loyaltyDiscountAmount?: number;
+  loyaltyPointsEarned?: number;
+  
+  // Legacy field — kept for backward compatibility with old bookings
+  paymentScreenshot?: {
     url: string;
     public_id: string;
   };
-  totalAmount: number;
+  
   createdAt: Date;
   updatedAt: Date;
 }
@@ -45,7 +74,7 @@ const BookingSlotSchema = new mongoose.Schema({
   }
 }, { _id: false });
 
-// Subdocument schema for Cloudinary payment screenshot
+// Legacy subdocument schema for Cloudinary payment screenshot
 const PaymentScreenshotSchema = new mongoose.Schema({
   url: {
     type: String,
@@ -79,21 +108,59 @@ const BookingSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'confirmed', 'rejected'],
-    default: 'pending',
-    required: true
-  },
-  paymentScreenshot: {
-    type: PaymentScreenshotSchema,
+    enum: ['pending_payment', 'pending', 'confirmed', 'rejected', 'cancelled', 'refunded', 'partially_refunded'],
+    default: 'pending_payment',
     required: true
   },
   totalAmount: {
     type: Number,
     required: true,
     min: 0
+  },
+  
+  // Razorpay payment fields
+  razorpayOrderId: String,
+  razorpayPaymentId: String,
+  razorpaySignature: String,
+  paymentStatus: {
+    type: String,
+    enum: ['pending', 'paid', 'refunded', 'partially_refunded'],
+    default: 'pending'
+  },
+  
+  // Payment split details
+  platformCommission: { type: Number, min: 0 },
+  ownerShare: { type: Number, min: 0 },
+  gatewayFee: { type: Number, min: 0 },
+  razorpayTransferId: String,
+  
+  // Cancellation & Refund fields
+  cancelledBy: {
+    type: String,
+    enum: ['player', 'owner']
+  },
+  cancelledAt: Date,
+  cancellationReason: String,
+  refundAmount: { type: Number, min: 0 },
+  refundId: String,
+  refundStatus: {
+    type: String,
+    enum: ['pending', 'processed', 'failed']
+  },
+  refundProcessedAt: Date,
+
+  // Loyalty attributes
+  appliedLoyaltyPoints: { type: Number, min: 0, default: 0 },
+  loyaltyDiscountAmount: { type: Number, min: 0, default: 0 },
+  loyaltyPointsEarned: { type: Number, min: 0, default: 0 },
+  
+  // Legacy field — kept for backward compatibility with old bookings
+  paymentScreenshot: {
+    type: PaymentScreenshotSchema,
+    required: false
   }
 }, {
-  timestamps: true // This adds createdAt and updatedAt automatically
+  timestamps: true
 });
 
 // Create indexes for faster queries
@@ -102,6 +169,8 @@ BookingSchema.index({ ownerId: 1 });
 BookingSchema.index({ turfId: 1 });
 BookingSchema.index({ status: 1 });
 BookingSchema.index({ 'slot.day': 1, 'slot.startTime': 1, 'slot.date': 1 });
+BookingSchema.index({ razorpayOrderId: 1 });
+// razorpayPaymentId index removed — already defined via schema field
 
 // Pre-save middleware to validate booking data
 BookingSchema.pre('save', function(this: IBooking, next) {

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   Dialog,
@@ -13,19 +13,26 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, Upload, CheckCircle, XCircle } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, Shield, CreditCard } from 'lucide-react';
 import { format } from 'date-fns';
-import Image from 'next/image';
+import Script from 'next/script';
+import { cn } from '@/lib/utils';
+
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
 
 interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
   turf: {
     _id: string;
-    ownerId: string; // Add ownerId field
+    ownerId: string;
     businessName: string;
     pricing: number;
-    upiQrCode: {
+    upiQrCode?: {
       url: string;
       public_id: string;
     };
@@ -38,7 +45,7 @@ interface PaymentModalProps {
   }>;
   totalAmount: number;
   onSuccess: () => void;
-  paymentTimer?: number; // Timer in seconds
+  paymentTimer?: number;
 }
 
 export default function PaymentModal({
@@ -51,378 +58,391 @@ export default function PaymentModal({
   paymentTimer = 0
 }: PaymentModalProps) {
   const { user } = useAuth();
-  const [currentStep, setCurrentStep] = useState<'payment' | 'upload' | 'processing' | 'success' | 'error'>('payment');
-  const [paymentScreenshot, setPaymentScreenshot] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
+  const [currentStep, setCurrentStep] = useState<'ready' | 'processing' | 'success' | 'error'>('ready');
+  const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
+  const [razorpayOpen, setRazorpayOpen] = useState(false);
+  const [loyaltyPoints, setLoyaltyPoints] = useState(0);
+  const [useLoyaltyPoints, setUseLoyaltyPoints] = useState(false);
+  const [loadingLoyalty, setLoadingLoyalty] = useState(false);
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        setError('Please select a valid image file');
-        return;
-      }
-
-      // Validate file size (5MB max)
-      if (file.size > 5 * 1024 * 1024) {
-        setError('File size should be less than 5MB');
-        return;
-      }
-
-      setPaymentScreenshot(file);
-      setError(null);
-
-      // Create preview URL
-      const url = URL.createObjectURL(file);
-      setPreviewUrl(url);
+  // Check if Razorpay is already loaded
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.Razorpay) {
+      setRazorpayLoaded(true);
     }
-  };
+  }, []);
 
-  const handleRemoveFile = () => {
-    setPaymentScreenshot(null);
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-      setPreviewUrl(null);
+  // Fetch loyalty points when modal opens
+  useEffect(() => {
+    if (isOpen && user?.role === 'customer') {
+      const fetchLoyalty = async () => {
+        setLoadingLoyalty(true);
+        try {
+          const res = await fetch(`/api/loyalty/customer/${user.uid}`);
+          const data = await res.json();
+          if (data.success) {
+            setLoyaltyPoints(data.data.currentPoints || 0);
+          }
+        } catch (err) {
+          console.error('Failed to fetch loyalty points', err);
+        } finally {
+          setLoadingLoyalty(false);
+        }
+      };
+      fetchLoyalty();
     }
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
+  }, [isOpen, user]);
 
-  const handleSubmitBooking = async () => {
-    if (!paymentScreenshot || !user) {
-      setError('Payment screenshot and user authentication are required');
+  const rawDiscount = Math.floor(loyaltyPoints / 10);
+  const loyaltyDiscount = useLoyaltyPoints ? Math.min(rawDiscount, totalAmount) : 0;
+  const finalAmountToPay = totalAmount - loyaltyDiscount;
+
+  const handlePayNow = async () => {
+    if (!user || !razorpayLoaded) {
+      setError('Payment system not ready. Please wait a moment.');
       return;
     }
 
     try {
-      setUploading(true);
-      setCurrentStep('processing');
+      setProcessing(true);
       setError(null);
+      setCurrentStep('processing');
 
-      // Create FormData for file upload
-      const formData = new FormData();
-      formData.append('customerId', user.uid);
-      formData.append('ownerId', turf.ownerId); // The turf owner's user ID
-      formData.append('turfId', turf._id);
-      
-      // Prepare slots data with dates as strings
+      // Step 1: Create booking + Razorpay order
       const slotsData = selectedSlots.map(slot => ({
         ...slot,
-        date: format(slot.date, 'yyyy-MM-dd')
+        date: format(slot.date, 'yyyy-MM-dd'),
       }));
-      formData.append('slots', JSON.stringify(slotsData));
-      formData.append('totalAmount', totalAmount.toString());
-      formData.append('paymentScreenshot', paymentScreenshot);
 
-      const response = await fetch('/api/bookings/create', {
+      const createResponse = await fetch('/api/bookings/create', {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerId: user.uid,
+          ownerId: turf.ownerId,
+          turfId: turf._id,
+          slots: slotsData,
+          totalAmount,
+          useLoyaltyPoints,
+        }),
       });
 
-      const result = await response.json();
+      const createData = await createResponse.json();
 
-      if (!response.ok) {
-        // Handle specific slot conflict errors
-        if (response.status === 409 && result.code === 'SLOT_CONFLICT') {
-          setError(`⚠️ Booking failed: Some slots are no longer available. Another customer just booked them.\n\nUnavailable slots: ${result.unavailableSlots.map((slot: any) => `${slot.startTime}-${slot.endTime}`).join(', ')}\n\nPlease close this dialog and select different time slots.`);
-          setCurrentStep('error');
-          return;
+      if (!createResponse.ok) {
+        if (createData.code === 'SLOT_CONFLICT') {
+          const unavailableText = createData.unavailableSlots
+            ?.map((s: any) => `${s.startTime}-${s.endTime}`)
+            .join(', ');
+          throw new Error(
+            `Some slots are no longer available: ${unavailableText}. Please close and select different time slots.`
+          );
         }
-        
-        throw new Error(result.error || 'Failed to create booking');
+        throw new Error(createData.error || 'Failed to create booking');
       }
 
-      console.log('Booking created successfully:', result);
+      // Hide our dialog so it doesn't block Razorpay's iframe
+      setRazorpayOpen(true);
 
-      setCurrentStep('success');
-      
-      // Auto-close after 3 seconds and trigger success callback
-      setTimeout(() => {
-        onSuccess();
-        onClose();
-        resetModal();
-      }, 3000);
+      // Step 2: Open Razorpay checkout
+      const options = {
+        key: createData.key,
+        amount: createData.amount * 100,
+        currency: createData.currency,
+        name: 'OutFyld',
+        description: `Booking at ${turf.businessName}`,
+        order_id: createData.orderId,
+        handler: async function (response: any) {
+          // Razorpay closed after payment — restore our dialog
+          setRazorpayOpen(false);
+          // Step 3: Verify payment
+          try {
+            setCurrentStep('processing');
+            const verifyResponse = await fetch('/api/bookings/verify-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                bookingIds: createData.bookingIds,
+              }),
+            });
 
-    } catch (error) {
-      console.error('Error creating booking:', error);
-      setError(error instanceof Error ? error.message : 'An unexpected error occurred');
+            const verifyData = await verifyResponse.json();
+
+            if (!verifyResponse.ok) {
+              throw new Error(verifyData.error || 'Payment verification failed');
+            }
+
+            setCurrentStep('success');
+            setProcessing(false);
+
+            // Auto-close after 3 seconds
+            setTimeout(() => {
+              onSuccess();
+              onClose();
+              resetModal();
+            }, 3000);
+          } catch (verifyError: any) {
+            setError(verifyError.message || 'Payment verification failed');
+            setCurrentStep('error');
+            setProcessing(false);
+          }
+        },
+        prefill: createData.prefill,
+        notes: {
+          turfId: turf._id,
+          slotCount: selectedSlots.length.toString(),
+        },
+        theme: {
+          color: '#16a34a',
+        },
+        modal: {
+          ondismiss: function () {
+            // Razorpay dismissed — restore our dialog
+            setRazorpayOpen(false);
+            
+            // Don't reset if payment success handler is already processing
+            setCurrentStep((prev) => {
+              if (prev === 'processing' || prev === 'success') {
+                return prev;
+              }
+              setProcessing(false);
+              return 'ready';
+            });
+          },
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', function (response: any) {
+        setRazorpayOpen(false);
+        setError(`Payment failed: ${response.error.description}`);
+        setCurrentStep('error');
+        setProcessing(false);
+      });
+      rzp.open();
+    } catch (error: any) {
+      setError(error.message || 'An unexpected error occurred');
       setCurrentStep('error');
-    } finally {
-      setUploading(false);
+      setProcessing(false);
     }
   };
 
   const resetModal = () => {
-    setCurrentStep('payment');
-    setPaymentScreenshot(null);
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-      setPreviewUrl(null);
-    }
+    setCurrentStep('ready');
     setError(null);
-    setUploading(false);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    setProcessing(false);
   };
 
   const handleClose = () => {
-    if (!uploading) {
+    if (!processing) {
       resetModal();
       onClose();
     }
   };
 
-  const renderPaymentStep = () => (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h3 className="text-lg font-semibold mb-2">Scan QR Code to Pay</h3>
-        <p className="text-gray-600 mb-4">
-          Scan the QR code below with your UPI app to make the payment of ₹{totalAmount}
-        </p>
-      </div>
-
-      <div className="flex justify-center">
-        <div className="relative w-64 h-64 border-2 border-gray-200 rounded-lg overflow-hidden">
-          <Image
-            src={turf.upiQrCode.url}
-            alt="UPI QR Code"
-            fill
-            sizes="256px"
-            className="object-contain"
-          />
-        </div>
-      </div>
-
-      <div className="bg-blue-50 p-4 rounded-lg">
-        <h4 className="font-medium text-blue-900 mb-2">Payment Instructions:</h4>
-        <ol className="text-sm text-blue-800 space-y-1">
-          <li>1. Open your UPI app (GPay, PhonePe, Paytm, etc.)</li>
-          <li>2. Scan the QR code above</li>
-          <li>3. Pay exactly ₹{totalAmount}</li>
-          <li>4. Take a screenshot of the payment confirmation</li>
-          <li>5. Upload the screenshot below</li>
-        </ol>
-      </div>
-
-      <Alert className="bg-yellow-50 border-yellow-200">
-        <AlertDescription className="text-yellow-800 text-sm">
-          ⏰ <strong>Note:</strong> Your selected time slots are not reserved. Please complete payment quickly as other customers may book the same slots.
-        </AlertDescription>
-      </Alert>
-
-      <Button 
-        onClick={() => setCurrentStep('upload')} 
-        className="w-full"
-      >
-        I've Made the Payment - Upload Screenshot
-      </Button>
-    </div>
-  );
-
-  const renderUploadStep = () => (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h3 className="text-lg font-semibold mb-2">Upload Payment Screenshot</h3>
-        <p className="text-gray-600">
-          Please upload a clear screenshot of your payment confirmation
-        </p>
-      </div>
-
-      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-        {previewUrl ? (
-          <div className="space-y-4">
-            <div className="relative w-32 h-32 mx-auto">
-              <Image
-                src={previewUrl}
-                alt="Payment Screenshot Preview"
-                fill
-                sizes="128px"
-                className="object-cover rounded-lg"
-              />
-            </div>
-            <div className="flex justify-center space-x-2">
-              <Button variant="outline" onClick={handleRemoveFile}>
-                Remove
-              </Button>
-              <Button onClick={() => fileInputRef.current?.click()}>
-                Change Image
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div 
-            className="cursor-pointer"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <Upload className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-            <p className="text-gray-600 mb-2">Click to upload payment screenshot</p>
-            <p className="text-sm text-gray-500">PNG, JPG up to 5MB</p>
-          </div>
-        )}
-        
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleFileSelect}
-          className="hidden"
-        />
-      </div>
-
-      {error && (
-        <Alert variant="destructive">
-          <XCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
-      <div className="flex space-x-3">
-        <Button 
-          variant="outline" 
-          onClick={() => setCurrentStep('payment')}
-          disabled={uploading}
-          className="flex-1"
-        >
-          Back
-        </Button>
-        <Button 
-          onClick={handleSubmitBooking}
-          disabled={!paymentScreenshot || uploading}
-          className="flex-1"
-        >
-          {uploading ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Creating Booking...
-            </>
-          ) : (
-            'Submit Booking Request'
-          )}
-        </Button>
-      </div>
-    </div>
-  );
-
-  const renderProcessingStep = () => (
-    <div className="text-center py-8">
-      <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-blue-600" />
-      <h3 className="text-lg font-semibold mb-2">Processing Your Booking</h3>
-      <p className="text-gray-600">
-        Please wait while we create your booking request...
-      </p>
-    </div>
-  );
-
-  const renderSuccessStep = () => (
-    <div className="text-center py-8">
-      <CheckCircle className="w-12 h-12 mx-auto mb-4 text-green-600" />
-      <h3 className="text-lg font-semibold mb-2 text-green-700">Booking Request Submitted!</h3>
-      <p className="text-gray-600 mb-4">
-        Your booking request has been sent to the turf owner. You'll be notified once it's reviewed.
-      </p>
-      <div className="bg-green-50 p-4 rounded-lg text-left">
-        <h4 className="font-medium text-green-900 mb-2">Booking Details:</h4>
-        <div className="text-sm text-green-800 space-y-1">
-          <p><strong>Turf:</strong> {turf.businessName}</p>
-          <div>
-            <strong>Slots ({selectedSlots.length}):</strong>
-            {selectedSlots.map((slot, index) => (
-              <div key={index} className="ml-2">
-                • {format(slot.date, 'EEEE, MMM d')}, {slot.startTime} - {slot.endTime}
-              </div>
-            ))}
-          </div>
-          <p><strong>Amount:</strong> ₹{totalAmount}</p>
-          <p><strong>Status:</strong> Pending Approval</p>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderErrorStep = () => (
-    <div className="text-center py-8">
-      <XCircle className="w-12 h-12 mx-auto mb-4 text-red-600" />
-      <h3 className="text-lg font-semibold mb-2 text-red-700">Booking Failed</h3>
-      <p className="text-gray-600 mb-4">{error}</p>
-      <div className="flex space-x-3 justify-center">
-        <Button variant="outline" onClick={() => setCurrentStep('upload')}>
-          Try Again
-        </Button>
-        <Button onClick={handleClose}>
-          Close
-        </Button>
-      </div>
-    </div>
-  );
-
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle>Complete Your Booking</DialogTitle>
-            {paymentTimer > 0 && (
-              <div className="text-sm text-orange-600 font-medium">
-                ⏰ {Math.floor(paymentTimer / 60)}:{(paymentTimer % 60).toString().padStart(2, '0')}
+    <>
+      <Script
+        src="https://checkout.razorpay.com/v1/checkout.js"
+        onLoad={() => setRazorpayLoaded(true)}
+      />
+      <Dialog open={isOpen} onOpenChange={handleClose} modal={!razorpayOpen}>
+        <DialogContent 
+          className={cn(
+            "max-w-md max-h-[90vh] overflow-y-auto",
+            razorpayOpen && "opacity-0 pointer-events-none"
+          )}
+        >
+          <DialogHeader>
+            <div className="flex items-center justify-between">
+              <DialogTitle>Complete Your Booking</DialogTitle>
+              {paymentTimer > 0 && (
+                <div className="text-sm text-orange-600 font-medium">
+                  ⏰ {Math.floor(paymentTimer / 60)}:{(paymentTimer % 60).toString().padStart(2, '0')}
+                </div>
+              )}
+            </div>
+            <DialogDescription>
+              Pay securely via Razorpay to confirm your booking
+              {paymentTimer > 0 && (
+                <span className="block text-orange-600 mt-1">
+                  Complete payment within {Math.floor(paymentTimer / 60)} minutes to secure your slots
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Booking Summary */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Booking Summary</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>Turf:</span>
+                <span className="font-medium">{turf.businessName}</span>
+              </div>
+              <div className="text-sm">
+                <span>Slots ({selectedSlots.length}):</span>
+                <div className="mt-1 space-y-1">
+                  {selectedSlots.map((slot, index) => (
+                    <div key={index} className="flex justify-between text-xs">
+                      <span className="text-gray-600">
+                        {format(slot.date, 'MMM d')}, {slot.startTime} - {slot.endTime}
+                      </span>
+                      <span className="font-medium">₹{turf.pricing}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <Separator />
+
+              {loyaltyPoints > 0 && (
+                <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-purple-700">Use Loyalty Points</span>
+                    <span className="text-xs text-gray-500">
+                      Balance: {loyaltyPoints} pts (₹{rawDiscount} value)
+                    </span>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      className="sr-only peer"
+                      checked={useLoyaltyPoints}
+                      onChange={(e) => setUseLoyaltyPoints(e.target.checked)}
+                      disabled={loadingLoyalty || processing}
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                  </label>
+                </div>
+              )}
+
+              <div className="space-y-1">
+                <div className="flex justify-between text-sm text-gray-600">
+                  <span>Subtotal:</span>
+                  <span>₹{totalAmount}</span>
+                </div>
+                {useLoyaltyPoints && (
+                  <div className="flex justify-between text-sm text-purple-600">
+                    <span>Loyalty Discount:</span>
+                    <span>-₹{loyaltyDiscount}</span>
+                  </div>
+                )}
+                <div className="flex justify-between font-bold text-lg pt-1">
+                  <span>Total Payable:</span>
+                  <span className="text-green-600">₹{finalAmountToPay}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Step Content */}
+          <div className="mt-4">
+            {currentStep === 'ready' && (
+              <div className="space-y-4">
+                <div className="bg-green-50 p-4 rounded-lg text-center">
+                  <CreditCard className="h-10 w-10 mx-auto text-green-600 mb-3" />
+                  <h3 className="text-lg font-semibold mb-1">Secure Payment</h3>
+                  <p className="text-sm text-gray-600 mb-1">
+                    Pay via UPI, Card, Net Banking, or Wallet
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Your booking will be confirmed instantly after payment
+                  </p>
+                </div>
+
+                {error && (
+                  <Alert variant="destructive">
+                    <XCircle className="h-4 w-4" />
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                )}
+
+                <Button
+                  onClick={handlePayNow}
+                  disabled={processing || !razorpayLoaded}
+                  className="w-full bg-green-600 hover:bg-green-700 text-lg py-6"
+                >
+                  {processing ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <Shield className="w-5 h-5 mr-2" />
+                      Pay ₹{finalAmountToPay} Securely
+                    </>
+                  )}
+                </Button>
+
+                <p className="text-center text-xs text-gray-400">
+                  Secured by Razorpay. All transactions are encrypted.
+                </p>
+              </div>
+            )}
+
+            {currentStep === 'processing' && (
+              <div className="text-center py-8">
+                <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-green-600" />
+                <h3 className="text-lg font-semibold mb-2">Processing Payment...</h3>
+                <p className="text-gray-600">Please wait while we verify your payment.</p>
+              </div>
+            )}
+
+            {currentStep === 'success' && (
+              <div className="text-center py-8">
+                <CheckCircle className="w-12 h-12 mx-auto mb-4 text-green-600" />
+                <h3 className="text-lg font-semibold mb-2 text-green-700">Booking Confirmed! 🎉</h3>
+                <p className="text-gray-600 mb-4">
+                  Your payment was successful and your booking is confirmed.
+                </p>
+                <div className="bg-green-50 p-4 rounded-lg text-left">
+                  <h4 className="font-medium text-green-900 mb-2">Booking Details:</h4>
+                  <div className="text-sm text-green-800 space-y-1">
+                    <p><strong>Turf:</strong> {turf.businessName}</p>
+                    <div>
+                      <strong>Slots ({selectedSlots.length}):</strong>
+                      {selectedSlots.map((slot, index) => (
+                        <div key={index} className="ml-2">
+                          • {format(slot.date, 'EEEE, MMM d')}, {slot.startTime} - {slot.endTime}
+                        </div>
+                      ))}
+                    </div>
+                    {useLoyaltyPoints && (
+                      <p><strong>Discount Applied:</strong> ₹{loyaltyDiscount}</p>
+                    )}
+                    <p><strong>Amount Paid:</strong> ₹{finalAmountToPay}</p>
+                    <p><strong>Status:</strong> ✅ Confirmed</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {currentStep === 'error' && (
+              <div className="text-center py-8">
+                <XCircle className="w-12 h-12 mx-auto mb-4 text-red-600" />
+                <h3 className="text-lg font-semibold mb-2 text-red-700">Payment Issue</h3>
+                <p className="text-gray-600 mb-4">{error}</p>
+                <div className="flex space-x-3 justify-center">
+                  <Button variant="outline" onClick={() => setCurrentStep('ready')}>
+                    Try Again
+                  </Button>
+                  <Button onClick={handleClose}>
+                    Close
+                  </Button>
+                </div>
               </div>
             )}
           </div>
-          <DialogDescription>
-            Follow the steps below to complete your turf booking
-            {paymentTimer > 0 && (
-              <span className="block text-orange-600 mt-1">
-                Complete payment within {Math.floor(paymentTimer / 60)} minutes to secure your slots
-              </span>
-            )}
-          </DialogDescription>
-        </DialogHeader>
-
-        {/* Booking Summary */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Booking Summary</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>Turf:</span>
-              <span className="font-medium">{turf.businessName}</span>
-            </div>
-            <div className="text-sm">
-              <span>Slots ({selectedSlots.length}):</span>
-              <div className="mt-1 space-y-1">
-                {selectedSlots.map((slot, index) => (
-                  <div key={index} className="flex justify-between text-xs">
-                    <span className="text-gray-600">
-                      {format(slot.date, 'MMM d')}, {slot.startTime} - {slot.endTime}
-                    </span>
-                    <span className="font-medium">₹{turf.pricing}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <Separator />
-            <div className="flex justify-between font-semibold">
-              <span>Total Amount:</span>
-              <span className="text-green-600">₹{totalAmount}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Step Content */}
-        <div className="mt-6 flex-1 overflow-y-auto">
-          {currentStep === 'payment' && renderPaymentStep()}
-          {currentStep === 'upload' && renderUploadStep()}
-          {currentStep === 'processing' && renderProcessingStep()}
-          {currentStep === 'success' && renderSuccessStep()}
-          {currentStep === 'error' && renderErrorStep()}
-        </div>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

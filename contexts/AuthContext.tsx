@@ -29,6 +29,13 @@ interface User {
   emailVerified: boolean;
   isActive: boolean;
   
+  // Subscription plan fields (for turf owners)
+  subscriptionPlan?: 'starter' | 'pro' | 'basic' | 'premium';
+  subscriptionAmount?: number;
+  subscriptionStartDate?: Date;
+  subscriptionEndDate?: Date;
+  subscriptionStatus?: 'active' | 'expired' | 'none';
+  
   // Admin verification fields (for turf owners)
   isVerifiedByAdmin?: boolean;
   paymentVerified?: boolean;

@@ -30,14 +30,6 @@ const SlotReservationSchema = new mongoose.Schema({
   }
 });
 
-// Compound index for efficient slot lookup
-SlotReservationSchema.index({ 
-  turfId: 1, 
-  'slot.date': 1, 
-  'slot.startTime': 1, 
-  'slot.endTime': 1 
-});
-
 // Unique index to prevent duplicate reservations for the same slot
 SlotReservationSchema.index({ 
   turfId: 1, 

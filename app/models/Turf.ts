@@ -190,11 +190,11 @@ const TurfSchema = new mongoose.Schema({
     }
   },
   
-  // Payment information
+  // Payment information (UPI QR code is optional — payments go through Razorpay)
   paymentInfo: {
     upiQrCode: {
       type: CloudinaryImageSchema,
-      required: true
+      required: false
     }
   },
   

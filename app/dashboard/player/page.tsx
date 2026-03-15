@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import { LandingHeader } from '@/components/landing/LandingHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,66 +16,86 @@ import {
   Search,
   History,
   Heart,
-  Trophy
+  Trophy,
+  ChevronDown,
+  Shield,
+  ListOrdered,
+  FileText,
+  Award
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 function PlayerDashboard() {
   const { user, logout } = useAuth();
+  const router = useRouter();
 
   if (!user) {
     return null;
   }
 
-  // Placeholder data - In real app, this would come from API
-  const playerStats = {
-    totalBookings: 12,
-    favoriteSpots: 3,
-    pointsEarned: 450,
-    gamesPlayed: 28
-  };
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [playerStats, setPlayerStats] = useState({
+    totalBookings: 0,
+    favoriteSpots: 0,
+    pointsEarned: 0,
+    gamesPlayed: 0
+  });
+  const [loading, setLoading] = useState(true);
 
-  const recentBookings = [
-    {
-      id: 1,
-      turfId: '1', // Add turfId for navigation
-      turfName: 'Prime Sports Arena',
-      location: 'Sangli, Maharashtra',
-      date: '2025-09-25',
-      time: '6:00 PM - 7:00 PM',
-      status: 'completed',
-      sport: 'Cricket'
-    },
-    {
-      id: 2,
-      turfId: '2', // Add turfId for navigation
-      turfName: 'Elite Cricket Ground',
-      location: 'Miraj, Maharashtra',
-      date: '2025-09-28',
-      time: '8:00 AM - 10:00 AM',
-      status: 'upcoming',
-      sport: 'Cricket'
-    }
-  ];
+  // Fetch real data from backend
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/bookings/customer/${user.uid}?limit=5`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          setBookings(data.bookings || []);
+          
+          // Calculate stats based on real data
+          const completedBookings = data.bookings?.filter((b: any) => 
+            b.status === 'completed' || b.paymentStatus === 'paid'
+          ) || [];
+          
+          setPlayerStats({
+            totalBookings: data.pagination?.totalItems || 0,
+            favoriteSpots: 0, // No favorites feature yet
+            pointsEarned: completedBookings.length * 10, // Example logic for points
+            gamesPlayed: completedBookings.length
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch player dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const favoriteTurfs = [
-    {
-      id: 1,
-      turfId: '1', // Add turfId for navigation
-      name: 'Prime Sports Arena',
-      location: 'Sangli, Maharashtra',
-      rating: 4.6,
-      price: '₹1200/hour'
-    },
-    {
-      id: 2,
-      turfId: '2', // Add turfId for navigation
-      name: 'Elite Cricket Ground', 
-      location: 'Miraj, Maharashtra',
-      rating: 4.4,
-      price: '₹1000/hour'
-    }
-  ];
+    fetchDashboardData();
+  }, [user.uid]);
+
+  const recentBookings = bookings.slice(0, 3).map((booking: any) => ({
+    id: booking._id,
+    turfId: booking.turfId?._id,
+    turfName: booking.turfId?.businessName || 'Unknown Turf',
+    location: booking.turfId?.location?.address || 'Location unavailable',
+    date: booking.slot?.date,
+    time: `${booking.slot?.startTime} - ${booking.slot?.endTime}`,
+    status: booking.status === 'confirmed' && new Date(booking.slot?.date) < new Date() ? 'completed' : 
+            booking.status === 'pending_payment' ? 'pending' : booking.status,
+    sport: 'Sports' // Default or fetch from turf details if available
+  }));
 
   const handleLogout = async () => {
     try {
@@ -87,45 +108,7 @@ function PlayerDashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <Link href="/" className="flex items-center">
-                <div className="bg-green-500 rounded-lg p-2 mr-3">
-                  <MapPin className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-xl font-bold text-gray-900">OutFyld</h1>
-                  <p className="text-xs text-gray-500">Player Dashboard</p>
-                </div>
-              </Link>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                  <User className="h-5 w-5 text-white" />
-                </div>
-                <div className="hidden sm:block">
-                  <p className="text-sm font-medium text-gray-900">{user.name}</p>
-                  <p className="text-xs text-gray-500 capitalize">{user.role}</p>
-                </div>
-              </div>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleLogout}
-                className="text-gray-600 hover:text-red-600"
-              >
-                <LogOut className="h-4 w-4" />
-                <span className="hidden sm:inline ml-2">Logout</span>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <LandingHeader />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -223,7 +206,7 @@ function PlayerDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {recentBookings.map((booking) => (
+                {recentBookings.map((booking: any) => (
                   <div key={booking.id} className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-1">
@@ -312,6 +295,7 @@ function PlayerDashboard() {
                 <CardDescription>Your most loved playing spots</CardDescription>
               </CardHeader>
               <CardContent>
+                {/*
                 <div className="space-y-3">
                   {favoriteTurfs.map((turf) => (
                     <div key={turf.id} className="flex items-center justify-between p-3 border rounded-lg">
@@ -334,6 +318,11 @@ function PlayerDashboard() {
                       </Link>
                     </div>
                   ))}
+                </div>
+                */}
+                <div className="text-center py-6 text-sm text-gray-500">
+                  <Heart className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+                  <p>Favorite turfs feature coming soon.</p>
                 </div>
               </CardContent>
             </Card>

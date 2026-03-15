@@ -54,13 +54,38 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if owner is verified by admin
-    if (user.verificationStatus !== 'approved' || !user.isVerifiedByAdmin) {
+    // Check if owner is active (removed manual admin verification check)
+    if (user.verificationStatus === 'rejected') {
       return NextResponse.json(
         { 
-          error: 'Account not verified', 
-          message: 'Your account must be verified by an administrator before you can add turfs. Please wait for admin approval.',
+          error: 'Account rejected', 
+          message: 'Your account has been rejected. Please contact support.',
           verificationStatus: user.verificationStatus 
+        },
+        { status: 403 }
+      );
+    }
+
+    // Check turf limit based on subscription plan
+    const existingTurfCount = await Turf.countDocuments({ ownerUid: uid });
+    const plan = user.subscriptionPlan || 'basic';
+    
+    // Limits: basic/starter = 1 turf, premium/pro = 3 turfs
+    if ((plan === 'basic' || plan === 'starter') && existingTurfCount >= 1) {
+      return NextResponse.json(
+        { 
+          error: 'Plan limit reached', 
+          message: 'Basic plan members can only list 1 turf. Please upgrade your plan to add more turfs.' 
+        },
+        { status: 403 }
+      );
+    }
+    
+    if ((plan === 'premium' || plan === 'pro') && existingTurfCount >= 3) {
+      return NextResponse.json(
+        { 
+          error: 'Plan limit reached', 
+          message: 'Premium plan members can only list up to 3 turfs. Contact support to add more.' 
         },
         { status: 403 }
       );
@@ -212,12 +237,12 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Check if owner is verified by admin
-    if (user.verificationStatus !== 'approved' || !user.isVerifiedByAdmin) {
+    // Check if owner is active (removed manual admin verification check)
+    if (user.verificationStatus === 'rejected') {
       return NextResponse.json(
         { 
-          error: 'Account not verified', 
-          message: 'Your account must be verified by an administrator before you can update turfs.',
+          error: 'Account rejected', 
+          message: 'Your account has been rejected. Please contact support.',
           verificationStatus: user.verificationStatus 
         },
         { status: 403 }
@@ -397,12 +422,12 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Check if owner is verified by admin
-    if (user.verificationStatus !== 'approved' || !user.isVerifiedByAdmin) {
+    // Check if owner is active (removed manual admin verification check)
+    if (user.verificationStatus === 'rejected') {
       return NextResponse.json(
         { 
-          error: 'Account not verified', 
-          message: 'Your account must be verified by an administrator before you can delete turfs.',
+          error: 'Account rejected', 
+          message: 'Your account has been rejected. Please contact support.',
           verificationStatus: user.verificationStatus 
         },
         { status: 403 }

@@ -1,9 +1,9 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,13 +15,11 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import Link from 'next/link';
 
 // Import our custom components
-import { UpiUploader } from '@/components/owner/UpiUploader';
 import { TurfImagesUploader } from '@/components/owner/TurfImagesUploader';
 import { SportsSelection } from '@/components/owner/SportsSelection';
 import { AmenitiesSelector } from '@/components/owner/AmenitiesSelector';
 import { AboutSection } from '@/components/owner/AboutSection';
 import { SlotManager } from '@/components/owner/SlotManager';
-import BookingManager from '@/components/owner/BookingManager';
 
 interface CloudinaryImage {
   url: string;
@@ -37,7 +35,6 @@ interface TimeSlot {
 interface OwnerFormData {
   businessName: string;
   phone: string;
-  upiQrCode: CloudinaryImage | null;
   turfImages: CloudinaryImage[];
   sportsOffered: string[];
   customSport: string;
@@ -70,7 +67,6 @@ function TurfOwnerDashboard() {
   const [formData, setFormData] = useState<OwnerFormData>({
     businessName: '',
     phone: '',
-    upiQrCode: null,
     turfImages: [],
     sportsOffered: [],
     customSport: '',
@@ -143,7 +139,6 @@ function TurfOwnerDashboard() {
             setFormData({
               businessName: turf.name || turf.contactInfo?.businessName || '',
               phone: turf.contactInfo?.phone || '',
-              upiQrCode: turf.paymentInfo?.upiQrCode || null,
               turfImages: turf.images || [],
               sportsOffered: turf.sportsOffered || [],
               customSport: turf.customSport || '',
@@ -174,7 +169,6 @@ function TurfOwnerDashboard() {
             setFormData({
               businessName: ownerData.businessName || '',
               phone: ownerData.phone || '',
-              upiQrCode: ownerData.upiQrCode || null,
               turfImages: ownerData.turfImages || [],
               sportsOffered: ownerData.sportsOffered || [],
               customSport: ownerData.customSport || '',
@@ -222,11 +216,6 @@ function TurfOwnerDashboard() {
 
     if (!formData.phone.trim()) {
       setError('Phone number is required');
-      return false;
-    }
-
-    if (!formData.upiQrCode) {
-      setError('UPI QR code is required');
       return false;
     }
 
@@ -304,7 +293,6 @@ function TurfOwnerDashboard() {
         availableSlots: formData.availableSlots,
         pricing: formData.pricing,
         location: formData.location,
-        upiQrCode: formData.upiQrCode,
         ...(turfId && { turfId }) // Include turfId for updates
       };
 
@@ -543,7 +531,6 @@ function TurfOwnerDashboard() {
             <TabsTrigger value="turf-details">Turf Details</TabsTrigger>
             <TabsTrigger value="scheduling">Scheduling</TabsTrigger>
             <TabsTrigger value="location">Location</TabsTrigger>
-            <TabsTrigger value="bookings">Bookings</TabsTrigger>
           </TabsList>
 
           <TabsContent value="business-info" className="space-y-6">
@@ -603,14 +590,24 @@ function TurfOwnerDashboard() {
               </CardContent>
             </Card>
 
-            {/* UPI QR Code Upload */}
-            <UpiUploader 
-              value={formData.upiQrCode}
-              onChange={(image) => setFormData({
-                ...formData,
-                upiQrCode: image
-              })}
-            />
+            {/* Bank Details Management */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <IndianRupee className="h-5 w-5" />
+                  Bank Details & Payouts
+                </CardTitle>
+                <CardDescription>Configure where your platform payouts will be sent.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Link href="/owner/bank-details">
+                  <Button variant="outline" className="w-full sm:w-auto">
+                    Manage Bank Details
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+
           </TabsContent>
 
           <TabsContent value="turf-details" className="space-y-6">
@@ -745,16 +742,9 @@ function TurfOwnerDashboard() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="bookings" className="space-y-6">
-            <BookingManager 
-              ownerId={user?.uid || ''} 
-              turfId={typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('turfId') || undefined : undefined}
-              turfName={isEditMode ? formData.businessName : undefined}
-            />
-          </TabsContent>
         </Tabs>
 
-        {/* Save Button - Only show when not in bookings tab */}
+        {/* Save Button */}
         <div className="flex justify-end pt-6">
           <Button 
             onClick={handleSave}

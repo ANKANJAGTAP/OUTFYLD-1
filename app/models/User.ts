@@ -43,12 +43,33 @@ interface IUser extends Document {
   isActive: boolean;
   
   // Subscription plan fields (for turf owners)
-  subscriptionPlan?: 'basic' | 'premium';
-  subscriptionAmount?: number; // Monthly amount (1000 for basic, 2000 for premium)
+  subscriptionPlan?: 'starter' | 'pro';
+  subscriptionAmount?: number;
+  subscriptionStartDate?: Date;
+  subscriptionEndDate?: Date;
+  subscriptionStatus?: 'active' | 'expired' | 'none';
+  razorpaySubscriptionOrderId?: string;
+  razorpaySubscriptionPaymentId?: string;
+  
+  // Legacy field — kept for backward compatibility with old data
   paymentScreenshot?: {
     url: string;
     public_id: string;
   };
+  
+  // Bank details for Razorpay transfers (turf owners)
+  bankDetails?: {
+    accountHolderName: string;
+    accountNumber: string;
+    ifscCode: string;
+    bankName: string;
+    accountType: 'savings' | 'current';
+    panNumber: string;
+    gstNumber?: string;
+  };
+  razorpayContactId?: string;
+  razorpayLinkedAccountId?: string; // Fund account ID for receiving transfers
+  bankDetailsVerified?: boolean;
   
   // Admin verification fields (for turf owners)
   isVerifiedByAdmin?: boolean;
@@ -57,12 +78,21 @@ interface IUser extends Document {
     amount?: number;
     date?: Date;
     transactionId?: string;
-    method?: string; // e.g., 'UPI', 'Bank Transfer', 'Cash'
+    method?: string;
   };
   verificationStatus?: 'pending' | 'approved' | 'rejected';
   rejectionReason?: string;
-  verifiedBy?: string; // Admin UID who verified
+  verifiedBy?: string;
   verifiedAt?: Date;
+
+  // Loyalty Program fields (for customers)
+  loyaltyPoints: number;
+  loyaltyHistory: Array<{
+    amount: number;
+    type: 'earned' | 'spent';
+    description: string;
+    date: Date;
+  }>;
 }
 
 const UserSchema = new mongoose.Schema({
@@ -87,7 +117,7 @@ const UserSchema = new mongoose.Schema({
     required: true 
   },
   phone: String,
-  businessName: String, // Only for owners
+  businessName: String,
   emailVerified: {
     type: Boolean,
     default: false
@@ -100,27 +130,56 @@ const UserSchema = new mongoose.Schema({
   // Subscription plan fields (for turf owners)
   subscriptionPlan: {
     type: String,
-    enum: ['basic', 'premium'],
-    required: function(this: IUser): boolean {
-      return this.role === 'owner' && this.verificationStatus !== 'pending';
-    }
+    enum: ['starter', 'pro', 'basic', 'premium'], // includes legacy values
   },
   subscriptionAmount: {
     type: Number,
     min: 0
   },
+  subscriptionStartDate: {
+    type: Date
+  },
+  subscriptionEndDate: {
+    type: Date
+  },
+  subscriptionStatus: {
+    type: String,
+    enum: ['active', 'expired', 'none'],
+    default: 'none'
+  },
+  razorpaySubscriptionOrderId: String,
+  razorpaySubscriptionPaymentId: String,
+  
+  // Legacy field — kept for backward compatibility
   paymentScreenshot: {
     type: CloudinaryImageSchema,
-    required: function(this: IUser): boolean {
-      return this.role === 'owner' && this.subscriptionPlan !== undefined;
-    }
+    required: false
+  },
+  
+  // Bank details for Razorpay transfers
+  bankDetails: {
+    accountHolderName: String,
+    accountNumber: String,
+    ifscCode: String,
+    bankName: String,
+    accountType: {
+      type: String,
+      enum: ['savings', 'current']
+    },
+    panNumber: String,
+    gstNumber: String
+  },
+  razorpayContactId: String,
+  razorpayLinkedAccountId: String,
+  bankDetailsVerified: {
+    type: Boolean,
+    default: false
   },
   
   // Admin verification fields (for turf owners)
   isVerifiedByAdmin: {
     type: Boolean,
     default: function(this: IUser): boolean {
-      // Auto-approve customers and admins, require verification for owners
       return this.role !== 'owner';
     }
   },
@@ -142,13 +201,26 @@ const UserSchema = new mongoose.Schema({
     }
   },
   rejectionReason: String,
-  verifiedBy: String, // Admin UID who verified
-  verifiedAt: Date
+  verifiedBy: String,
+  verifiedAt: Date,
+
+  // Loyalty Program fields (for customers)
+  loyaltyPoints: {
+    type: Number,
+    default: 0
+  },
+  loyaltyHistory: [{
+    amount: { type: Number, required: true },
+    type: { type: String, enum: ['earned', 'spent'], required: true },
+    description: { type: String, required: true },
+    date: { type: Date, default: Date.now }
+  }]
 }, {
-  timestamps: true // This adds createdAt and updatedAt automatically
+  timestamps: true
 });
 
-// Create indexes for faster queries (email and uid already have unique indexes)
+// Create indexes for faster queries
 UserSchema.index({ role: 1 });
+UserSchema.index({ subscriptionStatus: 1, subscriptionEndDate: 1 });
 
 export default mongoose.models.User || mongoose.model<IUser>('User', UserSchema);

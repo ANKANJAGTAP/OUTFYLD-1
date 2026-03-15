@@ -55,17 +55,23 @@ export async function POST(request: NextRequest) {
       businessName: role === 'owner' ? body.businessName : null,
       emailVerified: false,
       isActive: true,
+      loyaltyPoints: 1000,
+      loyaltyHistory: [{
+        amount: 1000,
+        type: 'earned',
+        description: 'Welcome Bonus!',
+        date: new Date()
+      }],
       createdAt: new Date(),
       updatedAt: new Date()
     };
     
-    // Add verification fields for turf owners
+    // Add verification fields - auto approve all roles
     if (role === 'owner') {
-      userData.isVerifiedByAdmin = false;
+      userData.isVerifiedByAdmin = true;
       userData.paymentVerified = false;
-      userData.verificationStatus = 'pending';
+      userData.verificationStatus = 'approved';
     } else {
-      // Auto-approve customers and other roles
       userData.isVerifiedByAdmin = true;
       userData.paymentVerified = false;
       userData.verificationStatus = 'approved';

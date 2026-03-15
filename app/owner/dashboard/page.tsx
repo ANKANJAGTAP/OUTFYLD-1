@@ -16,14 +16,22 @@ import {
   Plus,
   BarChart3,
   Clock,
-  DollarSign,
-  Edit,
   Trash2,
-  Eye
+  Eye,
+  DollarSign,
+  Edit
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface Turf {
   _id: string;
@@ -176,8 +184,20 @@ function OwnerDashboard() {
           return;
         }
 
-        // Approved - redirect to turf owner dashboard to add/manage turfs
+        // Approved - check turf limits before redirecting
         if (data.subscription.verificationStatus === 'approved') {
+          const plan = data.subscription.subscriptionPlan;
+          
+          if ((plan === 'basic' || plan === 'starter') && turfs.length >= 1) {
+            toast.error('Basic plan members can only list 1 turf. Please upgrade your plan to add more turfs.');
+            return;
+          }
+          
+          if ((plan === 'premium' || plan === 'pro') && turfs.length >= 3) {
+            toast.error('Premium plan members can only list up to 3 turfs. Contact support to add more.');
+            return;
+          }
+
           router.push('/dashboard/turf-owner');
           return;
         }
@@ -233,25 +253,48 @@ function OwnerDashboard() {
             </div>
 
             <div className="flex items-center space-x-2 md:space-x-4">
-              <div className="text-right hidden lg:block">
-                <p className="text-sm font-medium text-gray-900">
-                  {user.name}
-                </p>
-                <p className="text-xs text-gray-500">{user.businessName || 'Turf Owner'}</p>
-              </div>
-              <Badge variant="secondary" className="bg-blue-100 text-blue-800 hidden md:flex">
-                Owner
-              </Badge>
-              <Link href="/">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="text-xs"
-                >
-                  <MapPin className="h-4 w-4 md:mr-1" />
-                  <span className="hidden md:inline">Home</span>
-                </Button>
-              </Link>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="p-0 h-auto hover:bg-transparent flex items-center gap-2">
+                    <div className="text-right hidden lg:block">
+                      <p className="text-sm font-medium text-gray-900">
+                        {user.name}
+                      </p>
+                      <p className="text-xs text-gray-500">{user.businessName || 'Turf Owner'}</p>
+                    </div>
+                    <Badge variant="secondary" className="bg-blue-100 text-blue-800 hidden md:flex">
+                      Owner
+                    </Badge>
+                    {user.subscriptionPlan && (
+                      <Badge variant={user.subscriptionPlan === 'premium' || user.subscriptionPlan === 'pro' ? 'default' : 'secondary'} className="hidden md:flex relative group">
+                        {user.subscriptionPlan.charAt(0).toUpperCase() + user.subscriptionPlan.slice(1)} Plan
+                      </Badge>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => router.push('/owner/profile')}>
+                    <Users className="mr-2 h-4 w-4" />
+                    <span>My Profile</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push('/owner/bank-details')}>
+                    <DollarSign className="mr-2 h-4 w-4" />
+                    <span>Payment Receiving Details</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push('/owner/analytics')}>
+                    <BarChart3 className="mr-2 h-4 w-4" />
+                    <span>Analytics</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="text-red-600" onClick={logout}>
+                    <Trash2 className="mr-2 h-4 w-4 rotate-180" />
+                    <span>Log out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
               <Button 
                 variant="outline" 
                 size="sm"
@@ -468,7 +511,7 @@ function OwnerDashboard() {
                         variant="outline" 
                         size="sm" 
                         className="flex-1"
-                        onClick={() => router.push(`/dashboard/turf-owner?turfId=${turf._id}`)}
+                        onClick={() => router.push(`/owner/bookings?turfId=${turf._id}`)}
                       >
                         <Calendar className="h-4 w-4 mr-1" />
                         Bookings

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import Job from '@/app/models/Job'; // Import Job model first to register schema
 import JobApplication from '@/app/models/JobApplication';
-import Job from '@/app/models/Job';
 import User from '@/app/models/User';
 import { getAuth } from 'firebase-admin/auth';
 import admin from 'firebase-admin';

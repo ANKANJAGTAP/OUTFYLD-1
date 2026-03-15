@@ -53,10 +53,12 @@ interface BookingData {
   };
   status: 'pending' | 'confirmed' | 'rejected';
   totalAmount: number;
-  paymentScreenshot: {
+  paymentScreenshot?: {
     url: string;
     public_id: string;
   };
+  razorpayPaymentId?: string;
+  paymentStatus?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -251,29 +253,51 @@ export default function BookingManager({ ownerId, turfId, turfName }: BookingMan
           </div>
 
           <div className="space-y-3">
-            <div>
-              <h4 className="font-medium text-gray-900 mb-2">Payment Screenshot</h4>
-              <div className="relative w-full h-32 bg-gray-100 rounded-lg overflow-hidden">
-                <Image
-                  src={booking.paymentScreenshot.url}
-                  alt="Payment Screenshot"
-                  fill
-                  className="object-cover"
-                />
+            {booking.paymentScreenshot ? (
+              <div>
+                <h4 className="font-medium text-gray-900 mb-2">Payment Screenshot</h4>
+                <div className="relative w-full h-32 bg-gray-100 rounded-lg overflow-hidden">
+                  <Image
+                    src={booking.paymentScreenshot.url}
+                    alt="Payment Screenshot"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full mt-2"
+                  onClick={() => {
+                    setSelectedBooking(booking);
+                    setShowPaymentModal(true);
+                  }}
+                >
+                  <Eye className="w-4 h-4 mr-1" />
+                  View Full Image
+                </Button>
               </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="w-full mt-2"
-                onClick={() => {
-                  setSelectedBooking(booking);
-                  setShowPaymentModal(true);
-                }}
-              >
-                <Eye className="w-4 h-4 mr-1" />
-                View Full Image
-              </Button>
-            </div>
+            ) : (
+              <div>
+                <h4 className="font-medium text-gray-900 mb-2">Payment Details</h4>
+                <div className="bg-gray-50 p-3 rounded-lg border text-sm">
+                  <div className="flex justify-between mb-2">
+                    <span className="text-gray-500">Method</span>
+                    <span className="font-medium">Razorpay</span>
+                  </div>
+                  {booking.razorpayPaymentId && (
+                    <div className="flex justify-between mb-2">
+                      <span className="text-gray-500">Payment ID</span>
+                      <span className="font-medium text-xs font-mono">{booking.razorpayPaymentId}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Status</span>
+                    <span className="font-medium capitalize">{booking.paymentStatus || 'Paid'}</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -444,12 +468,14 @@ export default function BookingManager({ ownerId, turfId, turfName }: BookingMan
                 </Button>
               </div>
               <div className="relative w-full h-96">
-                <Image
-                  src={selectedBooking.paymentScreenshot.url}
-                  alt="Payment Screenshot"
-                  fill
-                  className="object-contain"
-                />
+                {selectedBooking.paymentScreenshot && (
+                  <Image
+                    src={selectedBooking.paymentScreenshot.url}
+                    alt="Payment Screenshot"
+                    fill
+                    className="object-contain"
+                  />
+                )}
               </div>
               <div className="mt-4 p-4 bg-gray-50 rounded-lg">
                 <h4 className="font-medium mb-2">Booking Details</h4>

@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
               'slot.startTime': slot.startTime,
               'slot.endTime': slot.endTime,
               'slot.date': slot.date,
-              status: { $in: ['pending', 'confirmed'] }
+              status: { $in: ['pending_payment', 'confirmed'] }
             }).session(session);
 
             if (existingBooking) {

@@ -16,21 +16,50 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Clean up stale pending_payment bookings (older than 10 minutes)
+    const staleThreshold = new Date(Date.now() - 10 * 60 * 1000);
+    await Booking.deleteMany({
+      status: 'pending_payment',
+      createdAt: { $lt: staleThreshold },
+    });
+
     // Check if any of the slots are now booked or reserved by others
     const conflictResults = await Promise.all(
       slots.map(async (slot: any) => {
-        // Check for bookings
-        const booking = await Booking.findOne({
+        // Check for confirmed bookings (always block)
+        const confirmedBooking = await Booking.findOne({
           turfId,
           'slot.day': slot.day,
           'slot.startTime': slot.startTime,
           'slot.endTime': slot.endTime,
           'slot.date': slot.date,
-          status: { $in: ['pending', 'confirmed'] }
+          status: 'confirmed'
         });
 
-        if (booking) {
+        if (confirmedBooking) {
           return { slot, conflict: 'booked' };
+        }
+
+        // Check for pending_payment bookings by OTHER customers
+        if (customerId) {
+          // Look up this user's MongoDB _id from the UID
+          const User = (await import('@/app/models/User')).default;
+          const currentUser = await User.findOne({ uid: customerId });
+          if (currentUser) {
+            const pendingBooking = await Booking.findOne({
+              turfId,
+              'slot.day': slot.day,
+              'slot.startTime': slot.startTime,
+              'slot.endTime': slot.endTime,
+              'slot.date': slot.date,
+              status: 'pending_payment',
+              customerId: { $ne: currentUser._id },
+            });
+
+            if (pendingBooking) {
+              return { slot, conflict: 'booked' };
+            }
+          }
         }
 
         // Check for reservations by other customers
