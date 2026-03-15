@@ -83,6 +83,13 @@ export default function RoleRedirect({ children }: RoleRedirectProps) {
         }
         return;
       }
+
+      // Prevent owners from accessing customer-facing browse/book features
+      const customerOnlyPublicRoutes = ['/browse', '/book'];
+      if (customerOnlyPublicRoutes.some(route => pathname.startsWith(route)) && user.role === 'owner') {
+        router.push('/owner/dashboard');
+        return;
+      }
     } 
     // If user is not authenticated
     else if (!firebaseUser && !initialLoading) {
