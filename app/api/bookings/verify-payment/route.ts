@@ -231,13 +231,13 @@ export async function POST(request: NextRequest) {
         };
 
         // Email to owner (Disabled per user request)
-        /*
+        
         if (ownerData.email) {
           try {
             await sendBookingNotificationEmail(ownerData.email, ownerData.name || 'Owner', bookingDetails);
           } catch (e) { console.error('Email to owner failed:', e); }
         }
-        */
+        
 
         // Confirmation email to customer
         if (customerData.email) {

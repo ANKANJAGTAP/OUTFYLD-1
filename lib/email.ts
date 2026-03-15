@@ -185,92 +185,92 @@ export async function sendBookingNotificationEmail(
             }
           </style>
         </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>🎉 New Booking Request!</h1>
-              <p style="margin: 10px 0 0 0;">You have a new booking request for your turf</p>
-            </div>
-            
-            <div class="content">
-              <p>Hello <strong>${ownerName}</strong>,</p>
-              <p>Great news! You have received a new booking request for <strong>${turfName}</strong>.</p>
-              
-              <div class="alert">
-                ⏰ <strong>Action Required:</strong> Please review and approve/reject this booking request as soon as possible.
-              </div>
+      <body>
+  <div class="container">
+    <div class="header">
+      <h1>✅ Booking Confirmed!</h1>
+      <p style="margin: 10px 0 0 0;">A booking has been successfully confirmed for your turf</p>
+    </div>
 
-              <div class="booking-card">
-                <h2 style="margin-top: 0; color: #667eea;">📋 Booking Details</h2>
-                
-                <div class="booking-detail">
-                  <span class="label">Booking ID:</span>
-                  <span class="value"><code>${bookingId}</code></span>
-                </div>
-                
-                <div class="booking-detail">
-                  <span class="label">Customer Name:</span>
-                  <span class="value">${customerName}</span>
-                </div>
-                
-                <div class="booking-detail">
-                  <span class="label">Customer Email:</span>
-                  <span class="value">${customerEmail}</span>
-                </div>
-                
-                ${customerPhone ? `
-                <div class="booking-detail">
-                  <span class="label">Customer Phone:</span>
-                  <span class="value">${customerPhone}</span>
-                </div>
-                ` : ''}
-                
-                <div class="booking-detail">
-                  <span class="label">Turf:</span>
-                  <span class="value">${turfName}</span>
-                </div>
-                
-                <div class="booking-detail">
-                  <span class="label">Location:</span>
-                  <span class="value">${turfLocation}</span>
-                </div>
-                
-                <div class="booking-detail">
-                  <span class="label">Date:</span>
-                  <span class="value">${bookingDate}</span>
-                </div>
-                
-                <div class="booking-detail">
-                  <span class="label">Time Slot:</span>
-                  <span class="value">${bookingTime}</span>
-                </div>
-                
-                <div class="booking-detail">
-                  <span class="label">Amount:</span>
-                  <span class="value amount">₹${totalAmount}</span>
-                </div>
-              </div>
+    <div class="content">
+      <p>Hello <strong>${ownerName}</strong>,</p>
+      <p>Good news! A booking has been successfully completed for <strong>${turfName}</strong>.</p>
 
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/owner/dashboard" class="button button-view">
-                  View Booking Dashboard
-                </a>
-              </div>
+      <div class="alert">
+        📅 <strong>Upcoming Booking:</strong> Please make sure the turf is ready for the scheduled time.
+      </div>
 
-              <p style="color: #666; font-size: 14px;">
-                💡 <strong>Tip:</strong> The customer has already made the payment. Please verify the payment screenshot in your dashboard before approving the booking.
-              </p>
-            </div>
-            
-            <div class="footer">
-              <p><strong>OutFyld</strong> - Your Turf Management Platform</p>
-              <p>This is an automated notification. Please do not reply to this email.</p>
-              <p style="margin-top: 10px;">
-                Need help? Contact us at admin@outfyld.in
-              </p>
-            </div>
-          </div>
-        </body>
+      <div class="booking-card">
+        <h2 style="margin-top: 0; color: #667eea;">📋 Booking Details</h2>
+
+        <div class="booking-detail">
+          <span class="label">Booking ID:</span>
+          <span class="value"><code>${bookingId}</code></span>
+        </div>
+
+        <div class="booking-detail">
+          <span class="label">Customer Name:</span>
+          <span class="value">${customerName}</span>
+        </div>
+
+        <div class="booking-detail">
+          <span class="label">Customer Email:</span>
+          <span class="value">${customerEmail}</span>
+        </div>
+
+        ${customerPhone ? `
+        <div class="booking-detail">
+          <span class="label">Customer Phone:</span>
+          <span class="value">${customerPhone}</span>
+        </div>
+        ` : ''}
+
+        <div class="booking-detail">
+          <span class="label">Turf:</span>
+          <span class="value">${turfName}</span>
+        </div>
+
+        <div class="booking-detail">
+          <span class="label">Location:</span>
+          <span class="value">${turfLocation}</span>
+        </div>
+
+        <div class="booking-detail">
+          <span class="label">Date:</span>
+          <span class="value">${bookingDate}</span>
+        </div>
+
+        <div class="booking-detail">
+          <span class="label">Time Slot:</span>
+          <span class="value">${bookingTime}</span>
+        </div>
+
+        <div class="booking-detail">
+          <span class="label">Amount Paid:</span>
+          <span class="value amount">₹${totalAmount}</span>
+        </div>
+      </div>
+
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/owner/dashboard" class="button button-view">
+          View Booking Dashboard
+        </a>
+      </div>
+
+      <p style="color: #666; font-size: 14px;">
+        💡 <strong>Note:</strong> The payment for this booking has already been completed by the customer.
+      </p>
+    </div>
+
+    <div class="footer">
+      <p><strong>OutFyld</strong> - Your Turf Management Platform</p>
+      <p>This is an automated notification. Please do not reply to this email.</p>
+      <p style="margin-top: 10px;">
+        Need help? Contact us at admin@outfyld.in
+      </p>
+    </div>
+  </div>
+</body>
         </html>
       `,
       text: `
