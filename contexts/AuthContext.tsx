@@ -29,13 +29,6 @@ interface User {
   emailVerified: boolean;
   isActive: boolean;
   
-  // Subscription plan fields (for turf owners)
-  subscriptionPlan?: 'starter' | 'pro' | 'basic' | 'premium';
-  subscriptionAmount?: number;
-  subscriptionStartDate?: Date;
-  subscriptionEndDate?: Date;
-  subscriptionStatus?: 'active' | 'expired' | 'none';
-  
   // Admin verification fields (for turf owners)
   isVerifiedByAdmin?: boolean;
   paymentVerified?: boolean;
@@ -49,6 +42,7 @@ interface User {
   rejectionReason?: string;
   verifiedBy?: string;
   verifiedAt?: Date;
+  subscriptionPlan?: string;
   
   createdAt: Date;
   updatedAt: Date;
@@ -250,6 +244,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         throw new Error('Please verify your email before logging in. Check your email inbox.');
       }
 
+      setFirebaseUser(userCredential.user);
+      toast.success('Successfully logged in!');
       // Firebase auth state change will handle the rest
     } catch (error: any) {
       console.error('Login error:', error);
@@ -299,7 +295,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           await firebaseUser.delete();
           throw new Error(errorData.error || 'Failed to create user profile');
         }
+        
+        // Get the validated user from response to set locally immediately
+        const responseData = await response.json();
+        setUser(responseData.user);
+        toast.success(`Successfully registered and logged in as ${role}!`);
+      } else {
+        setUser(existingUserData);
+        toast.success(`Successfully logged in with Google!`);
       }
+
+      // Manually set this so the redirect components can fire immediately
+      setFirebaseUser(firebaseUser);
 
       // Successful, onAuthStateChanged will fetch data
     } catch (error: any) {
