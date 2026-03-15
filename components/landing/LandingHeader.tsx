@@ -19,7 +19,7 @@ import {
 
 export function LandingHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user, firebaseUser, logout, loading } = useAuth();
+  const { user, firebaseUser, logout, loading, initialLoading } = useAuth();
   const router = useRouter();
 
   const handleLogout = async () => {
@@ -68,7 +68,13 @@ export function LandingHeader() {
           </nav>
 
           <div className="hidden lg:flex items-center space-x-3">
-            {firebaseUser && user ? (
+            {initialLoading ? (
+               // Show skeleton loader while determining auth state
+               <div className="flex items-center space-x-3">
+                  <div className="h-9 w-20 bg-gray-200 animate-pulse rounded-md"></div>
+                  <div className="h-9 w-20 bg-gray-200 animate-pulse rounded-md"></div>
+               </div>
+            ) : firebaseUser && user ? (
               // User is logged in
               <div className="flex items-center space-x-3">
                 <DropdownMenu>
@@ -210,7 +216,13 @@ export function LandingHeader() {
               </Link>
               
               <div className="flex flex-col space-y-2 pt-4 border-t border-gray-200">
-                {firebaseUser && user ? (
+                {initialLoading ? (
+                  // Mobile skeleton loader
+                  <>
+                    <div className="h-9 w-full bg-gray-200 animate-pulse rounded-md"></div>
+                    <div className="h-9 w-full bg-gray-200 animate-pulse rounded-md"></div>
+                  </>
+                ) : firebaseUser && user ? (
                   // Mobile: User is logged in
                   <>
                     <div className="text-center py-3 bg-gray-50 rounded-md">

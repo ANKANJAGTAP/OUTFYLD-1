@@ -33,7 +33,7 @@ const TimeSlotSchema = new mongoose.Schema({
 
 // Interface for Turf document
 interface ITurf extends Document {
-  ownerId: string;
+  ownerId: mongoose.Types.ObjectId | any;
   ownerUid: string;
   name: string;
   description: string;
@@ -76,6 +76,7 @@ interface ITurf extends Document {
     phone: string;
     email: string;
     businessName: string;
+    ownerName?: string;
   };
   isActive: boolean;
   rating?: number;
@@ -87,6 +88,7 @@ const TurfSchema = new mongoose.Schema({
   // Owner reference
   ownerId: {
     type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
     required: true
   },
   ownerUid: {
@@ -238,6 +240,10 @@ const TurfSchema = new mongoose.Schema({
     businessName: {
       type: String,
       required: true
+    },
+    ownerName: {
+      type: String,
+      required: false
     }
   },
   

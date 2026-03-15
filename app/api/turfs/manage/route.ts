@@ -95,6 +95,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const {
       name,
+      ownerName, // Added
+      phone, // Added
       description,
       images,
       sportsOffered,
@@ -161,9 +163,10 @@ export async function POST(request: NextRequest) {
       geoLocation: body.geoLocation || undefined,
       locationMetadata: body.locationMetadata || undefined,
       contactInfo: {
-        phone: user.phone || '',
+        phone: phone || user.phone || '',
         email: user.email,
-        businessName: user.businessName || name
+        businessName: user.businessName || name,
+        ownerName: ownerName || user.name || ''
       },
       isActive: true
     });
@@ -247,6 +250,8 @@ export async function PUT(request: NextRequest) {
     const {
       turfId,
       name,
+      ownerName, // Added
+      phone, // Added
       description,
       images,
       sportsOffered,
@@ -296,14 +301,13 @@ export async function PUT(request: NextRequest) {
         availableSlots,
         pricing,
         maxDiscount: maxDiscount || 0,
-        location: location || {},
-        geoLocation: body.geoLocation || existingTurf.geoLocation,
-        locationMetadata: body.locationMetadata || existingTurf.locationMetadata,
-        contactInfo: {
-          phone: user.phone || existingTurf.contactInfo.phone,
-          email: user.email,
-          businessName: user.businessName || name || existingTurf.contactInfo.businessName
-        }
+        location: location || existingTurf.location,
+        geoLocation: body.geoLocation !== undefined ? body.geoLocation : existingTurf.geoLocation,
+        locationMetadata: body.locationMetadata !== undefined ? body.locationMetadata : existingTurf.locationMetadata,
+        'contactInfo.phone': phone || existingTurf.contactInfo.phone,
+        'contactInfo.email': user.email,
+        'contactInfo.businessName': name || existingTurf.contactInfo.businessName,
+        'contactInfo.ownerName': ownerName || existingTurf.contactInfo.ownerName || user.name || ''
       },
       { new: true, runValidators: true }
     );

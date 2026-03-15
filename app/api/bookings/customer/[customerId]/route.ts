@@ -54,7 +54,7 @@ export async function GET(
     const [bookings, totalCount] = await Promise.all([
       Booking.find(filterQuery)
         .populate('ownerId', 'name email businessName phone')
-        .populate('turfId', 'businessName location pricing sportsOffered amenities')
+        .populate('turfId', 'name businessName location contactInfo pricing sportsOffered amenities images')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit),

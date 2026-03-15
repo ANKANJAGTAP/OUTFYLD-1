@@ -4,6 +4,7 @@ import { Inter } from 'next/font/google';
 import { Toaster } from '@/components/ui/toaster';
 import { ToastProvider } from '@/components/providers/ToastProvider';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { LocationProvider } from '@/contexts/LocationContext';
 import RoleRedirect from '@/components/RoleRedirect';
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import Script from "next/script";
@@ -34,11 +35,13 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <AuthProvider>
-          <RoleRedirect>
-            {children}
-          </RoleRedirect>
-          <Toaster />
-          <ToastProvider />
+          <LocationProvider>
+            <RoleRedirect>
+              {children}
+            </RoleRedirect>
+            <Toaster />
+            <ToastProvider />
+          </LocationProvider>
         </AuthProvider>
         <SpeedInsights />
         <Analytics />

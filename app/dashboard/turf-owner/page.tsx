@@ -49,6 +49,7 @@ interface TimeSlot {
 
 interface OwnerFormData {
   businessName: string;
+  ownerName: string;
   phone: string;
   turfImages: CloudinaryImage[];
   sportsOffered: string[];
@@ -85,6 +86,7 @@ function TurfOwnerDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [activeTab, setActiveTab] = useState("business-info");
   const [subscriptionStatus, setSubscriptionStatus] = useState<{
     hasSubscription: boolean;
     status: string;
@@ -94,6 +96,7 @@ function TurfOwnerDashboard() {
 
   const [formData, setFormData] = useState<OwnerFormData>({
     businessName: "",
+    ownerName: "",
     phone: "",
     turfImages: [],
     sportsOffered: [],
@@ -169,6 +172,7 @@ function TurfOwnerDashboard() {
 
             setFormData({
               businessName: turf.name || turf.contactInfo?.businessName || "",
+              ownerName: turf.contactInfo?.ownerName || "",
               phone: turf.contactInfo?.phone || "",
               turfImages: turf.images || [],
               sportsOffered: turf.sportsOffered || [],
@@ -203,6 +207,7 @@ function TurfOwnerDashboard() {
 
             setFormData({
               businessName: ownerData.businessName || "",
+              ownerName: ownerData.ownerName || user?.name || "",
               phone: ownerData.phone || "",
               turfImages: ownerData.turfImages || [],
               sportsOffered: ownerData.sportsOffered || [],
@@ -247,6 +252,11 @@ function TurfOwnerDashboard() {
     // Basic validation
     if (!formData.businessName.trim()) {
       setError("Business name is required");
+      return false;
+    }
+
+    if (!formData.ownerName.trim()) {
+      setError("Owner name is required");
       return false;
     }
 
@@ -324,6 +334,8 @@ function TurfOwnerDashboard() {
 
       const turfData = {
         name: formData.businessName || "My Turf",
+        ownerName: formData.ownerName,
+        phone: formData.phone,
         description: formData.about,
         images: formData.turfImages,
         sportsOffered: formData.sportsOffered,
@@ -575,12 +587,12 @@ function TurfOwnerDashboard() {
           </Alert>
         )}
 
-        <Tabs defaultValue="business-info" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="business-info">Business Info</TabsTrigger>
-            <TabsTrigger value="turf-details">Turf Details</TabsTrigger>
-            <TabsTrigger value="scheduling">Scheduling</TabsTrigger>
-            <TabsTrigger value="location">Location</TabsTrigger>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 h-auto gap-2 p-1 bg-muted/50 rounded-lg">
+            <TabsTrigger value="business-info" className="whitespace-normal text-xs sm:text-sm py-2">Business Info</TabsTrigger>
+            <TabsTrigger value="turf-details" className="whitespace-normal text-xs sm:text-sm py-2">Turf Details</TabsTrigger>
+            <TabsTrigger value="scheduling" className="whitespace-normal text-xs sm:text-sm py-2">Scheduling</TabsTrigger>
+            <TabsTrigger value="location" className="whitespace-normal text-xs sm:text-sm py-2">Location</TabsTrigger>
           </TabsList>
 
           <TabsContent value="business-info" className="space-y-6">
@@ -592,8 +604,22 @@ function TurfOwnerDashboard() {
                   Basic Information
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="ownerName">Owner Name *</Label>
+                    <Input
+                      id="ownerName"
+                      placeholder="Your full name"
+                      value={formData.ownerName || ""}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          ownerName: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
                   <div className="space-y-2">
                     <Label htmlFor="businessName">Business Name *</Label>
                     <Input
@@ -622,52 +648,50 @@ function TurfOwnerDashboard() {
                       }
                     />
                   </div>
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="pricing" className="flex items-center gap-2">
-                    <IndianRupee className="h-4 w-4" />
-                    Pricing per Hour *
-                  </Label>
-                  <Input
-                    id="pricing"
-                    type="number"
-                    placeholder="Enter hourly rate"
-                    value={formData.pricing || ""}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        pricing: Number(e.target.value),
-                      })
-                    }
-                    className="max-w-sm"
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="pricing" className="flex items-center gap-2">
+                      <IndianRupee className="h-4 w-4" />
+                      Pricing per Hour *
+                    </Label>
+                    <Input
+                      id="pricing"
+                      type="number"
+                      placeholder="Enter hourly rate"
+                      value={formData.pricing || ""}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          pricing: Number(e.target.value),
+                        })
+                      }
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="maxDiscount" className="flex items-center gap-2">
-                    <IndianRupee className="h-4 w-4" />
-                    Maximum Discount % (Dynamic Pricing)
-                  </Label>
-                  <Input
-                    id="maxDiscount"
-                    type="number"
-                    placeholder="e.g. 20"
-                    min={0}
-                    max={100}
-                    value={formData.maxDiscount || ""}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        maxDiscount: Math.min(100, Math.max(0, Number(e.target.value))),
-                      })
-                    }
-                    className="max-w-sm"
-                  />
-                  <p className="text-xs text-gray-500">
-                    Set the maximum discount (0–100%) the platform can offer on your turf based on demand. 
-                    Higher discounts attract more bookings during low-demand periods.
-                  </p>
+                  <div className="space-y-2 lg:col-span-2">
+                    <Label htmlFor="maxDiscount" className="flex items-center gap-2">
+                      <IndianRupee className="h-4 w-4" />
+                      Maximum Discount % (Dynamic Pricing)
+                    </Label>
+                    <Input
+                      id="maxDiscount"
+                      type="number"
+                      placeholder="e.g. 20"
+                      min={0}
+                      max={100}
+                      value={formData.maxDiscount || ""}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          maxDiscount: Math.min(100, Math.max(0, Number(e.target.value))),
+                        })
+                      }
+                      className="max-w-sm"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Set the maximum discount (0–100%) the platform can offer on your turf based on demand.
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -691,6 +715,12 @@ function TurfOwnerDashboard() {
                 </Link>
               </CardContent>
             </Card>
+
+            <div className="flex justify-end pt-4">
+              <Button onClick={() => setActiveTab("turf-details")}>
+                Next Step
+              </Button>
+            </div>
           </TabsContent>
 
           <TabsContent value="turf-details" className="space-y-6">
@@ -710,16 +740,16 @@ function TurfOwnerDashboard() {
               value={formData.sportsOffered}
               customSport={formData.customSport}
               onSportsChange={(sports) =>
-                setFormData({
-                  ...formData,
+                setFormData((prev) => ({
+                  ...prev,
                   sportsOffered: sports,
-                })
+                }))
               }
               onCustomSportChange={(sport) =>
-                setFormData({
-                  ...formData,
+                setFormData((prev) => ({
+                  ...prev,
                   customSport: sport,
-                })
+                }))
               }
             />
 
@@ -744,6 +774,15 @@ function TurfOwnerDashboard() {
                 })
               }
             />
+
+            <div className="flex justify-between pt-4">
+              <Button variant="outline" onClick={() => setActiveTab("business-info")}>
+                Previous Step
+              </Button>
+              <Button onClick={() => setActiveTab("scheduling")}>
+                Next Step
+              </Button>
+            </div>
           </TabsContent>
 
           <TabsContent value="scheduling" className="space-y-6">
@@ -757,6 +796,15 @@ function TurfOwnerDashboard() {
                 })
               }
             />
+
+            <div className="flex justify-between pt-4">
+              <Button variant="outline" onClick={() => setActiveTab("turf-details")}>
+                Previous Step
+              </Button>
+              <Button onClick={() => setActiveTab("location")}>
+                Next Step
+              </Button>
+            </div>
           </TabsContent>
 
           <TabsContent value="location" className="space-y-6">
@@ -889,19 +937,25 @@ function TurfOwnerDashboard() {
                 }));
               }}
             />
+
+            <div className="flex justify-between pt-4 pb-8 border-b border-gray-200">
+              <Button variant="outline" onClick={() => setActiveTab("scheduling")}>
+                Previous Step
+              </Button>
+            </div>
           </TabsContent>
         </Tabs>
 
-        {/* Save Button */}
-        <div className="flex justify-end pt-6">
+        {/* Global Save Button always visible at bottom */}
+        <div className="flex justify-end pt-6 sticky bottom-4 z-10 bg-gray-50/90 backdrop-blur-sm p-4 rounded-lg shadow-sm border border-gray-100">
           <Button
             onClick={handleSave}
             disabled={saving}
             size="lg"
-            className="bg-green-500 hover:bg-green-600 min-w-[120px]"
+            className="bg-green-600 hover:bg-green-700 min-w-[150px] shadow-md"
           >
-            <Save className="h-4 w-4 mr-2" />
-            {saving ? "Saving..." : "Save Changes"}
+            <Save className="h-5 w-5 mr-2" />
+            {saving ? "Saving Submit..." : isEditMode ? "Update Turf Details" : "Submit Turf Details"}
           </Button>
         </div>
       </div>

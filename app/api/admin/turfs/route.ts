@@ -42,10 +42,60 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden: Admins only' }, { status: 403 });
     }
 
-    // 3. Fetch all active turfs populated with Owner details
-    const turfs = await Turf.find({ isActive: true })
-        .populate('ownerId', 'name email phone businessName verificationStatus subscriptionPlan')
-        .sort({ createdAt: -1 });
+    // 3. Fetch all active turfs
+    let turfs = await Turf.find({ isActive: true })
+        .sort({ createdAt: -1 })
+        .lean();
+
+    // 4. Manually populate owner details to avoid populate type mismatch issues
+    const userIds = turfs.map((t: any) => t.ownerId);
+    const users = await User.find({ _id: { $in: userIds } }).lean();
+    
+    // Also fetch by ownerUid as fallback for older records
+    const uids = turfs.map((t: any) => t.ownerUid);
+    const usersByUid = await User.find({ uid: { $in: uids } }).lean();
+
+    // Attach users back to turfs
+    turfs = turfs.map((turf: any) => {
+      let owner = users.find((u: any) => u._id.toString() === turf.ownerId?.toString());
+      if (!owner && turf.ownerUid) {
+        owner = usersByUid.find((u: any) => u.uid === turf.ownerUid);
+      }
+      return {
+        ...turf,
+        ownerId: owner || null
+      };
+    });
+
+    // 5. Get aggregate bookings data for these turfs
+    const turfIds = turfs.map((t: any) => t._id);
+    const Booking = (await import('@/app/models/Booking')).default;
+    
+    const bookingsAggregation = await Booking.aggregate([
+      {
+        $match: {
+          turfId: { $in: turfIds },
+          status: 'confirmed'
+        }
+      },
+      {
+        $group: {
+          _id: '$turfId',
+          totalBookings: { $sum: 1 },
+          totalRevenue: { $sum: '$totalAmount' }
+        }
+      }
+    ]);
+
+    // Map the aggregations back to the turfs
+    turfs = turfs.map((turf: any) => {
+      const stats = bookingsAggregation.find(b => b._id.toString() === turf._id.toString()) || { totalBookings: 0, totalRevenue: 0 };
+      return {
+        ...turf,
+        totalBookings: stats.totalBookings,
+        totalRevenue: stats.totalRevenue
+      };
+    });
 
     return NextResponse.json({
       success: true,

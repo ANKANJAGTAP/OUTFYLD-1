@@ -84,6 +84,12 @@ export default function RoleRedirect({ children }: RoleRedirectProps) {
         return;
       }
 
+      // Restrict admin to ONLY access admin pages
+      if (user.role === 'admin' && !pathname.startsWith('/admin')) {
+        router.push('/admin/dashboard');
+        return;
+      }
+
       // Prevent owners from accessing customer-facing browse/book features
       const customerOnlyPublicRoutes = ['/browse', '/book'];
       if (customerOnlyPublicRoutes.some(route => pathname.startsWith(route)) && user.role === 'owner') {

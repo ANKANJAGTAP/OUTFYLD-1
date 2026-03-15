@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import {
   Table,
   TableBody,
@@ -31,7 +32,13 @@ interface Turf {
     businessName: string;
     subscriptionPlan?: string;
   };
+  contactInfo?: {
+    ownerName?: string;
+    businessName?: string;
+  };
   createdAt: string;
+  totalBookings?: number;
+  totalRevenue?: number;
 }
 
 interface AnalyticsData {
@@ -47,6 +54,8 @@ export default function AdminDashboard() {
   const router = useRouter();
   
   const [turfs, setTurfs] = useState<Turf[]>([]);
+  const [selectedTurf, setSelectedTurf] = useState<Turf | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   
   const [loading, setLoading] = useState(true);
@@ -136,12 +145,6 @@ export default function AdminDashboard() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Link href="/admin/settings">
-              <Button variant="outline" size="sm" className="text-xs sm:text-sm">
-                <IndianRupee className="w-4 h-4 mr-1 sm:mr-2" />
-                <span className="hidden sm:inline">Payment </span>QR
-              </Button>
-            </Link>
             <Link href="/admin/manage-admins">
               <Button variant="outline" size="sm" className="text-xs sm:text-sm">
                 <Shield className="w-4 h-4 mr-1 sm:mr-2" />
@@ -158,12 +161,6 @@ export default function AdminDashboard() {
               <Button variant="outline" size="sm" className="text-xs sm:text-sm">
                 <FileText className="w-4 h-4 mr-1 sm:mr-2" />
                 <span className="hidden sm:inline">View </span>Applications
-              </Button>
-            </Link>
-            <Link href="/">
-              <Button variant="outline" size="sm" className="text-xs sm:text-sm">
-                <User className="w-4 h-4 mr-1 sm:mr-2" />
-                <span className="hidden sm:inline">Go to </span>Home
               </Button>
             </Link>
             <Button 
@@ -257,37 +254,34 @@ export default function AdminDashboard() {
                   <TableRow>
                     <TableHead>Turf Name</TableHead>
                     <TableHead>Location</TableHead>
-                    <TableHead>Pricing</TableHead>
-                    <TableHead>Owner Name</TableHead>
-                    <TableHead>Owner Plan</TableHead>
-                    <TableHead>Added On</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>Owner</TableHead>
+                    <TableHead>Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {turfs.map((turf) => (
                     <TableRow key={turf._id}>
-                      <TableCell className="font-medium text-blue-600 hover:underline cursor-pointer" onClick={() => router.push(`/turf/${turf._id}`)}>
+                      <TableCell className="font-medium">
                          {turf.name}
                       </TableCell>
                       <TableCell>{turf.location?.city || '-'}, {turf.location?.state || '-'}</TableCell>
-                      <TableCell>₹{turf.pricing}/hr</TableCell>
                       <TableCell>
                           <div>
-                            <p className="text-sm font-medium">{turf.ownerId?.name}</p>
-                            <p className="text-xs text-gray-500">{turf.ownerId?.businessName}</p>
+                            <p className="text-sm font-medium">{turf.contactInfo?.ownerName || turf.ownerId?.name || turf.ownerId?.email || 'Unknown Owner'}</p>
+                            <p className="text-xs text-gray-500">{turf.contactInfo?.businessName || turf.ownerId?.businessName || ''}</p>
                           </div>
                       </TableCell>
                       <TableCell>
-                        {turf.ownerId?.subscriptionPlan ? (
-                          <Badge variant={turf.ownerId.subscriptionPlan === 'premium' || turf.ownerId.subscriptionPlan === 'pro' ? 'default' : 'secondary'} className="text-xs">
-                            {turf.ownerId.subscriptionPlan === 'premium' || turf.ownerId.subscriptionPlan === 'pro' ? 'Premium' : 'Basic'}
-                          </Badge>
-                        ) : '-'}
-                      </TableCell>
-                      <TableCell>{turf.createdAt ? new Date(turf.createdAt).toLocaleDateString() : '-'}</TableCell>
-                      <TableCell>
-                         <Badge variant="outline" className="bg-green-50 text-green-700">Online</Badge>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => {
+                            setSelectedTurf(turf);
+                            setIsModalOpen(true);
+                          }}
+                        >
+                          View More
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -298,6 +292,68 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
+        {/* View More Modal */}
+        {selectedTurf && (
+          <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+            <DialogContent className="max-w-2xl bg-white shadow-xl rounded-lg p-6">
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-bold text-gray-800">{selectedTurf.name}</DialogTitle>
+                <DialogDescription className="text-gray-500">Detailed Turf Information</DialogDescription>
+              </DialogHeader>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-700 border-b pb-2">Basic Info</h3>
+                  <div>
+                    <p className="text-sm text-gray-500">Location</p>
+                    <p className="font-medium text-gray-800">{selectedTurf.location?.city || '-'}, {selectedTurf.location?.state || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Pricing</p>
+                    <p className="font-medium text-gray-800">₹{selectedTurf.pricing || 0} / hr</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Registered On</p>
+                    <p className="font-medium text-gray-800">{selectedTurf.createdAt ? new Date(selectedTurf.createdAt).toLocaleDateString() : '-'}</p>
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-700 border-b pb-2">Owner Info</h3>
+                  <div>
+                    <p className="text-sm text-gray-500">Owner Name</p>
+                    <p className="font-medium text-gray-800">{selectedTurf.contactInfo?.ownerName || selectedTurf.ownerId?.name || selectedTurf.ownerId?.email || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Business Name</p>
+                    <p className="font-medium text-gray-800">{selectedTurf.contactInfo?.businessName || selectedTurf.ownerId?.businessName || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Subscription Plan</p>
+                    <p className="font-medium text-gray-800 capitalize">{selectedTurf.ownerId?.subscriptionPlan || 'Basic'}</p>
+                  </div>
+                </div>
+
+                <div className="md:col-span-2 space-y-4 mt-2">
+                  <h3 className="text-lg font-semibold text-gray-700 border-b pb-2">Analytics</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                      <p className="text-sm text-blue-600 font-medium">Total Bookings</p>
+                      <p className="text-2xl font-bold text-blue-900">{selectedTurf.totalBookings || 0}</p>
+                    </div>
+                    <div className="bg-green-50 p-4 rounded-lg border border-green-100">
+                      <p className="text-sm text-green-600 font-medium">Total Revenue</p>
+                      <p className="text-2xl font-bold text-green-900">₹{selectedTurf.totalRevenue?.toLocaleString('en-IN') || 0}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-6 flex justify-end">
+                <Button variant="outline" onClick={() => setIsModalOpen(false)}>Close</Button>
+                <Button className="ml-2" onClick={() => router.push(`/turf/${selectedTurf._id}`)}>Go to Turf Page</Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
     </div>
   );

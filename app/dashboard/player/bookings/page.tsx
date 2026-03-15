@@ -42,8 +42,8 @@ function PlayerBookings() {
   const recentBookings = bookings.map(booking => ({
     id: booking._id,
     turfId: booking.turfId?._id,
-    turfName: booking.turfId?.businessName || 'Unknown Turf',
-    location: booking.turfId?.location?.address || 'Location unavailable',
+    turfName: booking.turfId?.name || booking.turfId?.businessName || booking.turfId?.contactInfo?.businessName || 'Unknown Turf',
+    location: booking.turfId?.location?.address || booking.turfId?.location?.city || 'Location unavailable',
     date: booking.slot?.date,
     time: `${booking.slot?.startTime} - ${booking.slot?.endTime}`,
     status: booking.status === 'confirmed' && new Date(booking.slot?.date) < new Date() ? 'completed' : 
@@ -102,7 +102,16 @@ function PlayerBookings() {
                       </p>
                     </div>
                     <div className="text-left md:text-right w-full md:w-auto flex flex-row md:flex-col items-center md:items-end justify-between md:justify-start">
-                      <p className="text-sm font-medium text-gray-900 bg-gray-100 px-3 py-1 rounded-full">{booking.sport}</p>
+                      {booking.status === 'completed' ? (
+                        <Link href={`/feedback/${booking.id}`}>
+                          <Button size="sm" variant="outline" className="font-medium text-green-700 hover:text-green-800 hover:bg-green-50 border-green-200">
+                            Give Feedback/Review
+                          </Button>
+                        </Link>
+                      ) : (
+                        <p className="text-sm font-medium text-gray-900 bg-gray-100 px-3 py-1 rounded-full">{booking.sport}</p>
+                      )}
+                      
                       {booking.status === 'upcoming' && (
                         <Link href={`/book/${booking.turfId}`} className="mt-0 md:mt-3">
                           <Button size="sm" variant="outline" className="border-green-200 hover:bg-green-50 text-green-700">
@@ -112,9 +121,11 @@ function PlayerBookings() {
                       )}
                       
                       {booking.status === 'completed' && (
-                        <Button size="sm" variant="outline" className="mt-0 md:mt-3 border-gray-200">
-                           Book Again
-                        </Button>
+                        <Link href={`/book/${booking.turfId}`} className="mt-0 md:mt-3">
+                          <Button size="sm" variant="outline" className="border-gray-200">
+                             Book Again
+                          </Button>
+                        </Link>
                       )}
                     </div>
                   </div>

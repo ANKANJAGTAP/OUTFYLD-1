@@ -42,7 +42,14 @@ export default function BrowsePage() {
   const [browseData, setBrowseData] = useState<BrowseData | null>(null);
 
   // ⭐ Geolocation for "Nearest" sort
-  const { location: userLocation, error: locationError, loading: locationLoading, requestLocation } = useGeolocation();
+  const {
+    location: userLocation,
+    error: locationError,
+    loading: locationLoading,
+    permissionState,
+    isDenied: isLocationDenied,
+    requestLocation
+  } = useGeolocation();
 
   // ⭐ When user selects "Nearest" sort, request location
   const handleSortChange = (value: string) => {
@@ -75,7 +82,7 @@ export default function BrowsePage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
         
         {/* Header Section */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 border-b border-gray-200 pb-4">
+        <div className="sticky top-[72px] lg:top-[80px] z-30 bg-gradient-to-br from-gray-50 to-green-50/95 backdrop-blur-md pt-4 pb-4 border-b border-gray-200 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center">
           <div>
             <h2 className="text-xl md:text-2xl font-bold text-gray-900">Browse Turfs</h2>
             <p className="text-sm text-gray-500 mt-1">
@@ -123,21 +130,23 @@ export default function BrowsePage() {
               </div>
             )}
             
-            {locationError && (
-              <div className="flex items-center justify-between text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2">
-                <span>⚠️ {locationError}</span>
+            {isLocationDenied && (
+              <div className="flex items-center justify-between text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-4 py-2">
                 <div className="flex items-center gap-2">
-                  <button onClick={requestLocation} className="underline font-medium hover:text-amber-900">
-                    Retry
+                  <span>⚠️ Location access denied. Cannot sort by nearest.</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button onClick={requestLocation} className="underline font-medium hover:text-red-900 transition-colors">
+                    Retry Setup
                   </button>
-                  <button onClick={() => setSortBy('newest')} className="text-gray-500 hover:text-gray-700">
+                  <button onClick={() => setSortBy('newest')} className="text-gray-500 hover:text-gray-800 transition-colors" title="Clear sort">
                     <X className="h-4 w-4" />
                   </button>
                 </div>
               </div>
             )}
             
-            {userLocation && !locationLoading && !locationError && (
+            {userLocation && !locationLoading && !isLocationDenied && !locationError && (
               <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-4 py-2">
                 <MapPin className="h-4 w-4" />
                 Showing turfs nearest to your location
@@ -146,15 +155,15 @@ export default function BrowsePage() {
           </div>
         )}
 
-        <div className="grid lg:grid-cols-4 gap-4 md:gap-6 lg:gap-8">
-          <div className="lg:col-span-1 border-r lg:border-r-0 lg:border-gray-200 lg:pr-6">
+        <div className="grid lg:grid-cols-4 gap-4 md:gap-6 lg:gap-8 relative">
+          <div className="lg:col-span-1 self-start sticky top-[150px] max-h-[calc(100vh-160px)] overflow-y-auto lg:border-r lg:border-gray-200 lg:pr-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pb-4">
             <FilterSidebar 
-              filters={filters}
-              onFiltersChange={setFilters}
-              availableCities={browseData?.filters.cities || []}
-              availableSports={browseData?.filters.sports || []}
-              priceRange={browseData?.filters.priceRange || { min: 0, max: 10000 }}
-            />
+                filters={filters}
+                onFiltersChange={setFilters}
+                availableCities={browseData?.filters.cities || []}
+                availableSports={browseData?.filters.sports || []}
+                priceRange={browseData?.filters.priceRange || { min: 0, max: 10000 }}
+              />
           </div>
           
           <div className="lg:col-span-3">

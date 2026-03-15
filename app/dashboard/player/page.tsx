@@ -57,24 +57,40 @@ function PlayerDashboard() {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/api/bookings/customer/${user.uid}?limit=5`);
+        const [bookingsResponse, loyaltyResponse] = await Promise.all([
+          fetch(`/api/bookings/customer/${user.uid}?limit=5`),
+          fetch(`/api/loyalty/customer/${user.uid}`)
+        ]);
         
-        if (response.ok) {
-          const data = await response.json();
-          setBookings(data.bookings || []);
-          
-          // Calculate stats based on real data
-          const completedBookings = data.bookings?.filter((b: any) => 
-            b.status === 'completed' || b.paymentStatus === 'paid'
-          ) || [];
-          
-          setPlayerStats({
-            totalBookings: data.pagination?.totalItems || 0,
-            favoriteSpots: 0, // No favorites feature yet
-            pointsEarned: completedBookings.length * 10, // Example logic for points
-            gamesPlayed: completedBookings.length
-          });
+        let fetchedBookings = [];
+        let totalBookings = 0;
+        let points = 0;
+
+        if (bookingsResponse.ok) {
+          const data = await bookingsResponse.json();
+          fetchedBookings = data.bookings || [];
+          totalBookings = data.pagination?.totalItems || 0;
+          setBookings(fetchedBookings);
         }
+
+        if (loyaltyResponse.ok) {
+          const loyaltyData = await loyaltyResponse.json();
+          if (loyaltyData.success && loyaltyData.data) {
+            points = loyaltyData.data.currentPoints || 0;
+          }
+        }
+        
+        // Calculate stats based on real data
+        const completedBookings = fetchedBookings.filter((b: any) => 
+          b.status === 'completed' || b.paymentStatus === 'paid'
+        );
+        
+        setPlayerStats({
+          totalBookings: totalBookings,
+          favoriteSpots: 0, // No favorites feature yet
+          pointsEarned: points,
+          gamesPlayed: completedBookings.length
+        });
       } catch (error) {
         console.error('Failed to fetch player dashboard data:', error);
       } finally {
@@ -88,8 +104,8 @@ function PlayerDashboard() {
   const recentBookings = bookings.slice(0, 3).map((booking: any) => ({
     id: booking._id,
     turfId: booking.turfId?._id,
-    turfName: booking.turfId?.businessName || 'Unknown Turf',
-    location: booking.turfId?.location?.address || 'Location unavailable',
+    turfName: booking.turfId?.name || booking.turfId?.businessName || booking.turfId?.contactInfo?.businessName || 'Unknown Turf',
+    location: booking.turfId?.location?.address || booking.turfId?.location?.city || 'Location unavailable',
     date: booking.slot?.date,
     time: `${booking.slot?.startTime} - ${booking.slot?.endTime}`,
     status: booking.status === 'confirmed' && new Date(booking.slot?.date) < new Date() ? 'completed' : 
@@ -228,13 +244,26 @@ function PlayerDashboard() {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-medium text-gray-900">{booking.sport}</p>
-                      {booking.status === 'upcoming' && (
-                        <Link href={`/book/${booking.turfId}`}>
-                          <Button size="sm" variant="outline" className="mt-2">
-                            View Details
+                      {booking.status === 'completed' && (
+                        <Link href={`/feedback/${booking.id}`}>
+                          <Button size="sm" variant="outline" className="mb-2 w-full font-medium text-green-700 hover:text-green-800 hover:bg-green-50 border-green-200">
+                            Give Feedback/Review
                           </Button>
                         </Link>
+                      )}
+                      
+                      {booking.status !== 'completed' && (
+                        <p className="text-sm font-medium text-gray-900 bg-gray-100 px-3 py-1 rounded-full inline-block">{booking.sport}</p>
+                      )}
+                      
+                      {booking.status === 'upcoming' && (
+                        <div className="mt-2 block">
+                          <Link href={`/book/${booking.turfId}`}>
+                            <Button size="sm" variant="outline" className="w-full">
+                              View Details
+                            </Button>
+                          </Link>
+                        </div>
                       )}
                     </div>
                   </div>
