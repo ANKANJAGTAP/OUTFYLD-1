@@ -15,7 +15,7 @@ import { Mail, Phone, MapPin, Users, Star, Clock, Activity } from 'lucide-react'
 
 export default function AboutPage() {
   const stats = [
-    { id: 1, label: 'Turfs listed', value: '142' },
+    { id: 1, label: 'Platform listed', value: '142' },
     { id: 2, label: 'Bookings/month', value: '4.1k' },
     { id: 3, label: 'Avg. rating', value: '4.6 ⭐' },
     { id: 4, label: 'Cities', value: '12' }
