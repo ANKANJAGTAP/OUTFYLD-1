@@ -39,6 +39,12 @@ interface IBooking extends Document {
   appliedLoyaltyPoints?: number;
   loyaltyDiscountAmount?: number;
   loyaltyPointsEarned?: number;
+
+  // Dynamic pricing / promo attributes
+  dynamicDiscountPercent?: number;
+  dynamicDiscountAmount?: number;
+  promoCode?: string;
+  promoDiscountAmount?: number;
   
   // Legacy field — kept for backward compatibility with old bookings
   paymentScreenshot?: {
@@ -153,6 +159,12 @@ const BookingSchema = new mongoose.Schema({
   appliedLoyaltyPoints: { type: Number, min: 0, default: 0 },
   loyaltyDiscountAmount: { type: Number, min: 0, default: 0 },
   loyaltyPointsEarned: { type: Number, min: 0, default: 0 },
+
+  // Dynamic pricing / promo attributes
+  dynamicDiscountPercent: { type: Number, min: 0, default: 0 },
+  dynamicDiscountAmount: { type: Number, min: 0, default: 0 },
+  promoCode: { type: String },
+  promoDiscountAmount: { type: Number, min: 0, default: 0 },
   
   // Legacy field — kept for backward compatibility with old bookings
   paymentScreenshot: {

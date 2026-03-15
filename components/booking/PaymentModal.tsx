@@ -32,6 +32,10 @@ interface PaymentModalProps {
     ownerId: string;
     businessName: string;
     pricing: number;
+    offerPrice?: number;
+    discountPercent?: number;
+    discountAmount?: number;
+    offerLabel?: string;
     upiQrCode?: {
       url: string;
       public_id: string;
@@ -44,6 +48,8 @@ interface PaymentModalProps {
     endTime: string;
   }>;
   totalAmount: number;
+  promoCode?: string;
+  promoDiscountAmount?: number;
   onSuccess: () => void;
   paymentTimer?: number;
 }
@@ -54,6 +60,8 @@ export default function PaymentModal({
   turf,
   selectedSlots,
   totalAmount,
+  promoCode: appliedPromoCode,
+  promoDiscountAmount = 0,
   onSuccess,
   paymentTimer = 0
 }: PaymentModalProps) {
@@ -95,9 +103,18 @@ export default function PaymentModal({
     }
   }, [isOpen, user]);
 
-  const rawDiscount = Math.floor(loyaltyPoints / 10);
+  // Cap loyalty at 500 points max (₹50)
+  const cappedLoyaltyPoints = Math.min(loyaltyPoints, 500);
+  const rawDiscount = Math.floor(cappedLoyaltyPoints / 10);
   const loyaltyDiscount = useLoyaltyPoints ? Math.min(rawDiscount, totalAmount) : 0;
-  const finalAmountToPay = totalAmount - loyaltyDiscount;
+
+  // Calculate dynamic discount (auto-applied if no promo)
+  const hasDynamicDiscount = !appliedPromoCode && (turf.discountPercent ?? 0) > 0;
+  const dynamicDiscountTotal = hasDynamicDiscount ? (turf.discountAmount ?? 0) * selectedSlots.length : 0;
+  const promoTotal = appliedPromoCode ? promoDiscountAmount : 0;
+  const activeDiscount = appliedPromoCode ? promoTotal : dynamicDiscountTotal;
+
+  const finalAmountToPay = Math.max(0, totalAmount - activeDiscount - loyaltyDiscount);
 
   const handlePayNow = async () => {
     if (!user || !razorpayLoaded) {
@@ -126,6 +143,7 @@ export default function PaymentModal({
           slots: slotsData,
           totalAmount,
           useLoyaltyPoints,
+          promoCode: appliedPromoCode || undefined,
         }),
       });
 
@@ -305,9 +323,9 @@ export default function PaymentModal({
               {loyaltyPoints > 0 && (
                 <div className="flex items-center justify-between py-2 border-b border-gray-100">
                   <div className="flex flex-col">
-                    <span className="text-sm font-medium text-purple-700">Use Loyalty Points</span>
+                  <span className="text-sm font-medium text-purple-700">Use Loyalty Points</span>
                     <span className="text-xs text-gray-500">
-                      Balance: {loyaltyPoints} pts (₹{rawDiscount} value)
+                      Balance: {loyaltyPoints} pts{loyaltyPoints > 500 ? ' (max 500 usable)' : ''} (₹{rawDiscount} value)
                     </span>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
@@ -325,9 +343,21 @@ export default function PaymentModal({
 
               <div className="space-y-1">
                 <div className="flex justify-between text-sm text-gray-600">
-                  <span>Subtotal:</span>
+                  <span>Subtotal ({selectedSlots.length} × ₹{turf.pricing}):</span>
                   <span>₹{totalAmount}</span>
                 </div>
+                {hasDynamicDiscount && (
+                  <div className="flex justify-between text-sm text-green-600">
+                    <span>🔥 Dynamic Discount ({turf.discountPercent}% OFF):</span>
+                    <span>-₹{dynamicDiscountTotal}</span>
+                  </div>
+                )}
+                {appliedPromoCode && (
+                  <div className="flex justify-between text-sm text-green-600">
+                    <span>Promo ({appliedPromoCode}):</span>
+                    <span>-₹{promoTotal}</span>
+                  </div>
+                )}
                 {useLoyaltyPoints && (
                   <div className="flex justify-between text-sm text-purple-600">
                     <span>Loyalty Discount:</span>

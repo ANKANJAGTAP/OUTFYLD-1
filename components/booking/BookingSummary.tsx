@@ -15,14 +15,12 @@ interface BookingSummaryProps {
     name: string;
     price: number;
     location: string;
+    offerPrice?: number;
+    discountPercent?: number;
+    discountAmount?: number;
   };
   selectedDate: Date;
   selectedSlots: string[];
-  /**
-   * Optional: If you already create a booking on server before upload,
-   * pass the bookingId here. If not provided, this component will
-   * simulate a local bookingId for demo purposes.
-   */
   bookingId?: string;
 }
 
@@ -34,12 +32,21 @@ export function BookingSummary({
 }: BookingSummaryProps) {
   const [promoCode, setPromoCode] = useState('');
   const [promoApplied, setPromoApplied] = useState(false);
+  const [promoError, setPromoError] = useState<string | null>(null);
+  const [promoChecking, setPromoChecking] = useState(false);
+
+  // Calculate per-slot price (use offer price when dynamic discount applies and no promo)
+  const hasDynamicDiscount = !promoApplied && (turf.discountPercent ?? 0) > 0;
+  const effectivePerSlotPrice = hasDynamicDiscount ? (turf.offerPrice ?? turf.price) : turf.price;
+  const dynamicDiscountPerSlot = hasDynamicDiscount ? (turf.discountAmount ?? 0) : 0;
 
   const basePrice = turf.price * selectedSlots.length;
-  const discount = promoApplied ? basePrice * 0.1 : 0; // 10% discount
+  const dynamicDiscount = dynamicDiscountPerSlot * selectedSlots.length;
+  const promoDiscount = promoApplied ? Math.min(100, basePrice) : 0; // WELCOME100 = flat ₹100
+  const activeDiscount = promoApplied ? promoDiscount : dynamicDiscount;
   const platformFee = selectedSlots.length > 0 ? 50 : 0;
-  const taxes = (basePrice - discount + platformFee) * 0.18; // 18% GST
-  const totalAmount = basePrice - discount + platformFee + taxes;
+  const taxes = (basePrice - activeDiscount + platformFee) * 0.18; // 18% GST
+  const totalAmount = Math.max(0, basePrice - activeDiscount + platformFee + taxes);
 
   // Payment & upload states
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
@@ -53,10 +60,30 @@ export function BookingSummary({
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const handlePromoCode = () => {
-    if (promoCode.toLowerCase() === 'first10' && !promoApplied) {
-      setPromoApplied(true);
+  const handlePromoCode = async () => {
+    if (!promoCode.trim()) return;
+    setPromoError(null);
+
+    if (promoCode.toUpperCase() !== 'WELCOME100') {
+      setPromoError('Invalid promo code');
+      return;
     }
+
+    // WELCOME100 applied client-side — server will re-validate at booking time
+    setPromoChecking(true);
+    try {
+      // Simple client-side apply — actual validation happens in /api/bookings/create
+      setPromoApplied(true);
+      toast.success('WELCOME100 applied! ₹100 off your first booking.');
+    } finally {
+      setPromoChecking(false);
+    }
+  };
+
+  const handleRemovePromo = () => {
+    setPromoApplied(false);
+    setPromoCode('');
+    setPromoError(null);
   };
 
   const validateFile = (file: File) => {
@@ -228,10 +255,27 @@ export function BookingSummary({
                   <span>₹{basePrice}</span>
                 </div>
 
+                {/* Dynamic discount (auto-applied, mutually exclusive with promo) */}
+                {hasDynamicDiscount && (
+                  <div className="flex justify-between text-sm text-green-600">
+                    <span>🔥 Dynamic Discount ({turf.discountPercent}% OFF)</span>
+                    <span>-₹{dynamicDiscount.toFixed(2)}</span>
+                  </div>
+                )}
+
+                {/* Promo discount */}
                 {promoApplied && (
                   <div className="flex justify-between text-sm text-green-600">
-                    <span>Discount (FIRST10)</span>
-                    <span>-₹{discount.toFixed(2)}</span>
+                    <span className="flex items-center gap-1">
+                      Promo (WELCOME100)
+                      <button
+                        onClick={handleRemovePromo}
+                        className="text-xs text-red-500 underline ml-1"
+                      >
+                        Remove
+                      </button>
+                    </span>
+                    <span>-₹{promoDiscount.toFixed(2)}</span>
                   </div>
                 )}
 
@@ -260,25 +304,36 @@ export function BookingSummary({
                   <Tag className="h-4 w-4 mr-2" />
                   Promo Code
                 </Label>
+                {hasDynamicDiscount && !promoApplied && (
+                  <p className="text-xs text-amber-600">
+                    ⚠️ Applying a promo code will replace the current dynamic discount.
+                  </p>
+                )}
                 <div className="flex gap-2">
                   <Input
                     id="promo"
                     placeholder="Enter promo code"
                     value={promoCode}
-                    onChange={(e) => setPromoCode(e.target.value)}
+                    onChange={(e) => {
+                      setPromoCode(e.target.value.toUpperCase());
+                      setPromoError(null);
+                    }}
                     disabled={promoApplied}
                   />
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={handlePromoCode}
-                    disabled={promoApplied || !promoCode}
+                    disabled={promoApplied || !promoCode || promoChecking}
                   >
-                    {promoApplied ? 'Applied' : 'Apply'}
+                    {promoChecking ? '...' : promoApplied ? 'Applied' : 'Apply'}
                   </Button>
                 </div>
                 {promoApplied && (
-                  <p className="text-sm text-green-600">✓ 10% discount applied!</p>
+                  <p className="text-sm text-green-600">✓ ₹100 off applied! (verified at payment)</p>
+                )}
+                {promoError && (
+                  <p className="text-sm text-red-600">{promoError}</p>
                 )}
               </div>
 

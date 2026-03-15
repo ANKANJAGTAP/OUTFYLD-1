@@ -102,6 +102,7 @@ export async function POST(request: NextRequest) {
       amenities,
       availableSlots,
       pricing,
+      maxDiscount,
       location,
     } = body;
 
@@ -155,6 +156,7 @@ export async function POST(request: NextRequest) {
       amenities: amenities || [],
       availableSlots,
       pricing,
+      maxDiscount: maxDiscount || 0,
       location: location || {},
       geoLocation: body.geoLocation || undefined,
       locationMetadata: body.locationMetadata || undefined,
@@ -252,6 +254,7 @@ export async function PUT(request: NextRequest) {
       amenities,
       availableSlots,
       pricing,
+      maxDiscount,
       location,
     } = body;
 
@@ -292,6 +295,7 @@ export async function PUT(request: NextRequest) {
         amenities: amenities || [],
         availableSlots,
         pricing,
+        maxDiscount: maxDiscount || 0,
         location: location || {},
         geoLocation: body.geoLocation || existingTurf.geoLocation,
         locationMetadata: body.locationMetadata || existingTurf.locationMetadata,

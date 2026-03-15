@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectMongoDB } from "@/lib/mongodb";
 import Turf from "@/app/models/Turf";
+import { enrichTurfsWithOffers } from "@/lib/pricingEngine";
 
 export const dynamic = "force-dynamic";
 
@@ -117,7 +118,7 @@ export async function GET(request: NextRequest) {
       },
     ];
 
-    // ⭐ Projection stage (shared)
+    // ⭐ Projection stage (shared) — keep maxDiscount and availableSlots for pricing engine
     const projectStage = {
       $project: {
         owner: 0,
@@ -224,36 +225,50 @@ export async function GET(request: NextRequest) {
         isDistanceSort ? "(distance sort)" : "",
       );
 
+      // ⭐ Dynamic pricing: enrich turfs with offer data
+      const offerMap = await enrichTurfsWithOffers(turfs);
+
       // Transform data for frontend
-      const transformedTurfs = turfs.map((turf: any) => ({
-        _id: turf._id,
-        name: turf.name,
-        description: turf.description,
-        businessName: turf.contactInfo?.businessName || turf.name,
-        featuredImage: turf.featuredImage,
-        images: turf.images,
-        sportsOffered: turf.sportsOffered,
-        customSport: turf.customSport,
-        amenities: turf.amenities,
-        pricing: turf.pricing,
-        rating: turf.rating || 0,
-        reviewCount: turf.reviewCount || 0,
-        location: turf.location,
-        availableSlots: turf.availableSlots,
-        contactInfo: {
-          phone: turf.contactInfo?.phone,
-          businessName: turf.contactInfo?.businessName,
-        },
-        owner: turf.ownerId,
-        createdAt: turf.createdAt,
-        updatedAt: turf.updatedAt,
-        // ⭐ Include distance fields when sorting by distance
-        ...(isDistanceSort && {
-          distance: turf.distance,
-          distanceInKm: turf.distanceInKm,
-          distanceDisplay: turf.distanceDisplay,
-        }),
-      }));
+      const transformedTurfs = turfs.map((turf: any) => {
+        const turfId = turf._id.toString();
+        const offer = offerMap.get(turfId);
+
+        return {
+          _id: turf._id,
+          name: turf.name,
+          description: turf.description,
+          businessName: turf.contactInfo?.businessName || turf.name,
+          featuredImage: turf.featuredImage,
+          images: turf.images,
+          sportsOffered: turf.sportsOffered,
+          customSport: turf.customSport,
+          amenities: turf.amenities,
+          pricing: turf.pricing,
+          maxDiscount: turf.maxDiscount || 0,
+          // Dynamic pricing fields
+          offerPrice: offer?.offerPrice ?? turf.pricing,
+          discountPercent: offer?.discountPercent ?? 0,
+          discountAmount: offer?.discountAmount ?? 0,
+          offerLabel: offer?.offerLabel ?? '',
+          rating: turf.rating || 0,
+          reviewCount: turf.reviewCount || 0,
+          location: turf.location,
+          availableSlots: turf.availableSlots,
+          contactInfo: {
+            phone: turf.contactInfo?.phone,
+            businessName: turf.contactInfo?.businessName,
+          },
+          owner: turf.ownerId,
+          createdAt: turf.createdAt,
+          updatedAt: turf.updatedAt,
+          // ⭐ Include distance fields when sorting by distance
+          ...(isDistanceSort && {
+            distance: turf.distance,
+            distanceInKm: turf.distanceInKm,
+            distanceDisplay: turf.distanceDisplay,
+          }),
+        };
+      });
 
       // Get available filter options (independent of sort)
       const cities = await Turf.distinct("location.city", {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectMongoDB } from '@/lib/mongodb';
 import Turf from '@/app/models/Turf';
 import Booking from '@/app/models/Booking';
+import { calculateAllPeriodDiscounts, getBestDiscount } from '@/lib/pricingEngine';
 
 // Tell Next.js this route should be dynamic (not statically generated)
 export const dynamic = 'force-dynamic';
@@ -103,6 +104,10 @@ export async function GET(
     }) || [];
 
     // Prepare turf data with availability info and backward compatibility
+    // Calculate per-period dynamic pricing for this turf
+    const periodDiscounts = await calculateAllPeriodDiscounts(turf);
+    const bestOffer = getBestDiscount(periodDiscounts);
+
     const turfData = {
       _id: turf._id,
       ownerId: turf.ownerUid, // Use Firebase UID for booking API
@@ -111,18 +116,24 @@ export async function GET(
       email: turf.contactInfo?.email || '',
       phone: turf.contactInfo?.phone || '',
       description: turf.description,
-      about: turf.description, // Map description to about for backward compatibility
+      about: turf.description,
       images: turf.images,
-      turfImages: turf.images, // Map images to turfImages for backward compatibility
+      turfImages: turf.images,
       featuredImage: turf.featuredImage,
       sportsOffered: turf.sportsOffered,
       customSport: turf.customSport,
       amenities: turf.amenities,
       pricing: turf.pricing,
+      maxDiscount: turf.maxDiscount || 0,
+      // Best offer fields (for header display)
+      offerPrice: bestOffer.offerPrice,
+      discountPercent: bestOffer.discountPercent,
+      discountAmount: bestOffer.discountAmount,
+      offerLabel: bestOffer.discountPercent > 0 ? `Up to ${bestOffer.discountPercent}% OFF` : '',
       location: turf.location,
       contactInfo: turf.contactInfo,
       paymentInfo: turf.paymentInfo,
-      upiQrCode: turf.paymentInfo?.upiQrCode, // Map for backward compatibility
+      upiQrCode: turf.paymentInfo?.upiQrCode,
       availableSlots: slotsWithAvailability,
       isActive: turf.isActive,
       rating: turf.rating,
@@ -132,7 +143,8 @@ export async function GET(
     };
 
     return NextResponse.json({
-      turf: turfData
+      turf: turfData,
+      periodDiscounts,
     });
 
   } catch (error) {

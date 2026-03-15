@@ -50,6 +50,7 @@ interface ITurf extends Document {
     endTime: string;
   }>;
   pricing: number;
+  maxDiscount: number;
   location: {
     address?: string;
     city?: string;
@@ -161,6 +162,12 @@ const TurfSchema = new mongoose.Schema({
     type: Number,
     required: true,
     min: 0
+  },
+  maxDiscount: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 100
   },
   
   // Location details (text-based, for display)

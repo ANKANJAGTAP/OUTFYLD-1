@@ -57,6 +57,7 @@ interface OwnerFormData {
   about: string;
   availableSlots: TimeSlot[];
   pricing: number;
+  maxDiscount: number;
   location: {
     address: string;
     city: string;
@@ -101,6 +102,7 @@ function TurfOwnerDashboard() {
     about: "",
     availableSlots: [],
     pricing: 0,
+    maxDiscount: 0,
     location: {
       address: "",
       city: "",
@@ -175,6 +177,7 @@ function TurfOwnerDashboard() {
               about: turf.description || "",
               availableSlots: turf.availableSlots || [],
               pricing: turf.pricing || 0,
+              maxDiscount: turf.maxDiscount || 0,
               location: {
                 address: turf.location?.address || "",
                 city: turf.location?.city || "",
@@ -208,6 +211,7 @@ function TurfOwnerDashboard() {
               about: ownerData.about || "",
               availableSlots: ownerData.availableSlots || [],
               pricing: ownerData.pricing || 0,
+              maxDiscount: ownerData.maxDiscount || 0,
               location: {
                 address: ownerData.location?.address || "",
                 city: ownerData.location?.city || "",
@@ -327,6 +331,7 @@ function TurfOwnerDashboard() {
         amenities: formData.amenities,
         availableSlots: formData.availableSlots,
         pricing: formData.pricing,
+        maxDiscount: formData.maxDiscount,
         location: formData.location,
         geoLocation: formData.geoLocation,
         locationMetadata: formData.locationMetadata,
@@ -637,6 +642,32 @@ function TurfOwnerDashboard() {
                     }
                     className="max-w-sm"
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="maxDiscount" className="flex items-center gap-2">
+                    <IndianRupee className="h-4 w-4" />
+                    Maximum Discount % (Dynamic Pricing)
+                  </Label>
+                  <Input
+                    id="maxDiscount"
+                    type="number"
+                    placeholder="e.g. 20"
+                    min={0}
+                    max={100}
+                    value={formData.maxDiscount || ""}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        maxDiscount: Math.min(100, Math.max(0, Number(e.target.value))),
+                      })
+                    }
+                    className="max-w-sm"
+                  />
+                  <p className="text-xs text-gray-500">
+                    Set the maximum discount (0–100%) the platform can offer on your turf based on demand. 
+                    Higher discounts attract more bookings during low-demand periods.
+                  </p>
                 </div>
               </CardContent>
             </Card>

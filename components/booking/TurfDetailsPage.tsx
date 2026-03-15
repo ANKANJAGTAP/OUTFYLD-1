@@ -18,7 +18,8 @@ import {
   Phone,
   Mail,
   Loader2,
-  Lock
+  Lock,
+  Tag
 } from 'lucide-react';
 import Image from 'next/image';
 import { format, isSameDay, startOfWeek, endOfWeek, isWithinInterval, parseISO, addMonths, isAfter, startOfDay } from 'date-fns';
@@ -43,6 +44,11 @@ interface TurfData {
   amenities: string[];
   about: string;
   pricing: number;
+  offerPrice?: number;
+  discountPercent?: number;
+  discountAmount?: number;
+  offerLabel?: string;
+  maxDiscount?: number;
   location: {
     address?: string;
     city?: string;
@@ -96,6 +102,17 @@ const TurfDetailsPage = memo(function TurfDetailsPage({ turfId }: TurfDetailsPag
   const [reservationExpiry, setReservationExpiry] = useState<Date | null>(null);
   const [countdown, setCountdown] = useState<number>(0);
   const [paymentModalTimer, setPaymentModalTimer] = useState<number>(0);
+  const [promoCode, setPromoCode] = useState('');
+  const [promoApplied, setPromoApplied] = useState(false);
+  const [promoError, setPromoError] = useState<string | null>(null);
+  const [promoChecking, setPromoChecking] = useState(false);
+  const [periodDiscounts, setPeriodDiscounts] = useState<Record<string, {
+    originalPrice: number;
+    offerPrice: number;
+    discountPercent: number;
+    discountAmount: number;
+    offerLabel: string;
+  }> | null>(null);
   const [alertMessage, setAlertMessage] = useState<{
     type: 'error' | 'warning' | 'success' | 'info';
     message: string;
@@ -172,6 +189,9 @@ const TurfDetailsPage = memo(function TurfDetailsPage({ turfId }: TurfDetailsPag
 
       const data = await response.json();
       setTurf(data.turf);
+      if (data.periodDiscounts) {
+        setPeriodDiscounts(data.periodDiscounts);
+      }
     } catch (error) {
       console.error('Error fetching turf details:', error);
       setError('Failed to load turf details. Please try again.');
@@ -243,7 +263,7 @@ const TurfDetailsPage = memo(function TurfDetailsPage({ turfId }: TurfDetailsPag
     });
   }, []);
 
-  const handleDateSelect = useCallback((date: Date) => {
+  const handleDateSelect = useCallback(async (date: Date) => {
     const today = startOfDay(new Date());
     const maxBookingDate = addMonths(today, 1);
     
@@ -258,7 +278,21 @@ const TurfDetailsPage = memo(function TurfDetailsPage({ turfId }: TurfDetailsPag
     
     setSelectedDate(date);
     setSelectedSlots([]); // Clear selected slots when date changes
-  }, []);
+
+    // Fetch per-day pricing for the selected date
+    try {
+      const dateStr = format(date, 'yyyy-MM-dd');
+      const res = await fetch(`/api/turfs/${turfId}/pricing?date=${dateStr}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.periodDiscounts) {
+          setPeriodDiscounts(data.periodDiscounts);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch per-day pricing:', err);
+    }
+  }, [turfId]);
 
   const handleProceedToPayment = useCallback(async () => {
     if (selectedSlots.length === 0 || slotVerificationLoading) return;
@@ -440,6 +474,37 @@ const TurfDetailsPage = memo(function TurfDetailsPage({ turfId }: TurfDetailsPag
       a.startTime.localeCompare(b.startTime)
     );
   }, [selectedDate, turf, bookedSlots]);
+
+  // Helper: get the offer price for a slot based on its time period
+  const getSlotOfferPrice = useCallback((startTime: string): { offerPrice: number; discountPercent: number; discountAmount: number } => {
+    if (!turf || !periodDiscounts) return { offerPrice: turf?.pricing ?? 0, discountPercent: 0, discountAmount: 0 };
+    const hour = parseInt(startTime.split(':')[0], 10);
+    let period: string;
+    if (hour >= 6 && hour < 12) period = 'morning';
+    else if (hour >= 12 && hour < 18) period = 'afternoon';
+    else if (hour >= 18 && hour < 24) period = 'night';
+    else period = 'midnight';
+
+    const pd = periodDiscounts[period];
+    if (pd && pd.discountPercent > 0) {
+      return { offerPrice: pd.offerPrice, discountPercent: pd.discountPercent, discountAmount: pd.discountAmount };
+    }
+    return { offerPrice: turf.pricing, discountPercent: 0, discountAmount: 0 };
+  }, [turf, periodDiscounts]);
+
+  // Calculate per-slot total for selected slots
+  const selectedSlotsTotal = useMemo(() => {
+    if (!turf) return 0;
+    if (promoApplied) {
+      // WELCOME100: base price minus ₹100
+      const base = turf.pricing * selectedSlots.length;
+      return Math.max(0, base - Math.min(100, base));
+    }
+    return selectedSlots.reduce((sum, slot) => {
+      const { offerPrice } = getSlotOfferPrice(slot.startTime);
+      return sum + offerPrice;
+    }, 0);
+  }, [turf, selectedSlots, promoApplied, getSlotOfferPrice]);
 
   if (loading) {
     return (
@@ -636,13 +701,23 @@ const TurfDetailsPage = memo(function TurfDetailsPage({ turfId }: TurfDetailsPag
                                 }
                               }}
                             >
-                              {slot.startTime} - {slot.endTime}
-                              {slot.isBooked && (
-                                <span className="ml-1 text-xs">(Booked)</span>
-                              )}
-                              {isSlotSelected && (
-                                <span className="ml-1 text-xs">✓</span>
-                              )}
+                              <div className="flex flex-col items-center">
+                                <span>{slot.startTime} - {slot.endTime}</span>
+                                {(() => {
+                                  if (slot.isBooked) return <span className="text-xs">(Booked)</span>;
+                                  if (isSlotSelected) return <span className="text-xs">✓</span>;
+                                  const { offerPrice, discountPercent } = getSlotOfferPrice(slot.startTime);
+                                  if (discountPercent > 0 && turf) {
+                                    return (
+                                      <span className="text-xs mt-0.5">
+                                        <span className="line-through text-gray-400">₹{turf.pricing}</span>{' '}
+                                        <span className="text-green-600 font-bold">₹{offerPrice}</span>
+                                      </span>
+                                    );
+                                  }
+                                  return turf ? <span className="text-xs mt-0.5">₹{turf.pricing}</span> : null;
+                                })()}
+                              </div>
                             </Button>
                           );
                         })}
@@ -670,7 +745,15 @@ const TurfDetailsPage = memo(function TurfDetailsPage({ turfId }: TurfDetailsPag
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <span>Booking Summary</span>
-                  <span className="text-2xl font-bold text-green-600">₹{turf.pricing}</span>
+                  {turf.discountPercent && turf.discountPercent > 0 ? (
+                    <div className="text-right">
+                      <span className="text-sm line-through text-gray-400 mr-1">₹{turf.pricing}</span>
+                      <span className="text-2xl font-bold text-green-600">₹{turf.offerPrice}</span>
+                      <span className="block text-xs text-green-500 font-medium">{turf.offerLabel}</span>
+                    </div>
+                  ) : (
+                    <span className="text-2xl font-bold text-green-600">₹{turf.pricing}</span>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -683,14 +766,25 @@ const TurfDetailsPage = memo(function TurfDetailsPage({ turfId }: TurfDetailsPag
                       <div className="bg-gray-50 p-3 rounded-lg space-y-2">
                         <p className="font-medium">{format(selectedDate, 'EEEE, MMM d')}</p>
                         <div className="space-y-1">
-                          {selectedSlots.map((slot, index) => (
-                            <div key={index} className="flex justify-between items-center text-sm">
-                              <span className="text-gray-600">
-                                {slot.startTime} - {slot.endTime}
-                              </span>
-                              <span className="text-green-600 font-medium">₹{turf.pricing}</span>
-                            </div>
-                          ))}
+                          {selectedSlots.map((slot, index) => {
+                            const { offerPrice, discountPercent } = getSlotOfferPrice(slot.startTime);
+                            const showOffer = !promoApplied && discountPercent > 0;
+                            return (
+                              <div key={index} className="flex justify-between items-center text-sm">
+                                <span className="text-gray-600">
+                                  {slot.startTime} - {slot.endTime}
+                                </span>
+                                {showOffer ? (
+                                  <span>
+                                    <span className="line-through text-gray-400 text-xs mr-1">₹{turf.pricing}</span>
+                                    <span className="text-green-600 font-medium">₹{offerPrice}</span>
+                                  </span>
+                                ) : (
+                                  <span className="text-green-600 font-medium">₹{turf.pricing}</span>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                       
@@ -712,10 +806,103 @@ const TurfDetailsPage = memo(function TurfDetailsPage({ turfId }: TurfDetailsPag
                         </div>
                       )}
                       <Separator className="my-4" />
+
+                      {/* Dynamic discount summary (only if not using promo) */}
+                      {!promoApplied && selectedSlots.some(s => getSlotOfferPrice(s.startTime).discountPercent > 0) && (
+                        <div className="flex justify-between text-sm text-green-600 mb-1">
+                          <span>🔥 Dynamic Discount</span>
+                          <span>-₹{(turf.pricing * selectedSlots.length) - selectedSlotsTotal}</span>
+                        </div>
+                      )}
+
+                      {/* Promo discount display */}
+                      {promoApplied && (
+                        <div className="flex justify-between text-sm text-green-600 mb-1">
+                          <span className="flex items-center gap-1">
+                            WELCOME100
+                            <button
+                              onClick={() => {
+                                setPromoApplied(false);
+                                setPromoCode('');
+                              }}
+                              className="text-xs text-red-500 underline"
+                            >
+                              Remove
+                            </button>
+                          </span>
+                          <span>-₹{Math.min(100, turf.pricing * selectedSlots.length)}</span>
+                        </div>
+                      )}
+
+                      {/* Promo code input */}
+                      {!promoApplied && (
+                        <div className="mb-3">
+                          <label className="text-xs text-gray-500 flex items-center gap-1 mb-1">
+                            <Tag className="w-3 h-3" /> Have a promo code?
+                          </label>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              className="flex-1 text-sm border rounded px-2 py-1"
+                              placeholder="WELCOME100"
+                              value={promoCode}
+                              onChange={(e) => {
+                                setPromoCode(e.target.value.toUpperCase());
+                                setPromoError(null);
+                              }}
+                            />
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={async () => {
+                                if (!promoCode.trim()) return;
+                                if (promoCode.toUpperCase() !== 'WELCOME100') {
+                                  setPromoError('Invalid code');
+                                  return;
+                                }
+                                if (!user) {
+                                  setPromoError('Please log in to apply promo code');
+                                  return;
+                                }
+                                setPromoChecking(true);
+                                setPromoError(null);
+                                try {
+                                  const res = await fetch('/api/promo/validate', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ customerId: user.uid, promoCode: promoCode.toUpperCase() }),
+                                  });
+                                  const data = await res.json();
+                                  if (data.valid) {
+                                    setPromoApplied(true);
+                                    showAlert(data.message, 'success');
+                                  } else {
+                                    setPromoError(data.message);
+                                  }
+                                } catch {
+                                  setPromoError('Failed to validate. Try again.');
+                                } finally {
+                                  setPromoChecking(false);
+                                }
+                              }}
+                              disabled={!promoCode.trim() || promoChecking}
+                            >
+                              {promoChecking ? '...' : 'Apply'}
+                            </Button>
+                          </div>
+                          {promoError && <p className="text-xs text-red-500 mt-1">{promoError}</p>}
+                          {turf.discountPercent && turf.discountPercent > 0 && (
+                            <p className="text-xs text-amber-600 mt-1">
+                              ⚠️ Promo will replace the current dynamic discount.
+                            </p>
+                          )}
+                        </div>
+                      )}
+
                       <div className="flex justify-between font-medium">
                         <span>Total Amount:</span>
                         <span className="text-green-600 text-lg">
-                          ₹{(turf.pricing * selectedSlots.length).toLocaleString()}
+                          ₹{selectedSlotsTotal.toLocaleString()}
                         </span>
                       </div>
                     </div>
@@ -764,6 +951,8 @@ const TurfDetailsPage = memo(function TurfDetailsPage({ turfId }: TurfDetailsPag
           turf={turf}
           selectedSlots={selectedSlots.map(slot => ({ ...slot, date: selectedDate }))}
           totalAmount={turf.pricing * selectedSlots.length}
+          promoCode={promoApplied ? 'WELCOME100' : undefined}
+          promoDiscountAmount={promoApplied ? Math.min(100, turf.pricing * selectedSlots.length) : 0}
           onSuccess={handleBookingSuccess}
           paymentTimer={paymentModalTimer}
         />

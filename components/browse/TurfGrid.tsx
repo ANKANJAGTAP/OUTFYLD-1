@@ -19,6 +19,10 @@ interface TurfData {
   customSport?: string;
   amenities: string[];
   pricing: number;
+  offerPrice?: number;
+  discountPercent?: number;
+  discountAmount?: number;
+  offerLabel?: string;
   rating?: number;
   reviewCount?: number;
   location: {
@@ -148,9 +152,19 @@ export default function TurfGrid({
     return 'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=500&h=300&fit=crop';
   }, []);
 
-  const formatPrice = useCallback((price?: number) => {
-    if (!price || price <= 0) return 'Price on request';
-    return `₹${price}/hour`;
+  const formatPrice = useCallback((turf: TurfData) => {
+    const price = turf.pricing;
+    if (!price || price <= 0) return { display: 'Price on request', hasOffer: false };
+    
+    if (turf.discountPercent && turf.discountPercent > 0 && turf.offerPrice) {
+      return {
+        display: `₹${turf.offerPrice}/hr`,
+        original: `₹${price}/hr`,
+        hasOffer: true,
+        offerLabel: turf.offerLabel || `${turf.discountPercent}% OFF`,
+      };
+    }
+    return { display: `₹${price}/hr`, hasOffer: false };
   }, []);
 
   const getDisplayLocation = useCallback((turf: TurfData) => {
@@ -235,9 +249,27 @@ export default function TurfGrid({
                 />
                 {/* Price badge — top right */}
                 <div className="absolute top-2 right-2">
-                  <Badge variant="secondary" className="bg-white/90 text-black">
-                    {formatPrice(turf.pricing)}
-                  </Badge>
+                  {(() => {
+                    const priceInfo = formatPrice(turf);
+                    if (priceInfo.hasOffer) {
+                      return (
+                        <div className="flex flex-col items-end gap-1">
+                          <Badge className="bg-green-500/95 text-white text-xs font-bold">
+                            {priceInfo.offerLabel}
+                          </Badge>
+                          <Badge variant="secondary" className="bg-white/90 text-black">
+                            <span className="line-through text-gray-400 mr-1 text-xs">{priceInfo.original}</span>
+                            <span className="text-green-600 font-bold">{priceInfo.display}</span>
+                          </Badge>
+                        </div>
+                      );
+                    }
+                    return (
+                      <Badge variant="secondary" className="bg-white/90 text-black">
+                        {priceInfo.display}
+                      </Badge>
+                    );
+                  })()}
                 </div>
                 {/* ⭐ Distance badge — top left (only when sorting by distance) */}
                 {turf.distanceDisplay && (

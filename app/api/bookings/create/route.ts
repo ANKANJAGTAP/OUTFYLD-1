@@ -5,6 +5,13 @@ import User from '@/app/models/User';
 import Turf from '@/app/models/Turf';
 import SlotReservation from '@/app/models/SlotReservation';
 import { createOrder } from '@/lib/razorpay';
+import {
+  getTimePeriod,
+  getNextDates,
+  countAvailableSlotsInPeriod,
+  countBookingsAllPeriodsBatch,
+  calculateDynamicDiscount,
+} from '@/lib/pricingEngine';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,7 +25,7 @@ export async function POST(request: NextRequest) {
     await connectMongoDB();
 
     const body = await request.json();
-    const { customerId, ownerId, turfId, slots, totalAmount, useLoyaltyPoints } = body;
+    const { customerId, ownerId, turfId, slots, totalAmount, useLoyaltyPoints, promoCode } = body;
 
     // Validate required fields
     if (!customerId || !ownerId || !turfId || !slots || !totalAmount) {
@@ -144,18 +151,90 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Step 2.5: Calculate Loyalty Discount
+    // Step 2.5: Calculate discounts
     let loyaltyDiscountAmount = 0;
     let appliedLoyaltyPoints = 0;
+    let dynamicDiscountPercent = 0;
+    let dynamicDiscountAmount = 0;
+    let promoDiscountAmount = 0;
+    let appliedPromoCode = '';
     let finalAmount = parseFloat(totalAmount.toString());
 
-    if (useLoyaltyPoints && customer.loyaltyPoints > 0) {
-      // 10 points = 1 rupee
-      const calculatedDiscount = customer.loyaltyPoints / 10;
-      loyaltyDiscountAmount = Math.min(calculatedDiscount, finalAmount); // Cannot exceed total amount
-      appliedLoyaltyPoints = loyaltyDiscountAmount * 10;
-      finalAmount = finalAmount - loyaltyDiscountAmount;
+    // --- A) Promo code OR Dynamic discount (cannot stack) ---
+    if (promoCode && promoCode.toUpperCase() === 'WELCOME100') {
+      // WELCOME100: flat ₹100 off for first-time users only
+      const previousBookings = await Booking.countDocuments({
+        customerId: customer._id,
+        status: 'confirmed',
+      });
+
+      if (previousBookings > 0) {
+        return NextResponse.json(
+          { error: 'WELCOME100 is only for first-time users. You already have previous bookings.' },
+          { status: 400 }
+        );
+      }
+
+      promoDiscountAmount = Math.min(100, finalAmount); // ₹100 off, capped at total
+      appliedPromoCode = 'WELCOME100';
+      finalAmount -= promoDiscountAmount;
+    } else {
+      // Dynamic discount based on demand — per-slot calculation
+      if (turf.maxDiscount && turf.maxDiscount > 0) {
+        const dates = getNextDates(4); // 4-day demand window
+
+        // Fetch booking counts for all periods in one query
+        const allBookingCounts = await countBookingsAllPeriodsBatch([turfId], dates);
+        const periodCounts = allBookingCounts.get(turfId) || new Map();
+
+        // Calculate discount for each slot based on its time period
+        let totalDynamicDiscount = 0;
+        const perSlotDiscounts: Array<{ discountPercent: number; discountAmount: number }> = [];
+
+        for (const slot of slots) {
+          const slotHour = parseInt(slot.startTime.split(':')[0], 10);
+          const slotPeriod = getTimePeriod(slotHour);
+
+          const confirmedCount = periodCounts.get(slotPeriod) || 0;
+          const totalSlots = countAvailableSlotsInPeriod(
+            turf.availableSlots || [],
+            slotPeriod,
+            dates,
+          );
+
+          const discount = calculateDynamicDiscount(
+            turf.pricing,
+            turf.maxDiscount,
+            confirmedCount,
+            totalSlots,
+          );
+
+          perSlotDiscounts.push({
+            discountPercent: discount.discountPercent,
+            discountAmount: discount.discountAmount,
+          });
+          totalDynamicDiscount += discount.discountAmount;
+        }
+
+        dynamicDiscountPercent = perSlotDiscounts.length > 0
+          ? Math.max(...perSlotDiscounts.map(d => d.discountPercent))
+          : 0;
+        dynamicDiscountAmount = totalDynamicDiscount;
+        finalAmount -= dynamicDiscountAmount;
+      }
     }
+
+    // --- B) Loyalty points (stacks with either promo OR dynamic, capped at 500 points) ---
+    if (useLoyaltyPoints && customer.loyaltyPoints > 0) {
+      const maxLoyaltyPoints = Math.min(customer.loyaltyPoints, 500); // Cap at 500 points
+      const calculatedDiscount = maxLoyaltyPoints / 10; // 10 points = ₹1, max ₹50
+      loyaltyDiscountAmount = Math.min(calculatedDiscount, finalAmount); // Cannot exceed remaining
+      appliedLoyaltyPoints = Math.round(loyaltyDiscountAmount * 10);
+      finalAmount -= loyaltyDiscountAmount;
+    }
+
+    // Ensure finalAmount is never negative
+    finalAmount = Math.max(finalAmount, 0);
 
     // Reserve slots for this customer (10-minute window)
     const reservationExpiry = new Date(Date.now() + 10 * 60 * 1000);
@@ -223,6 +302,11 @@ export async function POST(request: NextRequest) {
         totalAmount: originalAmountPerSlot, // store the original price per slot
         appliedLoyaltyPoints: loyaltyPointsPerSlot,
         loyaltyDiscountAmount: discountPerSlot,
+        // Dynamic pricing / promo fields
+        dynamicDiscountPercent,
+        dynamicDiscountAmount: dynamicDiscountAmount / slots.length,
+        promoCode: appliedPromoCode || undefined,
+        promoDiscountAmount: promoDiscountAmount / slots.length,
         status: 'pending_payment',
         paymentStatus: 'pending',
         razorpayOrderId: order.id,
@@ -240,6 +324,10 @@ export async function POST(request: NextRequest) {
         originalAmount: parseFloat(totalAmount.toString()),
         loyaltyDiscountAmount,
         appliedLoyaltyPoints,
+        dynamicDiscountPercent,
+        dynamicDiscountAmount,
+        promoCode: appliedPromoCode || undefined,
+        promoDiscountAmount,
         currency: 'INR',
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         bookingIds: createdBookings.map((b) => b._id.toString()),
