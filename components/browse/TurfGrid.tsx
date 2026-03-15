@@ -14,10 +14,7 @@ interface TurfData {
   description: string;
   businessName: string;
   featuredImage?: string;
-  images?: Array<{
-    url: string;
-    public_id: string;
-  }>;
+  images?: Array<{ url: string; public_id: string }>;
   sportsOffered: string[];
   customSport?: string;
   amenities: string[];
@@ -30,22 +27,15 @@ interface TurfData {
     state?: string;
     pincode?: string;
   };
-  availableSlots?: Array<{
-    day: string;
-    startTime: string;
-    endTime: string;
-  }>;
-  contactInfo?: {
-    phone: string;
-    businessName: string;
-  };
-  owner?: {
-    _id: string;
-    name: string;
-    email: string;
-  };
+  availableSlots?: Array<{ day: string; startTime: string; endTime: string }>;
+  contactInfo?: { phone: string; businessName: string };
+  owner?: { _id: string; name: string; email: string };
   createdAt?: string;
   updatedAt?: string;
+  // ⭐ Distance fields (present only when sorted by distance)
+  distance?: number;
+  distanceInKm?: number;
+  distanceDisplay?: string;
 }
 
 interface TurfGridProps {
@@ -56,6 +46,9 @@ interface TurfGridProps {
   selectedLocation?: string;
   selectedRating?: number;
   sortBy?: string;
+  // ⭐ User location for distance sort
+  userLat?: number;
+  userLng?: number;
   availableCities?: string[];
   availableSports?: string[];
   onDataLoad?: (data: any) => void;
@@ -69,6 +62,8 @@ export default function TurfGrid({
   selectedLocation = '',
   selectedRating = 0,
   sortBy = 'newest',
+  userLat,
+  userLng,
   availableCities = [],
   availableSports = [],
   onDataLoad 
@@ -76,74 +71,57 @@ export default function TurfGrid({
   const [turfs, setTurfs] = useState<TurfData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [hasInitialLoad, setHasInitialLoad] = useState(false);
 
-  // Memoize search parameters to prevent unnecessary re-renders
   const searchParams = useMemo(() => {
     const params = new URLSearchParams({
       page: '1',
       limit: '12',
     });
 
-    if (searchQuery && searchQuery.trim()) {
-      params.append('search', searchQuery.trim());
-    }
-
-    if (selectedSports && selectedSports.length > 0) {
-      params.append('sports', selectedSports.join(','));
-    }
-
+    if (searchQuery && searchQuery.trim()) params.append('search', searchQuery.trim());
+    if (selectedSports && selectedSports.length > 0) params.append('sports', selectedSports.join(','));
     if (priceRange && priceRange.length === 2) {
       params.append('minPrice', priceRange[0].toString());
       params.append('maxPrice', priceRange[1].toString());
     }
+    if (selectedAmenities && selectedAmenities.length > 0) params.append('amenities', selectedAmenities.join(','));
+    if (selectedLocation && selectedLocation.trim()) params.append('city', selectedLocation.trim());
+    if (selectedRating && selectedRating > 0) params.append('minRating', selectedRating.toString());
+    if (sortBy) params.append('sortBy', sortBy);
 
-    if (selectedAmenities && selectedAmenities.length > 0) {
-      params.append('amenities', selectedAmenities.join(','));
-    }
-
-    if (selectedLocation && selectedLocation.trim()) {
-      params.append('city', selectedLocation.trim());
-    }
-
-    if (selectedRating && selectedRating > 0) {
-      params.append('minRating', selectedRating.toString());
-    }
-
-    if (sortBy) {
-      params.append('sortBy', sortBy);
+    // ⭐ Include lat/lng when sorting by distance
+    if (sortBy === 'distance' && userLat !== undefined && userLng !== undefined) {
+      params.append('lat', userLat.toString());
+      params.append('lng', userLng.toString());
     }
 
     return params.toString();
-  }, [searchQuery, selectedSports, priceRange, selectedAmenities, selectedLocation, selectedRating, sortBy]);
+  }, [searchQuery, selectedSports, priceRange, selectedAmenities, selectedLocation, selectedRating, sortBy, userLat, userLng]);
 
   const fetchTurfs = useCallback(async () => {
+    // ⭐ If sorting by distance but no location yet, don't fetch
+    if (sortBy === 'distance' && (userLat === undefined || userLng === undefined)) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
 
       const response = await fetch(`/api/turfs?${searchParams}`, {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         cache: 'no-store'
       });
       
-      if (!response.ok) {
-        throw new Error(`Failed to fetch turfs: ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`Failed to fetch turfs: ${response.status}`);
 
       const data = await response.json();
       
       if (data && data.turfs && Array.isArray(data.turfs)) {
         setTurfs(data.turfs);
-        
-        // Only call onDataLoad once on initial load and if it exists
-        if (onDataLoad && !hasInitialLoad) {
-          onDataLoad(data);
-          setHasInitialLoad(true);
-        }
+        if (onDataLoad) onDataLoad(data);
       } else {
         throw new Error('Invalid response format');
       }
@@ -154,9 +132,8 @@ export default function TurfGrid({
     } finally {
       setLoading(false);
     }
-  }, [searchParams, onDataLoad, hasInitialLoad]);
+  }, [searchParams, onDataLoad, sortBy, userLat, userLng]);
 
-  // Fetch turfs when search parameters change
   useEffect(() => {
     fetchTurfs();
   }, [fetchTurfs]);
@@ -166,12 +143,8 @@ export default function TurfGrid({
   }, []);
 
   const getImageUrl = useCallback((turf: TurfData) => {
-    if (turf.featuredImage) {
-      return turf.featuredImage;
-    }
-    if (turf.images && turf.images.length > 0) {
-      return turf.images[0].url;
-    }
+    if (turf.featuredImage) return turf.featuredImage;
+    if (turf.images && turf.images.length > 0) return turf.images[0].url;
     return 'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=500&h=300&fit=crop';
   }, []);
 
@@ -202,12 +175,23 @@ export default function TurfGrid({
     );
   }
 
+  // ⭐ Waiting for location (distance sort selected but location not available yet)
+  if (sortBy === 'distance' && userLat === undefined && userLng === undefined) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-3">
+          <MapPin className="h-10 w-10 text-gray-400 mx-auto" />
+          <p className="text-gray-600">Waiting for location access to show nearest turfs...</p>
+          <p className="text-sm text-gray-400">Please allow location access in your browser</p>
+        </div>
+      </div>
+    );
+  }
+
   if (error) {
     return (
       <Alert className="max-w-2xl mx-auto">
-        <AlertDescription>
-          {error}
-        </AlertDescription>
+        <AlertDescription>{error}</AlertDescription>
       </Alert>
     );
   }
@@ -219,7 +203,9 @@ export default function TurfGrid({
           <Users className="h-12 w-12 mx-auto text-gray-400 mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">No turfs found</h3>
           <p className="text-gray-500">
-            Try adjusting your search criteria or browse all available turfs.
+            {sortBy === 'distance'
+              ? 'No turfs with location data found. Try a different sort option.'
+              : 'Try adjusting your search criteria or browse all available turfs.'}
           </p>
         </div>
       </div>
@@ -230,6 +216,7 @@ export default function TurfGrid({
     <div className="space-y-6">
       <div className="text-sm text-gray-600">
         Showing {turfs.length} turfs
+        {sortBy === 'distance' && ' · Sorted by distance'}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -246,11 +233,20 @@ export default function TurfGrid({
                     target.src = 'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=500&h=300&fit=crop';
                   }}
                 />
+                {/* Price badge — top right */}
                 <div className="absolute top-2 right-2">
                   <Badge variant="secondary" className="bg-white/90 text-black">
                     {formatPrice(turf.pricing)}
                   </Badge>
                 </div>
+                {/* ⭐ Distance badge — top left (only when sorting by distance) */}
+                {turf.distanceDisplay && (
+                  <div className="absolute top-2 left-2">
+                    <Badge className="bg-blue-600/90 text-white text-xs font-medium">
+                      📍 {turf.distanceDisplay}
+                    </Badge>
+                  </div>
+                )}
               </div>
             </CardHeader>
             
@@ -260,7 +256,6 @@ export default function TurfGrid({
               </CardTitle>
               
               <div className="space-y-2 text-sm text-gray-600">
-                {/* Star Rating */}
                 <div className="mb-2">
                   <StarRating 
                     rating={turf.rating || 0} 
@@ -278,32 +273,22 @@ export default function TurfGrid({
                 {turf.sportsOffered && turf.sportsOffered.length > 0 && (
                   <div className="flex flex-wrap gap-1">
                     {turf.sportsOffered.slice(0, 3).map((sport, index) => (
-                      <Badge key={index} variant="outline" className="text-xs">
-                        {sport}
-                      </Badge>
+                      <Badge key={index} variant="outline" className="text-xs">{sport}</Badge>
                     ))}
                     {turf.sportsOffered.length > 3 && (
-                      <Badge variant="outline" className="text-xs">
-                        +{turf.sportsOffered.length - 3} more
-                      </Badge>
+                      <Badge variant="outline" className="text-xs">+{turf.sportsOffered.length - 3} more</Badge>
                     )}
                   </div>
                 )}
                 
                 {turf.description && (
-                  <p className="text-xs text-gray-500 line-clamp-2">
-                    {turf.description}
-                  </p>
+                  <p className="text-xs text-gray-500 line-clamp-2">{turf.description}</p>
                 )}
               </div>
             </CardContent>
             
             <CardFooter className="p-4 pt-0">
-              <Button 
-                onClick={() => handleBookNow(turf._id)}
-                className="w-full"
-                size="sm"
-              >
+              <Button onClick={() => handleBookNow(turf._id)} className="w-full" size="sm">
                 Book Now
               </Button>
             </CardFooter>

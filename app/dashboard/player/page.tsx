@@ -241,9 +241,11 @@ function PlayerDashboard() {
                 ))}
               </div>
               <div className="mt-4 text-center">
-                <Button variant="outline" className="w-full">
-                  <History className="h-4 w-4 mr-2" />
-                  View All Bookings
+                <Button variant="outline" className="w-full" asChild>
+                  <Link href="/dashboard/player/bookings">
+                    <History className="h-4 w-4 mr-2" />
+                    View All Bookings
+                  </Link>
                 </Button>
               </div>
             </CardContent>

@@ -22,19 +22,19 @@ const TimeSlotSchema = new mongoose.Schema({
   startTime: {
     type: String,
     required: true,
-    match: /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/ // HH:MM format validation
+    match: /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/
   },
   endTime: {
     type: String,
     required: true,
-    match: /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/ // HH:MM format validation
+    match: /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/
   }
 }, { _id: false });
 
 // Interface for Turf document
 interface ITurf extends Document {
-  ownerId: string; // Reference to User._id
-  ownerUid: string; // Reference to User.uid (Firebase UID)
+  ownerId: string;
+  ownerUid: string;
   name: string;
   description: string;
   images: Array<{
@@ -60,21 +60,26 @@ interface ITurf extends Document {
       longitude?: number;
     };
   };
+  geoLocation?: {
+    type: 'Point';
+    coordinates: [number, number]; // [longitude, latitude]
+  };
+  locationMetadata?: {
+    accuracy: string;
+    accuracyRadius: number;
+    isOwnerVerified: boolean;
+    geocodedBy: string;
+    geocodedAt: Date;
+  };
   contactInfo: {
     phone: string;
     email: string;
     businessName: string;
   };
-  paymentInfo: {
-    upiQrCode: {
-      url: string;
-      public_id: string;
-    };
-  };
   isActive: boolean;
   rating?: number;
   reviewCount?: number;
-  featuredImage?: string; // Main display image URL
+  featuredImage?: string;
 }
 
 const TurfSchema = new mongoose.Schema({
@@ -113,7 +118,7 @@ const TurfSchema = new mongoose.Schema({
     }
   },
   featuredImage: {
-    type: String, // URL of the main display image
+    type: String,
     required: true
   },
   
@@ -158,7 +163,7 @@ const TurfSchema = new mongoose.Schema({
     min: 0
   },
   
-  // Location details
+  // Location details (text-based, for display)
   location: {
     address: String,
     city: {
@@ -171,6 +176,45 @@ const TurfSchema = new mongoose.Schema({
       latitude: Number,
       longitude: Number
     }
+  },
+
+  // GeoJSON location for geospatial queries (nearest turf)
+  geoLocation: {
+    type: {
+      type: String,
+      enum: ['Point'],
+      default: 'Point'
+    },
+    coordinates: {
+      type: [Number], // [longitude, latitude] — GeoJSON standard
+      validate: {
+        validator: function(coords: number[]) {
+          if (!coords || coords.length !== 2) return true; // Allow empty
+          const [lng, lat] = coords;
+          return lng >= -180 && lng <= 180 && lat >= -90 && lat <= 90;
+        },
+        message: 'Invalid coordinates. Must be [longitude, latitude] within valid ranges.'
+      }
+    }
+  },
+
+  // Location quality metadata
+  locationMetadata: {
+    accuracy: {
+      type: String,
+      enum: ['ROOFTOP', 'RANGE_INTERPOLATED', 'GEOMETRIC_CENTER', 'APPROXIMATE'],
+      default: 'GEOMETRIC_CENTER'
+    },
+    accuracyRadius: {
+      type: Number,
+      default: 500
+    },
+    isOwnerVerified: {
+      type: Boolean,
+      default: false
+    },
+    geocodedBy: String,
+    geocodedAt: Date
   },
   
   // Contact information
@@ -190,14 +234,6 @@ const TurfSchema = new mongoose.Schema({
     }
   },
   
-  // Payment information (UPI QR code is optional — payments go through Razorpay)
-  paymentInfo: {
-    upiQrCode: {
-      type: CloudinaryImageSchema,
-      required: false
-    }
-  },
-  
   // Status and ratings
   isActive: {
     type: Boolean,
@@ -214,10 +250,10 @@ const TurfSchema = new mongoose.Schema({
     default: 0
   }
 }, {
-  timestamps: true // This adds createdAt and updatedAt automatically
+  timestamps: true
 });
 
-// Create indexes for better query performance
+// Basic indexes
 TurfSchema.index({ ownerId: 1 });
 TurfSchema.index({ ownerUid: 1 });
 TurfSchema.index({ 'location.city': 1 });
@@ -232,9 +268,11 @@ TurfSchema.index({ 'location.city': 1, isActive: 1 });
 TurfSchema.index({ sportsOffered: 1, 'location.city': 1 });
 TurfSchema.index({ pricing: 1, 'location.city': 1 });
 
+// Geospatial index for nearest turf queries
+TurfSchema.index({ geoLocation: '2dsphere' });
+
 // Pre-save middleware to set featured image
 TurfSchema.pre('save', function(this: ITurf, next) {
-  // Set featured image to the first image if not already set
   if (this.images && this.images.length > 0 && !this.featuredImage) {
     this.featuredImage = this.images[0].url;
   }

@@ -38,6 +38,7 @@ interface User {
     transactionId?: string;
     method?: string;
   };
+  subscriptionPlan?: string;
   verificationStatus?: 'pending' | 'approved' | 'rejected';
   rejectionReason?: string;
   verifiedBy?: string;

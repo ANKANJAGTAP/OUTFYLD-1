@@ -3,14 +3,24 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Menu, X, MapPin, User, LogOut, Shield } from 'lucide-react';
+import { Menu, X, MapPin, User, LogOut, Shield, ChevronDown, ListOrdered, FileText, Award } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 export function LandingHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, firebaseUser, logout, loading } = useAuth();
+  const router = useRouter();
 
   const handleLogout = async () => {
     try {
@@ -60,49 +70,70 @@ export function LandingHeader() {
           <div className="hidden lg:flex items-center space-x-3">
             {firebaseUser && user ? (
               // User is logged in
-              <div className="flex items-center space-x-2 xl:space-x-3">
-                <div className="text-right hidden xl:block">
-                  <p className="text-sm font-medium text-gray-900">
-                    {user.name}
-                  </p>
-                  <div className="flex items-center justify-end space-x-2">
-                    <Badge 
-                      variant="secondary" 
-                      className={user.role === 'owner' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}
-                    >
-                      {user.role === 'owner' ? 'Owner' : user.role === 'admin' ? 'Admin' : 'Customer'}
-                    </Badge>
-                  </div>
-                </div>
-                
-                {user.role === 'owner' && (
-                  <Link href="/owner/dashboard">
-                    <Button variant="outline" size="sm" className="text-xs">
-                      <User className="h-4 w-4 lg:mr-1" />
-                      <span className="hidden lg:inline">Dashboard</span>
+              <div className="flex items-center space-x-3">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="p-0 h-auto hover:bg-transparent flex items-center gap-2">
+                      <div className="text-right hidden sm:block">
+                        <p className="text-sm font-medium text-gray-900">
+                          {user.name}
+                        </p>
+                        <Badge 
+                          variant="secondary" 
+                          className={user.role === 'owner' ? 'bg-blue-100 text-blue-800' : user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800'}
+                        >
+                          {user.role === 'owner' ? 'Owner' : user.role === 'admin' ? 'Admin' : 'Customer'}
+                        </Badge>
+                      </div>
+                      <ChevronDown className="h-4 w-4 text-gray-500" />
                     </Button>
-                  </Link>
-                )}
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    
+                    {user.role === 'admin' && (
+                      <DropdownMenuItem onClick={() => router.push('/admin/dashboard')}>
+                        <Shield className="mr-2 h-4 w-4" />
+                        <span>Admin Dashboard</span>
+                      </DropdownMenuItem>
+                    )}
+                    
+                    {user.role === 'owner' && (
+                      <DropdownMenuItem onClick={() => router.push('/owner/dashboard')}>
+                        <MapPin className="mr-2 h-4 w-4" />
+                        <span>Owner Dashboard</span>
+                      </DropdownMenuItem>
+                    )}
 
-                {user.role === 'admin' && (
-                  <Link href="/admin/dashboard">
-                    <Button variant="outline" size="sm" className="text-xs">
-                      <Shield className="h-4 w-4 lg:mr-1" />
-                      <span className="hidden lg:inline">Admin</span>
-                    </Button>
-                  </Link>
-                )}
-                
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={handleLogout}
-                  disabled={loading}
-                  className="text-gray-600 hover:text-red-600 text-xs"
-                >
-                  <LogOut className="h-4 w-4 lg:mr-1" />
-                  <span className="hidden lg:inline">Logout</span>
-                </Button>
+                    {user.role === 'customer' && (
+                      <>
+                        <DropdownMenuItem onClick={() => router.push('/dashboard/player')}>
+                          <ListOrdered className="mr-2 h-4 w-4" />
+                          <span>Player Dashboard</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => router.push('/dashboard/player/profile')}>
+                          <User className="mr-2 h-4 w-4" />
+                          <span>My Profile</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => router.push('/dashboard/player/bookings')}>
+                          <FileText className="mr-2 h-4 w-4" />
+                          <span>Booking History</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => router.push('/dashboard/player/loyalty')}>
+                          <Award className="mr-2 h-4 w-4" />
+                          <span>Loyalty Points</span>
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                    
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem className="text-red-600" onClick={handleLogout} disabled={loading}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Log out</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             ) : (
               // User is not logged in

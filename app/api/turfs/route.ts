@@ -1,171 +1,235 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { connectMongoDB } from '@/lib/mongodb';
-import Turf from '@/app/models/Turf';
+import { NextRequest, NextResponse } from "next/server";
+import { connectMongoDB } from "@/lib/mongodb";
+import Turf from "@/app/models/Turf";
 
-// Tell Next.js this route should be dynamic (not statically generated)
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
-    // Connect to MongoDB
     await connectMongoDB();
 
-    // Get query parameters
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '12');
-    const search = searchParams.get('search') || '';
-    const sportsParam = searchParams.get('sports') || searchParams.get('sport') || '';
-    const amenitiesParam = searchParams.get('amenities') || '';
-    const city = searchParams.get('city') || '';
-    const minPrice = parseInt(searchParams.get('minPrice') || '0');
-    const maxPrice = parseInt(searchParams.get('maxPrice') || '10000');
-    const minRating = parseFloat(searchParams.get('minRating') || '0');
-    const sortBy = searchParams.get('sortBy') || 'newest';
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "12");
+    const search = searchParams.get("search") || "";
+    const sportsParam =
+      searchParams.get("sports") || searchParams.get("sport") || "";
+    const amenitiesParam = searchParams.get("amenities") || "";
+    const city = searchParams.get("city") || "";
+    const minPrice = parseInt(searchParams.get("minPrice") || "0");
+    const maxPrice = parseInt(searchParams.get("maxPrice") || "10000");
+    const minRating = parseFloat(searchParams.get("minRating") || "0");
+    const sortBy = searchParams.get("sortBy") || "newest";
 
-    // Build query for active turfs
-    const query: any = {
-      isActive: true
-    };
+    // ⭐ Geo params (only for distance sort)
+    const lat = parseFloat(searchParams.get("lat") || "");
+    const lng = parseFloat(searchParams.get("lng") || "");
+    const isDistanceSort = sortBy === "distance" && !isNaN(lat) && !isNaN(lng);
 
-    // Add filters
+    // Build filter query
+    const query: any = { isActive: true };
+
     if (search) {
       query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } },
-        { 'location.city': { $regex: search, $options: 'i' } },
-        { 'location.address': { $regex: search, $options: 'i' } },
-        { 'contactInfo.businessName': { $regex: search, $options: 'i' } }
+        { name: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+        { "location.city": { $regex: search, $options: "i" } },
+        { "location.address": { $regex: search, $options: "i" } },
+        { "contactInfo.businessName": { $regex: search, $options: "i" } },
       ];
     }
 
-    // Handle multiple sports
-    if (sportsParam && sportsParam !== 'all') {
-      const sports = sportsParam.split(',').map((s: string) => s.trim()).filter((s: string) => s);
-      if (sports.length > 0) {
-        query.sportsOffered = { $in: sports };
-      }
+    if (sportsParam && sportsParam !== "all") {
+      const sports = sportsParam
+        .split(",")
+        .map((s: string) => s.trim())
+        .filter((s: string) => s);
+      if (sports.length > 0) query.sportsOffered = { $in: sports };
     }
 
-    // Handle multiple amenities
     if (amenitiesParam) {
-      const amenities = amenitiesParam.split(',').map((a: string) => a.trim()).filter((a: string) => a);
-      if (amenities.length > 0) {
-        query.amenities = { $all: amenities };
-      }
+      const amenities = amenitiesParam
+        .split(",")
+        .map((a: string) => a.trim())
+        .filter((a: string) => a);
+      if (amenities.length > 0) query.amenities = { $all: amenities };
     }
 
-    if (city && city !== 'all') {
-      query['location.city'] = { $regex: city, $options: 'i' };
+    if (city && city !== "all") {
+      query["location.city"] = { $regex: city, $options: "i" };
     }
 
     if (minPrice > 0 || maxPrice < 10000) {
       query.pricing = { $gte: minPrice, $lte: maxPrice };
     }
 
-    // Add rating filter
     if (minRating > 0) {
       query.rating = { $gte: minRating };
     }
 
-    // Sort options
+    // Sort options for non-distance sorts
     const sortOptions: any = {};
     switch (sortBy) {
-      case 'price_low':
+      case "price-low":
+      case "price_low":
         sortOptions.pricing = 1;
         break;
-      case 'price_high':
+      case "price-high":
+      case "price_high":
         sortOptions.pricing = -1;
         break;
-      case 'rating':
+      case "rating":
         sortOptions.rating = -1;
         break;
-      case 'newest':
-        sortOptions.createdAt = -1;
+      case "popularity":
+        sortOptions.reviewCount = -1;
         break;
+      case "newest":
       default:
         sortOptions.createdAt = -1;
     }
 
-    // Calculate pagination
     const skip = (page - 1) * limit;
 
-    // 🔍 DEBUG: Log query details
-    console.log('🔍 Browse API Query:', JSON.stringify(query, null, 2));
-    console.log('📄 Page:', page, 'Limit:', limit, 'Skip:', skip);
+    console.log(
+      "🔍 Browse API — Sort:",
+      sortBy,
+      isDistanceSort ? `(lat: ${lat}, lng: ${lng})` : "",
+    );
+
+    // ⭐ Owner verification stages (shared between both pipelines)
+    const ownerVerificationStages = [
+      {
+        $lookup: {
+          from: "users",
+          localField: "ownerId",
+          foreignField: "_id",
+          as: "owner",
+        },
+      },
+      { $unwind: "$owner" },
+      {
+        $match: {
+          "owner.role": "owner",
+          "owner.isVerifiedByAdmin": true,
+          "owner.verificationStatus": "approved",
+        },
+      },
+    ];
+
+    // ⭐ Projection stage (shared)
+    const projectStage = {
+      $project: {
+        owner: 0,
+      },
+    };
+
+    let turfs: any[];
+    let total: number;
 
     try {
-      // Use aggregation to filter turfs by owner verification status
-      // This ensures turfs from revoked/rejected owners don't appear
-      const turfsAggregation = await Turf.aggregate([
-        { $match: query },
-        {
-          $lookup: {
-            from: 'users',
-            localField: 'ownerId',
-            foreignField: '_id',
-            as: 'owner'
-          }
-        },
-        { $unwind: '$owner' },
-        {
-          $match: {
-            'owner.role': 'owner',
-            'owner.isVerifiedByAdmin': true,
-            'owner.verificationStatus': 'approved'
-          }
-        },
-        { $sort: sortOptions },
-        { $skip: skip },
-        { $limit: limit },
-        {
-          $project: {
-            'paymentInfo.upiQrCode': 0,
-            'owner': 0
-          }
-        }
-      ]);
+      if (isDistanceSort) {
+        // ═══════════════════════════════════════════════
+        // ⭐ DISTANCE SORT: Use $geoNear pipeline
+        // $geoNear MUST be first stage in pipeline
+        // ═══════════════════════════════════════════════
 
-      // Get total count with owner filter
-      const totalAggregation = await Turf.aggregate([
-        { $match: query },
-        {
-          $lookup: {
-            from: 'users',
-            localField: 'ownerId',
-            foreignField: '_id',
-            as: 'owner'
-          }
-        },
-        { $unwind: '$owner' },
-        {
-          $match: {
-            'owner.role': 'owner',
-            'owner.isVerifiedByAdmin': true,
-            'owner.verificationStatus': 'approved'
-          }
-        },
-        { $count: 'total' }
-      ]);
+        const geoNearStage = {
+          $geoNear: {
+            near: {
+              type: "Point" as const,
+              coordinates: [lng, lat] as [number, number],
+            },
+            distanceField: "distance" as const,
+            spherical: true,
+            query: query,
+          },
+        };
 
-      const turfs = turfsAggregation;
-      const total = totalAggregation[0]?.total || 0;
+        const distanceFields = {
+          $addFields: {
+            distanceInKm: {
+              $round: [{ $divide: ["$distance", 1000] }, 1],
+            },
+            distanceDisplay: {
+              $cond: {
+                if: { $lt: ["$distance", 1000] },
+                then: {
+                  $concat: [
+                    { $toString: { $round: ["$distance", 0] } },
+                    "m away",
+                  ],
+                },
+                else: {
+                  $concat: [
+                    {
+                      $toString: {
+                        $round: [{ $divide: ["$distance", 1000] }, 1],
+                      },
+                    },
+                    "km away",
+                  ],
+                },
+              },
+            },
+          },
+        };
 
-      // 🔍 DEBUG: Log results
-      console.log('✅ Found turfs:', turfs.length, '/', total, 'total');
-      console.log('📊 First turf:', turfs[0] ? {
-        id: turfs[0]._id,
-        name: turfs[0].name,
-        city: turfs[0].location?.city,
-        isActive: turfs[0].isActive
-      } : 'None');
+        // Main query
+        turfs = await Turf.aggregate([
+          geoNearStage,
+          ...ownerVerificationStages,
+          // Distance already sorted by $geoNear
+          { $skip: skip },
+          { $limit: limit },
+          distanceFields,
+          projectStage,
+        ]);
+
+        // Count query
+        const countResult = await Turf.aggregate([
+          geoNearStage,
+          ...ownerVerificationStages,
+          { $count: "total" },
+        ]);
+        total = countResult[0]?.total || 0;
+      } else {
+        // ═══════════════════════════════════════════════
+        // NORMAL SORT: Existing pipeline (unchanged)
+        // ═══════════════════════════════════════════════
+
+        turfs = await Turf.aggregate([
+          { $match: query },
+          ...ownerVerificationStages,
+          { $sort: sortOptions },
+          { $skip: skip },
+          { $limit: limit },
+          projectStage,
+        ]);
+
+        const countResult = await Turf.aggregate([
+          { $match: query },
+          ...ownerVerificationStages,
+          { $count: "total" },
+        ]);
+        total = countResult[0]?.total || 0;
+      }
+
+      console.log(
+        "✅ Found turfs:",
+        turfs.length,
+        "/",
+        total,
+        "total",
+        isDistanceSort ? "(distance sort)" : "",
+      );
 
       // Transform data for frontend
       const transformedTurfs = turfs.map((turf: any) => ({
         _id: turf._id,
         name: turf.name,
         description: turf.description,
-        businessName: turf.contactInfo.businessName,
+        businessName: turf.contactInfo?.businessName || turf.name,
         featuredImage: turf.featuredImage,
         images: turf.images,
         sportsOffered: turf.sportsOffered,
@@ -177,28 +241,35 @@ export async function GET(request: NextRequest) {
         location: turf.location,
         availableSlots: turf.availableSlots,
         contactInfo: {
-          phone: turf.contactInfo.phone,
-          businessName: turf.contactInfo.businessName
+          phone: turf.contactInfo?.phone,
+          businessName: turf.contactInfo?.businessName,
         },
         owner: turf.ownerId,
         createdAt: turf.createdAt,
-        updatedAt: turf.updatedAt
+        updatedAt: turf.updatedAt,
+        // ⭐ Include distance fields when sorting by distance
+        ...(isDistanceSort && {
+          distance: turf.distance,
+          distanceInKm: turf.distanceInKm,
+          distanceDisplay: turf.distanceDisplay,
+        }),
       }));
 
-      // Get available filters data
-      const cities = await Turf.distinct('location.city', {
+      // Get available filter options (independent of sort)
+      const cities = await Turf.distinct("location.city", {
         isActive: true,
-        'location.city': { $exists: true, $ne: '' }
+        "location.city": { $exists: true, $ne: "" },
       });
 
       const allSports = await Turf.aggregate([
         { $match: { isActive: true } },
-        { $unwind: '$sportsOffered' },
-        { $group: { _id: '$sportsOffered', count: { $sum: 1 } } },
-        { $sort: { count: -1 } }
+        { $unwind: "$sportsOffered" },
+        { $group: { _id: "$sportsOffered", count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
       ]);
-
-      const sports = allSports.map((item: any) => item._id).filter((sport: any) => sport !== 'Other');
+      const sports = allSports
+        .map((item: any) => item._id)
+        .filter((sport: any) => sport !== "Other");
 
       return NextResponse.json({
         turfs: transformedTurfs,
@@ -208,93 +279,129 @@ export async function GET(request: NextRequest) {
           totalItems: total,
           itemsPerPage: limit,
           hasNextPage: page < Math.ceil(total / limit),
-          hasPrevPage: page > 1
+          hasPrevPage: page > 1,
         },
         filters: {
-          cities: cities.filter((city: any) => city),
+          cities: cities.filter((c: any) => c),
           sports,
           priceRange: {
-            min: await Turf.find(query).sort({ pricing: 1 }).limit(1).select('pricing').then((res: any) => res[0]?.pricing || 0),
-            max: await Turf.find(query).sort({ pricing: -1 }).limit(1).select('pricing').then((res: any) => res[0]?.pricing || 10000)
-          }
-        }
-      });
-
-    } catch (mongoError: any) {
-      console.error('❌ Error in Turf query:', mongoError);
-      console.error('Error name:', mongoError?.name);
-      console.error('Error message:', mongoError?.message);
-      console.error('Stack trace:', mongoError?.stack);
-      
-      // Only return mock data if it's actually a connection error
-      if (mongoError?.name === 'MongoNetworkError' || 
-          mongoError?.name === 'MongoServerSelectionError' ||
-          mongoError?.message?.includes('ENOTFOUND') ||
-          mongoError?.message?.includes('connection')) {
-        console.log('MongoDB connection error - returning mock data for development');
-      
-      // Return mock data if MongoDB connection fails
-      const mockTurfs = [
-        {
-          _id: 'mock1',
-          name: 'Green Valley Sports Complex',
-          description: 'Premium football turf with professional quality grass and excellent facilities.',
-          businessName: 'Green Valley Sports',
-          featuredImage: 'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=500',
-          images: [
-            { url: 'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=500', public_id: 'mock1' }
-          ],
-          sportsOffered: ['Football', 'Cricket'],
-          amenities: ['Floodlights', 'Parking', 'Washroom'],
-          pricing: 800,
-          rating: 4.5,
-          reviewCount: 24,
-          location: {
-            city: 'Mumbai',
-            address: '123 Sports Avenue',
-            state: 'Maharashtra',
-            pincode: '400001'
+            min: await Turf.find(query)
+              .sort({ pricing: 1 })
+              .limit(1)
+              .select("pricing")
+              .then((res: any) => res[0]?.pricing || 0),
+            max: await Turf.find(query)
+              .sort({ pricing: -1 })
+              .limit(1)
+              .select("pricing")
+              .then((res: any) => res[0]?.pricing || 10000),
           },
-          availableSlots: [
-            { day: 'Monday', startTime: '06:00', endTime: '22:00' },
-            { day: 'Tuesday', startTime: '06:00', endTime: '22:00' }
-          ],
-          contactInfo: {
-            phone: '+91 9876543210',
-            businessName: 'Green Valley Sports'
-          },
-          createdAt: new Date(),
-          updatedAt: new Date()
-        }
-      ];
-
-      return NextResponse.json({
-        turfs: mockTurfs,
-        pagination: {
-          currentPage: 1,
-          totalPages: 1,
-          totalItems: 1,
-          itemsPerPage: 12,
-          hasNextPage: false,
-          hasPrevPage: false
         },
-        filters: {
-          cities: ['Mumbai', 'Delhi', 'Bangalore'],
-          sports: ['Football', 'Cricket', 'Badminton', 'Tennis'],
-          priceRange: { min: 500, max: 2000 }
-        }
       });
+    } catch (mongoError: any) {
+      console.error("❌ Error in Turf query:", mongoError);
+
+      // ⭐ Handle geoNear specific errors gracefully
+      if (
+        mongoError?.message?.includes("2dsphere") ||
+        mongoError?.message?.includes("geoNear")
+      ) {
+        console.error(
+          "Geospatial query error — likely no turfs have geoLocation data yet",
+        );
+        return NextResponse.json({
+          turfs: [],
+          pagination: {
+            currentPage: page,
+            totalPages: 0,
+            totalItems: 0,
+            itemsPerPage: limit,
+            hasNextPage: false,
+            hasPrevPage: false,
+          },
+          filters: {
+            cities: [],
+            sports: [],
+            priceRange: { min: 0, max: 10000 },
+          },
+          message:
+            "No turfs with location data found. Owners need to add map location to their turfs.",
+        });
+      }
+
+      if (
+        mongoError?.name === "MongoNetworkError" ||
+        mongoError?.name === "MongoServerSelectionError" ||
+        mongoError?.message?.includes("ENOTFOUND") ||
+        mongoError?.message?.includes("connection")
+      ) {
+        console.log("MongoDB connection error");
+        // Your existing mock data fallback...
+        const mockTurfs = [
+          {
+            _id: "mock1",
+            name: "Green Valley Sports Complex",
+            description: "Premium football turf",
+            businessName: "Green Valley Sports",
+            featuredImage:
+              "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=500",
+            images: [
+              {
+                url: "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=500",
+                public_id: "mock1",
+              },
+            ],
+            sportsOffered: ["Football", "Cricket"],
+            amenities: ["Floodlights", "Parking"],
+            pricing: 800,
+            rating: 4.5,
+            reviewCount: 24,
+            location: {
+              city: "Mumbai",
+              address: "123 Sports Avenue",
+              state: "Maharashtra",
+              pincode: "400001",
+            },
+            availableSlots: [
+              { day: "Monday", startTime: "06:00", endTime: "22:00" },
+            ],
+            contactInfo: {
+              phone: "+91 9876543210",
+              businessName: "Green Valley Sports",
+            },
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ];
+
+        return NextResponse.json({
+          turfs: mockTurfs,
+          pagination: {
+            currentPage: 1,
+            totalPages: 1,
+            totalItems: 1,
+            itemsPerPage: 12,
+            hasNextPage: false,
+            hasPrevPage: false,
+          },
+          filters: {
+            cities: ["Mumbai"],
+            sports: ["Football", "Cricket"],
+            priceRange: { min: 500, max: 2000 },
+          },
+        });
       } else {
-        // For other errors, re-throw them to be caught by outer catch
         throw mongoError;
       }
     }
-
   } catch (error: any) {
-    console.error('Error fetching turfs:', error);
+    console.error("Error fetching turfs:", error);
     return NextResponse.json(
-      { error: 'Internal server error', details: error?.message || 'Unknown error' },
-      { status: 500 }
+      {
+        error: "Internal server error",
+        details: error?.message || "Unknown error",
+      },
+      { status: 500 },
     );
   }
 }

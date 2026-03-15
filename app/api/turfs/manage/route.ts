@@ -103,7 +103,6 @@ export async function POST(request: NextRequest) {
       availableSlots,
       pricing,
       location,
-      upiQrCode
     } = body;
 
     // Validate required fields
@@ -135,13 +134,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!upiQrCode || !upiQrCode.url) {
-      return NextResponse.json(
-        { error: 'UPI QR code is required' },
-        { status: 400 }
-      );
-    }
-
     // Validate location with city
     if (!location || !location.city || location.city.trim() === '') {
       return NextResponse.json(
@@ -164,13 +156,12 @@ export async function POST(request: NextRequest) {
       availableSlots,
       pricing,
       location: location || {},
+      geoLocation: body.geoLocation || undefined,
+      locationMetadata: body.locationMetadata || undefined,
       contactInfo: {
         phone: user.phone || '',
         email: user.email,
         businessName: user.businessName || name
-      },
-      paymentInfo: {
-        upiQrCode
       },
       isActive: true
     });
@@ -262,7 +253,6 @@ export async function PUT(request: NextRequest) {
       availableSlots,
       pricing,
       location,
-      upiQrCode
     } = body;
 
     if (!turfId) {
@@ -303,13 +293,12 @@ export async function PUT(request: NextRequest) {
         availableSlots,
         pricing,
         location: location || {},
+        geoLocation: body.geoLocation || existingTurf.geoLocation,
+        locationMetadata: body.locationMetadata || existingTurf.locationMetadata,
         contactInfo: {
           phone: user.phone || existingTurf.contactInfo.phone,
           email: user.email,
           businessName: user.businessName || name || existingTurf.contactInfo.businessName
-        },
-        paymentInfo: {
-          upiQrCode: upiQrCode || existingTurf.paymentInfo.upiQrCode
         }
       },
       { new: true, runValidators: true }

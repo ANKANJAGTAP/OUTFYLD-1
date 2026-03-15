@@ -1,25 +1,40 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import ProtectedRoute from '@/components/ProtectedRoute';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { AlertCircle, Save, User, Building, IndianRupee, MapPin, LogOut } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import Link from 'next/link';
+import { useState, useEffect } from "react";
+import LocationPickerMap from "@/components/owner/LocationPickerMap";
+import { useAuth } from "@/contexts/AuthContext";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import {
+  AlertCircle,
+  Save,
+  User,
+  Building,
+  IndianRupee,
+  MapPin,
+  LogOut,
+} from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import Link from "next/link";
 
 // Import our custom components
-import { TurfImagesUploader } from '@/components/owner/TurfImagesUploader';
-import { SportsSelection } from '@/components/owner/SportsSelection';
-import { AmenitiesSelector } from '@/components/owner/AmenitiesSelector';
-import { AboutSection } from '@/components/owner/AboutSection';
-import { SlotManager } from '@/components/owner/SlotManager';
+import { TurfImagesUploader } from "@/components/owner/TurfImagesUploader";
+import { SportsSelection } from "@/components/owner/SportsSelection";
+import { AmenitiesSelector } from "@/components/owner/AmenitiesSelector";
+import { AboutSection } from "@/components/owner/AboutSection";
+import { SlotManager } from "@/components/owner/SlotManager";
 
 interface CloudinaryImage {
   url: string;
@@ -48,6 +63,18 @@ interface OwnerFormData {
     state: string;
     pincode: string;
   };
+  // ADD these after the location field in the interface
+  geoLocation?: {
+    type: "Point";
+    coordinates: [number, number];
+  };
+  locationMetadata?: {
+    accuracy: string;
+    accuracyRadius: number;
+    isOwnerVerified: boolean;
+    geocodedBy: string;
+    geocodedAt: Date;
+  };
 }
 
 function TurfOwnerDashboard() {
@@ -63,23 +90,25 @@ function TurfOwnerDashboard() {
     rejectionReason?: string;
   } | null>(null);
   const [checkingSubscription, setCheckingSubscription] = useState(true);
-  
+
   const [formData, setFormData] = useState<OwnerFormData>({
-    businessName: '',
-    phone: '',
+    businessName: "",
+    phone: "",
     turfImages: [],
     sportsOffered: [],
-    customSport: '',
+    customSport: "",
     amenities: [],
-    about: '',
+    about: "",
     availableSlots: [],
     pricing: 0,
     location: {
-      address: '',
-      city: '',
-      state: '',
-      pincode: ''
-    }
+      address: "",
+      city: "",
+      state: "",
+      pincode: "",
+    },
+    geoLocation: undefined,
+    locationMetadata: undefined,
   });
 
   // Check subscription status on mount
@@ -94,12 +123,12 @@ function TurfOwnerDashboard() {
         if (data.success) {
           setSubscriptionStatus({
             hasSubscription: !!data.subscription.subscriptionPlan,
-            status: data.subscription.verificationStatus || 'none',
-            rejectionReason: data.subscription.rejectionReason
+            status: data.subscription.verificationStatus || "none",
+            rejectionReason: data.subscription.rejectionReason,
           });
         }
       } catch (err) {
-        console.error('Error checking subscription:', err);
+        console.error("Error checking subscription:", err);
       } finally {
         setCheckingSubscription(false);
       }
@@ -114,79 +143,82 @@ function TurfOwnerDashboard() {
   useEffect(() => {
     const loadOwnerData = async () => {
       if (!firebaseUser) return;
-      
+
       setLoading(true);
       try {
         const idToken = await firebaseUser.getIdToken();
-        
+
         // Check if we're editing an existing turf
         const urlParams = new URLSearchParams(window.location.search);
-        const turfId = urlParams.get('turfId');
-        
+        const turfId = urlParams.get("turfId");
+
         if (turfId) {
           // Load specific turf for editing
           setIsEditMode(true);
           const turfResponse = await fetch(`/api/turfs/owner/${turfId}`, {
             headers: {
-              'Authorization': `Bearer ${idToken}`,
+              Authorization: `Bearer ${idToken}`,
             },
           });
 
           if (turfResponse.ok) {
             const turfData = await turfResponse.json();
             const turf = turfData.turf;
-          
+
             setFormData({
-              businessName: turf.name || turf.contactInfo?.businessName || '',
-              phone: turf.contactInfo?.phone || '',
+              businessName: turf.name || turf.contactInfo?.businessName || "",
+              phone: turf.contactInfo?.phone || "",
               turfImages: turf.images || [],
               sportsOffered: turf.sportsOffered || [],
-              customSport: turf.customSport || '',
+              customSport: turf.customSport || "",
               amenities: turf.amenities || [],
-              about: turf.description || '',
+              about: turf.description || "",
               availableSlots: turf.availableSlots || [],
               pricing: turf.pricing || 0,
               location: {
-                address: turf.location?.address || '',
-                city: turf.location?.city || '',
-                state: turf.location?.state || '',
-                pincode: turf.location?.pincode || ''
-              }
+                address: turf.location?.address || "",
+                city: turf.location?.city || "",
+                state: turf.location?.state || "",
+                pincode: turf.location?.pincode || "",
+              },
+              // ADD at end of the setFormData call inside the turfId block
+              geoLocation: turf.geoLocation || undefined,
+              locationMetadata: turf.locationMetadata || undefined,
             });
           }
         } else {
           // Fallback to User collection
-          const userResponse = await fetch('/api/owner/update', {
+          const userResponse = await fetch("/api/owner/update", {
             headers: {
-              'Authorization': `Bearer ${idToken}`,
+              Authorization: `Bearer ${idToken}`,
             },
           });
 
           if (userResponse.ok) {
             const userData = await userResponse.json();
             const ownerData = userData.user;
-            
+
             setFormData({
-              businessName: ownerData.businessName || '',
-              phone: ownerData.phone || '',
+              businessName: ownerData.businessName || "",
+              phone: ownerData.phone || "",
               turfImages: ownerData.turfImages || [],
               sportsOffered: ownerData.sportsOffered || [],
-              customSport: ownerData.customSport || '',
+              customSport: ownerData.customSport || "",
               amenities: ownerData.amenities || [],
-              about: ownerData.about || '',
+              about: ownerData.about || "",
               availableSlots: ownerData.availableSlots || [],
               pricing: ownerData.pricing || 0,
               location: {
-                address: ownerData.location?.address || '',
-                city: ownerData.location?.city || '',
-                state: ownerData.location?.state || '',
-                pincode: ownerData.location?.pincode || ''
-              }
+                address: ownerData.location?.address || "",
+                city: ownerData.location?.city || "",
+                state: ownerData.location?.state || "",
+                pincode: ownerData.location?.pincode || "",
+              },
             });
           }
         }
       } catch (error) {
-        console.error('Error loading owner data:', error);
+        console.error("Error loading owner data:", error);
       } finally {
         setLoading(false);
       }
@@ -199,7 +231,7 @@ function TurfOwnerDashboard() {
     try {
       await logout();
     } catch (error) {
-      console.error('Logout failed:', error);
+      console.error("Logout failed:", error);
     }
   };
 
@@ -210,42 +242,45 @@ function TurfOwnerDashboard() {
 
     // Basic validation
     if (!formData.businessName.trim()) {
-      setError('Business name is required');
+      setError("Business name is required");
       return false;
     }
 
     if (!formData.phone.trim()) {
-      setError('Phone number is required');
+      setError("Phone number is required");
       return false;
     }
 
     if (formData.turfImages.length === 0) {
-      setError('At least one turf image is required');
+      setError("At least one turf image is required");
       return false;
     }
 
     if (formData.sportsOffered.length === 0) {
-      setError('At least one sport must be selected');
+      setError("At least one sport must be selected");
       return false;
     }
 
-    if (formData.sportsOffered.includes('Other') && !formData.customSport.trim()) {
+    if (
+      formData.sportsOffered.includes("Other") &&
+      !formData.customSport.trim()
+    ) {
       setError('Custom sport name is required when "Other" is selected');
       return false;
     }
 
     if (!formData.about.trim()) {
-      setError('About section is required');
+      setError("About section is required");
       return false;
     }
 
     if (formData.availableSlots.length === 0) {
-      setError('At least one time slot is required');
+      setError("At least one time slot is required");
       return false;
     }
 
     if (!formData.pricing || formData.pricing <= 0) {
-      setError('Valid pricing is required');
+      setError("Valid pricing is required");
       return false;
     }
 
@@ -262,29 +297,29 @@ function TurfOwnerDashboard() {
 
     try {
       const idToken = await firebaseUser.getIdToken();
-      
+
       // First, save/update the user profile
-      const userResponse = await fetch('/api/owner/update', {
-        method: 'PUT',
+      const userResponse = await fetch("/api/owner/update", {
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${idToken}`,
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
         },
         body: JSON.stringify(formData),
       });
 
       if (!userResponse.ok) {
         const userData = await userResponse.json();
-        setError(userData.error || 'Failed to update user profile');
+        setError(userData.error || "Failed to update user profile");
         return;
       }
 
       // Then, create/update the turf entry
       const urlParams = new URLSearchParams(window.location.search);
-      const turfId = urlParams.get('turfId');
-      
+      const turfId = urlParams.get("turfId");
+
       const turfData = {
-        name: formData.businessName || 'My Turf',
+        name: formData.businessName || "My Turf",
         description: formData.about,
         images: formData.turfImages,
         sportsOffered: formData.sportsOffered,
@@ -293,38 +328,41 @@ function TurfOwnerDashboard() {
         availableSlots: formData.availableSlots,
         pricing: formData.pricing,
         location: formData.location,
-        ...(turfId && { turfId }) // Include turfId for updates
+        geoLocation: formData.geoLocation,
+        locationMetadata: formData.locationMetadata,
+        ...(turfId && { turfId }), // Include turfId for updates
       };
 
-      const turfMethod = turfId ? 'PUT' : 'POST';
-      
-      const turfResponse = await fetch('/api/turfs/manage', {
+      const turfMethod = turfId ? "PUT" : "POST";
+
+      const turfResponse = await fetch("/api/turfs/manage", {
         method: turfMethod,
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${idToken}`,
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
         },
         body: JSON.stringify(turfData),
       });
 
       if (!turfResponse.ok) {
         const turfError = await turfResponse.json();
-        setError(turfError.error || 'Failed to save turf');
+        setError(turfError.error || "Failed to save turf");
         return;
       }
 
-      setSuccess(turfId ? 'Turf updated successfully!' : 'Turf created successfully!');
+      setSuccess(
+        turfId ? "Turf updated successfully!" : "Turf created successfully!",
+      );
       // Scroll to top to show success message
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      
+      window.scrollTo({ top: 0, behavior: "smooth" });
+
       // Redirect to dashboard after a short delay
       setTimeout(() => {
-        window.location.href = '/owner/dashboard';
+        window.location.href = "/owner/dashboard";
       }, 1500);
-      
     } catch (error) {
-      console.error('Error saving owner data:', error);
-      setError('An error occurred while saving. Please try again.');
+      console.error("Error saving owner data:", error);
+      setError("An error occurred while saving. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -358,27 +396,28 @@ function TurfOwnerDashboard() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <Card className="max-w-2xl">
           <CardHeader>
-            <CardTitle className="text-2xl text-center">Subscription Required</CardTitle>
+            <CardTitle className="text-2xl text-center">
+              Subscription Required
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-center space-y-4">
               <AlertCircle className="h-16 w-16 text-yellow-500 mx-auto" />
               <div>
-                <h3 className="text-lg font-semibold mb-2">No Subscription Plan</h3>
+                <h3 className="text-lg font-semibold mb-2">
+                  No Subscription Plan
+                </h3>
                 <p className="text-gray-600 mb-4">
-                  You need to select a subscription plan before you can add turfs.
+                  You need to select a subscription plan before you can add
+                  turfs.
                 </p>
               </div>
               <div className="flex gap-4 justify-center">
                 <Link href="/owner/subscription">
-                  <Button>
-                    Choose Subscription Plan
-                  </Button>
+                  <Button>Choose Subscription Plan</Button>
                 </Link>
                 <Link href="/owner/dashboard">
-                  <Button variant="outline">
-                    Go to Dashboard
-                  </Button>
+                  <Button variant="outline">Go to Dashboard</Button>
                 </Link>
               </div>
             </div>
@@ -388,18 +427,22 @@ function TurfOwnerDashboard() {
     );
   }
 
-  if (subscriptionStatus?.status === 'pending') {
+  if (subscriptionStatus?.status === "pending") {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <Card className="max-w-2xl">
           <CardHeader>
-            <CardTitle className="text-2xl text-center">Subscription Pending</CardTitle>
+            <CardTitle className="text-2xl text-center">
+              Subscription Pending
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-center space-y-4">
               <AlertCircle className="h-16 w-16 text-yellow-500 mx-auto" />
               <div>
-                <h3 className="text-lg font-semibold mb-2">Awaiting Admin Approval</h3>
+                <h3 className="text-lg font-semibold mb-2">
+                  Awaiting Admin Approval
+                </h3>
                 <p className="text-gray-600 mb-4">
                   Your subscription payment is being verified by our admin team.
                   You will be able to add turfs once approved.
@@ -407,9 +450,7 @@ function TurfOwnerDashboard() {
               </div>
               <div className="flex gap-4 justify-center">
                 <Link href="/owner/dashboard">
-                  <Button variant="outline">
-                    Go to Dashboard
-                  </Button>
+                  <Button variant="outline">Go to Dashboard</Button>
                 </Link>
               </div>
             </div>
@@ -419,21 +460,26 @@ function TurfOwnerDashboard() {
     );
   }
 
-  if (subscriptionStatus?.status === 'rejected') {
+  if (subscriptionStatus?.status === "rejected") {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <Card className="max-w-2xl">
           <CardHeader>
-            <CardTitle className="text-2xl text-center">Subscription Rejected</CardTitle>
+            <CardTitle className="text-2xl text-center">
+              Subscription Rejected
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-center space-y-4">
               <AlertCircle className="h-16 w-16 text-red-500 mx-auto" />
               <div>
-                <h3 className="text-lg font-semibold mb-2">Application Not Approved</h3>
+                <h3 className="text-lg font-semibold mb-2">
+                  Application Not Approved
+                </h3>
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
                   <p className="text-sm text-red-700">
-                    <strong>Rejection Reason:</strong> {subscriptionStatus.rejectionReason || 'No reason provided'}
+                    <strong>Rejection Reason:</strong>{" "}
+                    {subscriptionStatus.rejectionReason || "No reason provided"}
                   </p>
                   <p className="text-sm text-red-600 mt-2">
                     Please contact support for more information or to reapply.
@@ -442,14 +488,10 @@ function TurfOwnerDashboard() {
               </div>
               <div className="flex gap-4 justify-center">
                 <Link href="/owner/subscription">
-                  <Button>
-                    Reapply
-                  </Button>
+                  <Button>Reapply</Button>
                 </Link>
                 <Link href="/owner/dashboard">
-                  <Button variant="outline">
-                    Go to Dashboard
-                  </Button>
+                  <Button variant="outline">Go to Dashboard</Button>
                 </Link>
               </div>
             </div>
@@ -475,27 +517,30 @@ function TurfOwnerDashboard() {
                 <Building className="h-8 w-8 text-green-500 mr-3" />
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900">
-                    {isEditMode ? 'Edit Turf' : 'Add New Turf'}
+                    {isEditMode ? "Edit Turf" : "Add New Turf"}
                   </h1>
                   <p className="text-sm text-gray-500">
-                    {isEditMode ? 'Update your turf details' : 'Create a new turf facility'}
+                    {isEditMode
+                      ? "Update your turf details"
+                      : "Create a new turf facility"}
                   </p>
                 </div>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               <div className="text-right">
-                <p className="text-sm font-medium text-gray-900">{user?.name}</p>
-                <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                <p className="text-sm font-medium text-gray-900">
+                  {user?.name}
+                </p>
+                <Badge
+                  variant="secondary"
+                  className="bg-blue-100 text-blue-800"
+                >
                   Owner
                 </Badge>
               </div>
-              <Button 
-                onClick={handleLogout}
-                variant="outline"
-                size="sm"
-              >
+              <Button onClick={handleLogout} variant="outline" size="sm">
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout
               </Button>
@@ -549,11 +594,13 @@ function TurfOwnerDashboard() {
                     <Input
                       id="businessName"
                       placeholder="Your turf business name"
-                      value={formData.businessName || ''}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        businessName: e.target.value
-                      })}
+                      value={formData.businessName || ""}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          businessName: e.target.value,
+                        })
+                      }
                     />
                   </div>
                   <div className="space-y-2">
@@ -561,15 +608,17 @@ function TurfOwnerDashboard() {
                     <Input
                       id="phone"
                       placeholder="Contact phone number"
-                      value={formData.phone || ''}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        phone: e.target.value
-                      })}
+                      value={formData.phone || ""}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          phone: e.target.value,
+                        })
+                      }
                     />
                   </div>
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="pricing" className="flex items-center gap-2">
                     <IndianRupee className="h-4 w-4" />
@@ -579,11 +628,13 @@ function TurfOwnerDashboard() {
                     id="pricing"
                     type="number"
                     placeholder="Enter hourly rate"
-                    value={formData.pricing || ''}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      pricing: Number(e.target.value)
-                    })}
+                    value={formData.pricing || ""}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        pricing: Number(e.target.value),
+                      })
+                    }
                     className="max-w-sm"
                   />
                 </div>
@@ -597,7 +648,9 @@ function TurfOwnerDashboard() {
                   <IndianRupee className="h-5 w-5" />
                   Bank Details & Payouts
                 </CardTitle>
-                <CardDescription>Configure where your platform payouts will be sent.</CardDescription>
+                <CardDescription>
+                  Configure where your platform payouts will be sent.
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <Link href="/owner/bank-details">
@@ -607,103 +660,120 @@ function TurfOwnerDashboard() {
                 </Link>
               </CardContent>
             </Card>
-
           </TabsContent>
 
           <TabsContent value="turf-details" className="space-y-6">
             {/* Turf Images Upload */}
-            <TurfImagesUploader 
+            <TurfImagesUploader
               value={formData.turfImages}
-              onChange={(images) => setFormData({
-                ...formData,
-                turfImages: images
-              })}
+              onChange={(images) =>
+                setFormData({
+                  ...formData,
+                  turfImages: images,
+                })
+              }
             />
 
             {/* Sports Selection */}
-            <SportsSelection 
+            <SportsSelection
               value={formData.sportsOffered}
               customSport={formData.customSport}
-              onSportsChange={(sports) => setFormData({
-                ...formData,
-                sportsOffered: sports
-              })}
-              onCustomSportChange={(sport) => setFormData({
-                ...formData,
-                customSport: sport
-              })}
+              onSportsChange={(sports) =>
+                setFormData({
+                  ...formData,
+                  sportsOffered: sports,
+                })
+              }
+              onCustomSportChange={(sport) =>
+                setFormData({
+                  ...formData,
+                  customSport: sport,
+                })
+              }
             />
 
             {/* Amenities */}
-            <AmenitiesSelector 
+            <AmenitiesSelector
               value={formData.amenities}
-              onChange={(amenities) => setFormData({
-                ...formData,
-                amenities
-              })}
+              onChange={(amenities) =>
+                setFormData({
+                  ...formData,
+                  amenities,
+                })
+              }
             />
 
             {/* About Section */}
-            <AboutSection 
+            <AboutSection
               value={formData.about}
-              onChange={(about) => setFormData({
-                ...formData,
-                about
-              })}
+              onChange={(about) =>
+                setFormData({
+                  ...formData,
+                  about,
+                })
+              }
             />
           </TabsContent>
 
           <TabsContent value="scheduling" className="space-y-6">
             {/* Time Slots Management */}
-            <SlotManager 
+            <SlotManager
               value={formData.availableSlots}
-              onChange={(slots) => setFormData({
-                ...formData,
-                availableSlots: slots
-              })}
+              onChange={(slots) =>
+                setFormData({
+                  ...formData,
+                  availableSlots: slots,
+                })
+              }
             />
           </TabsContent>
 
           <TabsContent value="location" className="space-y-6">
-            {/* Location Information */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <MapPin className="h-5 w-5" />
                   Location Details
                 </CardTitle>
+                <CardDescription>
+                  Enter your turf area details, then mark the exact location on
+                  the map below.
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="address">Address</Label>
+                  <Label htmlFor="address">Address / Colony / Area</Label>
                   <Input
                     id="address"
-                    placeholder="Street address"
-                    value={formData.location?.address || ''}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      location: {
-                        ...formData.location,
-                        address: e.target.value
-                      }
-                    })}
+                    placeholder="e.g., Koramangala 5th Block, Near Sony Signal"
+                    value={formData.location?.address || ""}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        location: {
+                          ...formData.location,
+                          address: e.target.value,
+                        },
+                      })
+                    }
                   />
                 </div>
-                
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="city">City *</Label>
                     <Input
                       id="city"
                       placeholder="City"
-                      value={formData.location?.city || ''}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        location: {
-                          ...formData.location,
-                          city: e.target.value
-                        }
-                      })}
+                      value={formData.location?.city || ""}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          location: {
+                            ...formData.location,
+                            city: e.target.value,
+                          },
+                        })
+                      }
                       required
                     />
                   </div>
@@ -712,14 +782,16 @@ function TurfOwnerDashboard() {
                     <Input
                       id="state"
                       placeholder="State"
-                      value={formData.location?.state || ''}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        location: {
-                          ...formData.location,
-                          state: e.target.value
-                        }
-                      })}
+                      value={formData.location?.state || ""}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          location: {
+                            ...formData.location,
+                            state: e.target.value,
+                          },
+                        })
+                      }
                     />
                   </div>
                   <div className="space-y-2">
@@ -727,33 +799,73 @@ function TurfOwnerDashboard() {
                     <Input
                       id="pincode"
                       placeholder="Pincode"
-                      value={formData.location?.pincode || ''}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        location: {
-                          ...formData.location,
-                          pincode: e.target.value
-                        }
-                      })}
+                      value={formData.location?.pincode || ""}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          location: {
+                            ...formData.location,
+                            pincode: e.target.value,
+                          },
+                        })
+                      }
                     />
                   </div>
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
 
+            {/* ⭐ Map for exact location */}
+            <LocationPickerMap
+              address={formData.location?.address || ""}
+              city={formData.location?.city || ""}
+              state={formData.location?.state || ""}
+              pincode={formData.location?.pincode || ""}
+              initialCoordinates={
+                formData.geoLocation?.coordinates
+                  ? {
+                      latitude: formData.geoLocation.coordinates[1],
+                      longitude: formData.geoLocation.coordinates[0],
+                    }
+                  : undefined
+              }
+              onLocationConfirmed={(locationData) => {
+                setFormData((prev) => ({
+                  ...prev,
+                  geoLocation: {
+                    type: "Point" as const,
+                    coordinates: locationData.coordinates,
+                  },
+                  locationMetadata: {
+                    accuracy: locationData.accuracy,
+                    accuracyRadius: locationData.accuracyRadius,
+                    isOwnerVerified: locationData.isOwnerVerified,
+                    geocodedBy: "mapbox",
+                    geocodedAt: new Date(),
+                  },
+                  location: {
+                    ...prev.location,
+                    coordinates: {
+                      latitude: locationData.coordinates[1],
+                      longitude: locationData.coordinates[0],
+                    },
+                  },
+                }));
+              }}
+            />
+          </TabsContent>
         </Tabs>
 
         {/* Save Button */}
         <div className="flex justify-end pt-6">
-          <Button 
+          <Button
             onClick={handleSave}
             disabled={saving}
             size="lg"
             className="bg-green-500 hover:bg-green-600 min-w-[120px]"
           >
             <Save className="h-4 w-4 mr-2" />
-            {saving ? 'Saving...' : 'Save Changes'}
+            {saving ? "Saving..." : "Save Changes"}
           </Button>
         </div>
       </div>

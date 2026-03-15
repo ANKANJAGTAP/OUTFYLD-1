@@ -1,12 +1,11 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Search, SlidersHorizontal, User, LogOut, FileText, ChevronDown, ListOrdered, Award, Settings, Shield } from 'lucide-react';
+import { MapPin, Menu, X, User, LogOut, FileText, ChevronDown, ListOrdered, Award, Shield } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import {
@@ -18,14 +17,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-interface BrowseHeaderProps {
-  searchQuery: string;
-  onSearchChange: (query: string) => void;
-  sortBy: string;
-  onSortChange: (sort: string) => void;
-}
-
-export function BrowseHeader({ searchQuery, onSearchChange, sortBy, onSortChange }: BrowseHeaderProps) {
+export function BrowseHeader() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, firebaseUser, logout } = useAuth();
   const router = useRouter();
 
@@ -38,58 +31,48 @@ export function BrowseHeader({ searchQuery, onSearchChange, sortBy, onSortChange
   };
 
   return (
-    <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
+    <header className="bg-white border-b border-gray-200 sticky top-0 z-40 lg:z-50 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between py-4">
-          <Link href="/" className="flex items-center">
-            <div className="mr-3">
+        <div className="flex items-center justify-between py-3 md:py-4">
+          <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
+            <div className="mr-2 md:mr-3">
               <Image 
                 src="/images/logo.png" 
                 alt="OutFyld Logo" 
                 width={48} 
                 height={48} 
-                className="h-12 w-12 object-contain"
+                className="h-10 w-10 md:h-12 md:w-12 object-contain"
               />
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-green-600">OutFyld</h1>
+            <div className="hidden sm:block">
+              <h1 className="text-xl md:text-2xl font-bold text-green-600">OutFyld</h1>
               <p className="text-xs text-gray-500">Browse Turfs</p>
             </div>
           </Link>
 
-          <div className="flex items-center space-x-4 flex-1 max-w-2xl mx-8">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Search turfs, locations, or sports..."
-                value={searchQuery}
-                onChange={(e) => onSearchChange(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            
-            <Select value={sortBy} onValueChange={onSortChange}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="popularity">Most Popular</SelectItem>
-                <SelectItem value="rating">Highest Rated</SelectItem>
-                <SelectItem value="price-low">Price: Low to High</SelectItem>
-                <SelectItem value="price-high">Price: High to Low</SelectItem>
-                <SelectItem value="distance">Nearest First</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <nav className="hidden lg:flex items-center space-x-4 lg:space-x-6 xl:space-x-8 px-4 flex-1 justify-center">
+            <Link href="/" className="text-sm font-medium text-gray-700 hover:text-green-600 transition-colors">
+              Home
+            </Link>
+            <Link href="/browse" className="text-sm font-medium text-green-600 transition-colors">
+              Browse Turfs
+            </Link>
+            <Link href="/about" className="text-sm font-medium text-gray-700 hover:text-green-600 transition-colors">
+              About
+            </Link>
+            <Link href="/contact" className="text-sm font-medium text-gray-700 hover:text-green-600 transition-colors">
+              Contact
+            </Link>
+          </nav>
 
-          <div className="flex items-center space-x-4">
+          <div className="hidden lg:flex items-center space-x-4 shrink-0">
             {firebaseUser && user ? (
               // User is logged in
               <div className="flex items-center space-x-3">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="p-0 h-auto hover:bg-transparent flex items-center gap-2">
-                      <div className="text-right hidden sm:block">
+                      <div className="text-right">
                         <p className="text-sm font-medium text-gray-900">
                           {user.name}
                         </p>
@@ -155,19 +138,122 @@ export function BrowseHeader({ searchQuery, onSearchChange, sortBy, onSortChange
               <div className="flex items-center space-x-2">
                 <Link href="/auth/login">
                   <Button variant="outline" size="sm">
-                    <User className="h-4 w-4 mr-2" />
                     Login
                   </Button>
                 </Link>
                 <Link href="/auth/register">
-                  <Button size="sm">
-                    Register
+                  <Button size="sm" className="bg-green-500 hover:bg-green-600">
+                    Sign Up
                   </Button>
                 </Link>
               </div>
             )}
           </div>
+
+          <button
+            className="lg:hidden p-2 ml-1 cursor-pointer hover:bg-gray-100 rounded-md transition-colors"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            {isMenuOpen ? <X className="h-6 w-6 text-gray-700" /> : <Menu className="h-6 w-6 text-gray-700" />}
+          </button>
         </div>
+
+        {isMenuOpen && (
+          <div className="lg:hidden py-4 border-t border-gray-200 bg-white">
+            <nav className="flex flex-col space-y-3">
+              <Link 
+                href="/" 
+                className="text-gray-700 hover:text-green-600 hover:bg-green-50 transition-all px-4 py-2 rounded-md"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Home
+              </Link>
+              <Link 
+                href="/browse" 
+                className="text-gray-700 hover:text-green-600 hover:bg-green-50 transition-all px-4 py-2 rounded-md font-medium"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Browse Turfs
+              </Link>
+              <Link 
+                href="/about" 
+                className="text-gray-700 hover:text-green-600 hover:bg-green-50 transition-all px-4 py-2 rounded-md"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                About
+              </Link>
+              <Link 
+                href="/contact" 
+                className="text-gray-700 hover:text-green-600 hover:bg-green-50 transition-all px-4 py-2 rounded-md"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Contact
+              </Link>
+
+              <div className="flex flex-col space-y-2 pt-4 border-t border-gray-200">
+                {firebaseUser && user ? (
+                  <>
+                    <div className="text-center py-3 bg-gray-50 rounded-md">
+                      <p className="text-sm font-medium text-gray-900">{user.name}</p>
+                      <Badge 
+                        variant="secondary" 
+                        className={`mt-1 ${user.role === 'owner' ? 'bg-blue-100 text-blue-800' : user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800'}`}
+                      >
+                        {user.role === 'owner' ? 'Owner' : user.role === 'admin' ? 'Admin' : 'Customer'}
+                      </Badge>
+                    </div>
+                    {user.role === 'owner' && (
+                      <Link href="/owner/dashboard" onClick={() => setIsMenuOpen(false)}>
+                        <Button variant="outline" size="sm" className="w-full">
+                          <User className="h-4 w-4 mr-2" /> Owner Dashboard
+                        </Button>
+                      </Link>
+                    )}
+                    {user.role === 'admin' && (
+                      <Link href="/admin/dashboard" onClick={() => setIsMenuOpen(false)}>
+                        <Button variant="outline" size="sm" className="w-full">
+                          <Shield className="h-4 w-4 mr-2" /> Admin Dashboard
+                        </Button>
+                      </Link>
+                    )}
+                    {user.role === 'customer' && (
+                      <>
+                        <Link href="/dashboard/player" onClick={() => setIsMenuOpen(false)}>
+                          <Button variant="outline" size="sm" className="w-full">
+                            <ListOrdered className="h-4 w-4 mr-2" /> Player Dashboard
+                          </Button>
+                        </Link>
+                        <Link href="/dashboard/player/bookings" onClick={() => setIsMenuOpen(false)}>
+                          <Button variant="outline" size="sm" className="w-full">
+                            <FileText className="h-4 w-4 mr-2" /> Booking History
+                          </Button>
+                        </Link>
+                      </>
+                    )}
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="w-full text-red-600 hover:bg-red-50"
+                      onClick={() => { handleLogout(); setIsMenuOpen(false); }}
+                    >
+                      <LogOut className="h-4 w-4 mr-2" /> Logout
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/auth/login" onClick={() => setIsMenuOpen(false)}>
+                      <Button variant="outline" size="sm" className="w-full">Login</Button>
+                    </Link>
+                    <Link href="/auth/register" onClick={() => setIsMenuOpen(false)}>
+                      <Button size="sm" className="w-full bg-green-500 hover:bg-green-600">Sign Up</Button>
+                    </Link>
+                  </>
+                )}
+              </div>
+            </nav>
+          </div>
+        )}
       </div>
     </header>
   );
