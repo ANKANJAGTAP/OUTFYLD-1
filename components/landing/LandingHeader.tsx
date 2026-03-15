@@ -100,10 +100,24 @@ export function LandingHeader() {
                     )}
                     
                     {user.role === 'owner' && (
-                      <DropdownMenuItem onClick={() => router.push('/owner/dashboard')}>
-                        <MapPin className="mr-2 h-4 w-4" />
-                        <span>Owner Dashboard</span>
-                      </DropdownMenuItem>
+                      <>
+                        <DropdownMenuItem onClick={() => router.push('/owner/dashboard')}>
+                          <MapPin className="mr-2 h-4 w-4" />
+                          <span>Owner Dashboard</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => router.push('/owner/profile')}>
+                          <User className="mr-2 h-4 w-4" />
+                          <span>My Profile</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => router.push('/owner/bank-details')}>
+                          <FileText className="mr-2 h-4 w-4" />
+                          <span>Payment Details</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => router.push('/owner/analytics')}>
+                          <ListOrdered className="mr-2 h-4 w-4" />
+                          <span>Analytics</span>
+                        </DropdownMenuItem>
+                      </>
                     )}
 
                     {user.role === 'customer' && (
@@ -212,12 +226,32 @@ export function LandingHeader() {
                     </div>
                     
                     {user.role === 'owner' && (
-                      <Link href="/owner/dashboard" onClick={() => setIsMenuOpen(false)}>
-                        <Button variant="outline" size="sm" className="w-full">
-                          <User className="h-4 w-4 mr-2" />
-                          Owner Dashboard
-                        </Button>
-                      </Link>
+                      <>
+                        <Link href="/owner/dashboard" onClick={() => setIsMenuOpen(false)}>
+                          <Button variant="outline" size="sm" className="w-full justify-start">
+                            <MapPin className="h-4 w-4 mr-2" />
+                            Owner Dashboard
+                          </Button>
+                        </Link>
+                        <Link href="/owner/profile" onClick={() => setIsMenuOpen(false)}>
+                          <Button variant="outline" size="sm" className="w-full justify-start">
+                            <User className="h-4 w-4 mr-2" />
+                            My Profile
+                          </Button>
+                        </Link>
+                        <Link href="/owner/bank-details" onClick={() => setIsMenuOpen(false)}>
+                          <Button variant="outline" size="sm" className="w-full justify-start">
+                            <FileText className="h-4 w-4 mr-2" />
+                            Payment Details
+                          </Button>
+                        </Link>
+                        <Link href="/owner/analytics" onClick={() => setIsMenuOpen(false)}>
+                          <Button variant="outline" size="sm" className="w-full justify-start">
+                            <ListOrdered className="h-4 w-4 mr-2" />
+                            Analytics
+                          </Button>
+                        </Link>
+                      </>
                     )}
 
                     {user.role === 'admin' && (

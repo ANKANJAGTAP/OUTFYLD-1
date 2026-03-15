@@ -37,7 +37,7 @@ export default function BrowsePage() {
   });
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState('newest');
+  const [sortBy, setSortBy] = useState('distance');
   const [currentPage, setCurrentPage] = useState(1);
   const [browseData, setBrowseData] = useState<BrowseData | null>(null);
 
@@ -52,6 +52,13 @@ export default function BrowsePage() {
       requestLocation();
     }
   };
+
+  // ⭐ Request location on mount if default sort is "distance"
+  useEffect(() => {
+    if (sortBy === 'distance' && !userLocation && !locationLoading && !locationError) {
+      requestLocation();
+    }
+  }, [sortBy, userLocation, locationLoading, locationError, requestLocation]);
 
   // ⭐ If location is denied while on "distance" sort, revert
   useEffect(() => {
@@ -94,16 +101,12 @@ export default function BrowsePage() {
                   <SelectValue placeholder="Sort" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="distance">Nearest</SelectItem>
                   <SelectItem value="newest">Newest</SelectItem>
                   <SelectItem value="popularity">Popular</SelectItem>
                   <SelectItem value="rating">Highest Rated</SelectItem>
                   <SelectItem value="price-low">Price: Low to High</SelectItem>
                   <SelectItem value="price-high">Price: High to Low</SelectItem>
-                  <SelectItem value="distance">
-                    <span className="flex items-center gap-1">
-                      <MapPin className="h-3 w-3" /> Nearest
-                    </span>
-                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>

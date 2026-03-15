@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { MapPin, Search, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { GoogleMap, useLoadScript, Marker, Autocomplete } from '@react-google-maps/api';
 
 interface LocationPickerMapProps {
   address: string;
@@ -18,149 +19,231 @@ interface LocationPickerMapProps {
     accuracy: string;
     accuracyRadius: number;
     isOwnerVerified: boolean;
+    // New fields for reverse geocoding
+    address?: string;
+    city?: string;
+    state?: string;
+    pincode?: string;
   }) => void;
 }
+
+const libraries: any[] = ['places'];
+const mapContainerStyle = {
+  width: '100%',
+  height: '400px',
+  borderRadius: '0.5rem',
+};
+
+const DEFAULT_CENTER = { lat: 20.5937, lng: 78.9629 }; // Center of India
+
+const extractAddressFromGeocodeResult = (result: google.maps.GeocoderResult | google.maps.places.PlaceResult) => {
+  let city = '';
+  let state = '';
+  let pincode = '';
+  let addressStr = '';
+
+  if (result.address_components) {
+    for (const component of result.address_components) {
+      const types = component.types;
+      if (types.includes('locality')) {
+      city = component.long_name;
+    } else if (types.includes('administrative_area_level_2') && !city) {
+      city = component.long_name; // district as fallback
+    } else if (types.includes('administrative_area_level_3') && !city) {
+      city = component.long_name;
+    }
+    
+    if (types.includes('administrative_area_level_1')) {
+      state = component.long_name;
+    }
+    if (types.includes('postal_code')) {
+      pincode = component.long_name;
+    }
+  }
+}
+
+  // Find a good short precise address name
+  const sublocalityTypes = ['sublocality', 'neighborhood', 'route', 'premise', 'subpremise'];
+  const sublocality = result.address_components?.find(c => 
+    sublocalityTypes.some(t => c.types.includes(t))
+  );
+  
+  addressStr = sublocality ? sublocality.long_name : (result.formatted_address ? result.formatted_address.split(',')[0] : (result as google.maps.places.PlaceResult).name || '');
+
+  return { address: addressStr, city, state, pincode };
+};
 
 export default function LocationPickerMap({
   address, city, state, pincode,
   initialCoordinates, onLocationConfirmed
 }: LocationPickerMapProps) {
-  const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<any>(null);
-  const markerRef = useRef<any>(null);
 
+  const { isLoaded, loadError } = useLoadScript({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
+    libraries: libraries,
+  });
+
+  const mapRef = useRef<google.maps.Map | null>(null);
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [geocodeError, setGeocodeError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
-  const [confirmed, setConfirmed] = useState(false);
-  const [pinPosition, setPinPosition] = useState<[number, number] | null>(null);
+  
+  const [pinPosition, setPinPosition] = useState<google.maps.LatLngLiteral | null>(null);
+  const [mapCenter, setMapCenter] = useState<google.maps.LatLngLiteral>(DEFAULT_CENTER);
+  const [zoom, setZoom] = useState(5);
+
   const [geocodeAccuracy, setGeocodeAccuracy] = useState('GEOMETRIC_CENTER');
   const [geocodeAccuracyRadius, setGeocodeAccuracyRadius] = useState(500);
+  
+  // Store reverse geocoded address
+  const [reverseGeocodedAddress, setReverseGeocodedAddress] = useState<{
+    address: string;
+    city: string;
+    state: string;
+    pincode: string;
+  } | null>(null);
 
-  const placeMarker = useCallback(async (L: any, map: any, lat: number, lng: number) => {
-    if (markerRef.current) map.removeLayer(markerRef.current);
-
-    const marker = L.marker([lat, lng], { draggable: true }).addTo(map);
-    marker.on('dragend', () => {
-      const pos = marker.getLatLng();
-      setPinPosition([pos.lat, pos.lng]);
-      setConfirmed(false);
-    });
-    marker.bindPopup('📍 Your turf location<br><small>Drag to adjust</small>').openPopup();
-
-    markerRef.current = marker;
-    setPinPosition([lat, lng]);
-    setConfirmed(false);
-  }, []);
-
+  // Set initial coordinates if available
   useEffect(() => {
-    let isMounted = true;
-    
-    const initMap = async () => {
-      if (!mapContainerRef.current || mapRef.current) return;
+    // Only set it initially if we don't already have a pin positioned manually
+    // This prevents the parent form updates from constantly overriding our active drag/click
+    if (initialCoordinates?.latitude && initialCoordinates?.longitude && !pinPosition) {
+      const pos = { lat: initialCoordinates.latitude, lng: initialCoordinates.longitude };
+      setPinPosition(pos);
+      setMapCenter(pos);
+      setZoom(15);
+    }
+  }, [initialCoordinates, pinPosition]);
 
-      const L = (await import('leaflet')).default;
-      
-      // Prevent double initialization due to React StrictMode and async import
-      if (!isMounted || mapRef.current || (mapContainerRef.current as any)._leaflet_id) {
-        return;
-      }
-
-      delete (L.Icon.Default.prototype as any)._getIconUrl;
-      L.Icon.Default.mergeOptions({
-        iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-        iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-      });
-
-      const map = L.map(mapContainerRef.current).setView([20.5937, 78.9629], 5);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap',
-        maxZoom: 19
-      }).addTo(map);
-
-      map.on('click', (e: any) => placeMarker(L, map, e.latlng.lat, e.latlng.lng));
-      mapRef.current = map;
-
-      if (initialCoordinates?.latitude && initialCoordinates?.longitude) {
-        placeMarker(L, map, initialCoordinates.latitude, initialCoordinates.longitude);
-        map.setView([initialCoordinates.latitude, initialCoordinates.longitude], 15);
-      }
-    };
-
-    initMap();
-    return () => { 
-      isMounted = false;
-      if (mapRef.current) { 
-        mapRef.current.remove(); 
-        mapRef.current = null; 
-      } 
-    };
+  const onMapLoad = useCallback((map: google.maps.Map) => {
+    mapRef.current = map;
   }, []);
+
+  const reverseGeocode = useCallback((latLng: google.maps.LatLng | {lat: number, lng: number}) => {
+    if (!window.google) return;
+    const geocoder = new window.google.maps.Geocoder();
+    
+    geocoder.geocode({ location: latLng }, (results, status) => {
+      if (status === 'OK' && results && results[0]) {
+        const addressData = extractAddressFromGeocodeResult(results[0]);
+        setReverseGeocodedAddress(addressData);
+        setGeocodeAccuracy(results[0].geometry.location_type);
+        
+        // Auto-confirm the location
+        const lat = typeof latLng.lat === 'function' ? latLng.lat() : latLng.lat;
+        const lng = typeof latLng.lng === 'function' ? latLng.lng() : latLng.lng;
+        
+        onLocationConfirmed({
+          coordinates: [lng, lat],
+          accuracy: results[0].geometry.location_type,
+          accuracyRadius: 500, // Default radius
+          isOwnerVerified: true,
+          ...addressData
+        });
+      }
+    });
+  }, [onLocationConfirmed]);
+
+  const handleMapClick = useCallback((e: google.maps.MapMouseEvent) => {
+    if (e.latLng) {
+      const pos = { lat: e.latLng.lat(), lng: e.latLng.lng() };
+      setPinPosition(pos);
+      reverseGeocode(pos);
+    }
+  }, [reverseGeocode]);
+
+  const handleMarkerDragEnd = useCallback((e: google.maps.MapMouseEvent) => {
+    if (e.latLng) {
+      const pos = { lat: e.latLng.lat(), lng: e.latLng.lng() };
+      setPinPosition(pos);
+      reverseGeocode(pos);
+    }
+  }, [reverseGeocode]);
 
   const handleGeocode = async () => {
     if (!city) { setGeocodeError('Enter a city first'); return; }
+    if (!window.google) return;
+    
     setIsGeocoding(true);
     setGeocodeError(null);
 
-    try {
-      const res = await fetch('/api/geocode', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address, city, state, pincode })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-
-      const [lng, lat] = data.coordinates;
-      setGeocodeAccuracy(data.accuracy);
-      setGeocodeAccuracyRadius(data.accuracyRadius);
-
-      if (mapRef.current) {
-        const L = (await import('leaflet')).default;
-        placeMarker(L, mapRef.current, lat, lng);
-        mapRef.current.setView([lat, lng], 15);
-      }
-    } catch (err: any) { setGeocodeError(err.message); }
-    finally { setIsGeocoding(false); }
-  };
-
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
-    setIsSearching(true);
-    setGeocodeError(null);
+    const geocoder = new window.google.maps.Geocoder();
+    const fullAddress = [address, city, state, pincode].filter(Boolean).join(', ');
 
     try {
-      const res = await fetch('/api/geocode', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address: `${searchQuery}, ${city || ''}`, city: city || searchQuery })
+      geocoder.geocode({ address: fullAddress }, (results, status) => {
+        if (status === 'OK' && results && results[0]) {
+          const loc = results[0].geometry.location;
+          const pos = { lat: loc.lat(), lng: loc.lng() };
+          
+          setPinPosition(pos);
+          setMapCenter(pos);
+          setZoom(15);
+          setGeocodeAccuracy(results[0].geometry.location_type);
+          setGeocodeAccuracyRadius(500); // Google doesn't easily provide radius, setting default
+          
+          // Extact address directly from search results to avoid a second API call
+          const addressData = extractAddressFromGeocodeResult(results[0]);
+          setReverseGeocodedAddress(addressData);
+          
+          // Auto-confirm
+          onLocationConfirmed({
+            coordinates: [pos.lng, pos.lat],
+            accuracy: results[0].geometry.location_type,
+            accuracyRadius: 500,
+            isOwnerVerified: true,
+            ...addressData
+          });
+        } else {
+          setGeocodeError('Could not find location from address: ' + status);
+        }
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+    } catch (err: any) {
+       setGeocodeError(err.message);
+    } finally {
+      setIsGeocoding(false);
+    }
+  };
 
-      const [lng, lat] = data.coordinates;
-      if (mapRef.current) {
-        const L = (await import('leaflet')).default;
-        placeMarker(L, mapRef.current, lat, lng);
-        mapRef.current.setView([lat, lng], 16);
+  const onAutocompleteLoad = useCallback((autocomplete: google.maps.places.Autocomplete) => {
+    autocompleteRef.current = autocomplete;
+  }, []);
+
+  const onPlaceChanged = () => {
+    if (autocompleteRef.current !== null) {
+      const place = autocompleteRef.current.getPlace();
+      
+      if (!place.geometry || !place.geometry.location) {
+        setGeocodeError('Location search failed: No geometry found for this place.');
+        return;
       }
-    } catch (err: any) { setGeocodeError(err.message); }
-    finally { setIsSearching(false); }
+
+      const loc = place.geometry.location;
+      const pos = { lat: loc.lat(), lng: loc.lng() };
+      
+      setPinPosition(pos);
+      setMapCenter(pos);
+      setZoom(16);
+      setGeocodeAccuracy('ROOFTOP');
+      setGeocodeError(null);
+      
+      const addressData = extractAddressFromGeocodeResult(place);
+      setReverseGeocodedAddress(addressData);
+      
+      // Auto-confirm
+      onLocationConfirmed({
+        coordinates: [pos.lng, pos.lat],
+        accuracy: 'ROOFTOP',
+        accuracyRadius: 500,
+        isOwnerVerified: true,
+        ...addressData
+      });
+    }
   };
 
-  const handleConfirm = () => {
-    if (!pinPosition) { setGeocodeError('Place a pin on the map first'); return; }
-    const [lat, lng] = pinPosition;
-    onLocationConfirmed({
-      coordinates: [lng, lat], // ⭐ GeoJSON: longitude first
-      accuracy: geocodeAccuracy,
-      accuracyRadius: geocodeAccuracyRadius,
-      isOwnerVerified: true
-    });
-    setConfirmed(true);
-  };
+  if (loadError) return <div className="p-4 bg-red-50 text-red-600 rounded">Error loading maps</div>;
+  if (!isLoaded) return <div className="p-4 flex gap-2"><Loader2 className="animate-spin h-5 w-5" /> Loading maps...</div>;
 
   return (
     <Card>
@@ -182,11 +265,18 @@ export default function LocationPickerMap({
           </span>
         </div>
 
-        <div className="flex gap-2">
-          <Input placeholder="Search landmark near your turf..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} />
-          <Button type="button" onClick={handleSearch} disabled={isSearching || !searchQuery.trim()} variant="outline">
-            {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-          </Button>
+        <div className="flex gap-2 w-full">
+          <Autocomplete
+            onLoad={onAutocompleteLoad}
+            onPlaceChanged={onPlaceChanged}
+            className="flex-grow w-full border-gray-300 focus:border-green-500 focus:ring-green-500"
+          >
+            <Input 
+              type="text"
+              placeholder="Search milestone, landmark, or college directly..." 
+              className="w-full"
+            />
+          </Autocomplete>
         </div>
 
         {geocodeError && (
@@ -196,28 +286,47 @@ export default function LocationPickerMap({
           </Alert>
         )}
 
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
-        <div ref={mapContainerRef} className="w-full h-[400px] rounded-lg border border-gray-200 z-0" />
+        {/* Google Map Implementation */}
+        <div className="border border-gray-200 rounded-lg overflow-hidden bg-gray-100 relative z-0">
+          <GoogleMap
+            mapContainerStyle={mapContainerStyle}
+            center={mapCenter}
+            zoom={zoom}
+            onClick={handleMapClick}
+            onLoad={onMapLoad}
+            options={{
+              streetViewControl: false,
+              mapTypeControl: false,
+              fullscreenControl: true,
+            }}
+          >
+            {pinPosition && (
+              <Marker
+                position={pinPosition}
+                draggable={true}
+                onDragEnd={handleMarkerDragEnd}
+                animation={window.google.maps.Animation.DROP}
+              />
+            )}
+          </GoogleMap>
+        </div>
 
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
           <p className="text-sm text-blue-800 font-medium mb-1">📍 How to mark location:</p>
           <ol className="text-sm text-blue-700 space-y-1 list-decimal list-inside">
             <li>Click <b>Find from Address</b> to auto-locate your area</li>
             <li>Or use the <b>search bar</b> to find a nearby landmark</li>
             <li><b>Click on the map</b> to place the pin, or <b>drag</b> to adjust</li>
-            <li>Click <b>Confirm Location</b> when the pin is at your turf</li>
+            <li>The location is <b>automatically saved</b> when you drop the pin</li>
           </ol>
         </div>
 
         {pinPosition && (
           <div className="flex items-center justify-between bg-gray-50 border rounded-lg p-3">
             <div>
-              <p className="text-sm text-gray-600">📍 <span className="font-mono text-xs">{pinPosition[0].toFixed(6)}°N, {pinPosition[1].toFixed(6)}°E</span></p>
-              {confirmed && <p className="text-sm text-green-600 flex items-center gap-1 mt-1"><CheckCircle className="h-4 w-4" /> Location confirmed</p>}
+              <p className="text-sm text-gray-600">📍 <span className="font-mono text-xs">{pinPosition.lat.toFixed(6)}°N, {pinPosition.lng.toFixed(6)}°E</span></p>
+              <p className="text-sm text-green-600 flex items-center gap-1 mt-1"><CheckCircle className="h-4 w-4" /> Location selected</p>
             </div>
-            <Button type="button" onClick={handleConfirm} className={confirmed ? 'bg-green-500 hover:bg-green-600' : 'bg-blue-500 hover:bg-blue-600'}>
-              {confirmed ? <><CheckCircle className="h-4 w-4 mr-2" />Confirmed ✓</> : <><MapPin className="h-4 w-4 mr-2" />Confirm Location</>}
-            </Button>
           </div>
         )}
 

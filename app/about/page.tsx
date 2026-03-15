@@ -195,10 +195,6 @@ export default function AboutPage() {
                     <div className="text-sm text-gray-600">Sangli,Maharashtra,India</div>
                   </div>
                 </div>
-
-                <div className="mt-6">
-                  <Button className="w-full">Get in touch</Button>
-                </div>
               </CardContent>
             </Card>
           </div>
@@ -217,8 +213,6 @@ export default function AboutPage() {
             </div>
           </div>
         </section>
-
-        <div className="text-xs text-gray-400 mt-6">Surprising fact: The first widely used synthetic turf (AstroTurf) was installed in 1966 in the Houston Astrodome. 🏟️</div>
       </main>
       
       <Footer />

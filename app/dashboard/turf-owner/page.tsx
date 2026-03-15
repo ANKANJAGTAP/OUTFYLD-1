@@ -871,7 +871,7 @@ function TurfOwnerDashboard() {
                     accuracy: locationData.accuracy,
                     accuracyRadius: locationData.accuracyRadius,
                     isOwnerVerified: locationData.isOwnerVerified,
-                    geocodedBy: "mapbox",
+                    geocodedBy: "user_pin_drop",
                     geocodedAt: new Date(),
                   },
                   location: {
@@ -880,6 +880,11 @@ function TurfOwnerDashboard() {
                       latitude: locationData.coordinates[1],
                       longitude: locationData.coordinates[0],
                     },
+                    // Auto-fill form fields with reverse geocoded data if available
+                    ...(locationData.address && { address: locationData.address }),
+                    ...(locationData.city && { city: locationData.city }),
+                    ...(locationData.state && { state: locationData.state }),
+                    ...(locationData.pincode && { pincode: locationData.pincode }),
                   },
                 }));
               }}

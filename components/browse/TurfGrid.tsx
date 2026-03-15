@@ -233,22 +233,23 @@ export default function TurfGrid({
         {sortBy === 'distance' && ' · Sorted by distance'}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-8">
         {turfs.map((turf) => (
-          <Card key={turf._id} className="overflow-hidden hover:shadow-lg transition-shadow">
-            <CardHeader className="p-0">
-              <div className="relative h-48 bg-gray-200">
+          <Card key={turf._id} className="group flex flex-col overflow-hidden rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 bg-white h-full">
+            <CardHeader className="p-0 relative">
+              <div className="relative h-48 w-full bg-gray-200 overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent z-10 transition-opacity duration-300 group-hover:opacity-80" />
                 <img
                   src={getImageUrl(turf)}
                   alt={getDisplayName(turf)}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-110"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.src = 'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=500&h=300&fit=crop';
                   }}
                 />
                 {/* Price badge — top right */}
-                <div className="absolute top-2 right-2">
+                <div className="absolute top-3 right-3 z-20">
                   {(() => {
                     const priceInfo = formatPrice(turf);
                     if (priceInfo.hasOffer) {
@@ -271,24 +272,16 @@ export default function TurfGrid({
                     );
                   })()}
                 </div>
-                {/* ⭐ Distance badge — top left (only when sorting by distance) */}
-                {turf.distanceDisplay && (
-                  <div className="absolute top-2 left-2">
-                    <Badge className="bg-blue-600/90 text-white text-xs font-medium">
-                      📍 {turf.distanceDisplay}
-                    </Badge>
-                  </div>
-                )}
               </div>
             </CardHeader>
             
-            <CardContent className="p-4">
-              <CardTitle className="text-lg mb-2 truncate">
+            <CardContent className="p-5 flex-grow">
+              <CardTitle className="text-xl font-bold mb-3 text-gray-900 group-hover:text-green-600 transition-colors line-clamp-1">
                 {getDisplayName(turf)}
               </CardTitle>
               
-              <div className="space-y-2 text-sm text-gray-600">
-                <div className="mb-2">
+              <div className="space-y-3 text-sm text-gray-600">
+                <div className="flex items-center justify-between">
                   <StarRating 
                     rating={turf.rating || 0} 
                     reviewCount={turf.reviewCount || 0}
@@ -297,30 +290,30 @@ export default function TurfGrid({
                   />
                 </div>
 
-                <div className="flex items-center">
-                  <MapPin className="h-4 w-4 mr-1 flex-shrink-0" />
-                  <span className="truncate">{getDisplayLocation(turf)}</span>
+                <div className="flex items-start text-gray-500">
+                  <MapPin className="h-4 w-4 mr-1.5 mt-0.5 flex-shrink-0 text-gray-400" />
+                  <span className="line-clamp-2">{getDisplayLocation(turf)}</span>
                 </div>
                 
                 {turf.sportsOffered && turf.sportsOffered.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
+                  <div className="flex flex-wrap gap-1.5 pt-1">
                     {turf.sportsOffered.slice(0, 3).map((sport, index) => (
-                      <Badge key={index} variant="outline" className="text-xs">{sport}</Badge>
+                      <Badge key={index} variant="secondary" className="bg-green-50 text-green-700 hover:bg-green-100 border-0 font-medium px-2 py-0.5 text-xs">{sport}</Badge>
                     ))}
                     {turf.sportsOffered.length > 3 && (
-                      <Badge variant="outline" className="text-xs">+{turf.sportsOffered.length - 3} more</Badge>
+                      <Badge variant="secondary" className="bg-gray-100 text-gray-600 hover:bg-gray-200 border-0 font-medium px-2 py-0.5 text-xs">+{turf.sportsOffered.length - 3} more</Badge>
                     )}
                   </div>
                 )}
                 
                 {turf.description && (
-                  <p className="text-xs text-gray-500 line-clamp-2">{turf.description}</p>
+                  <p className="text-sm text-gray-500 line-clamp-2 leading-relaxed pt-1">{turf.description}</p>
                 )}
               </div>
             </CardContent>
             
-            <CardFooter className="p-4 pt-0">
-              <Button onClick={() => handleBookNow(turf._id)} className="w-full" size="sm">
+            <CardFooter className="p-5 pt-0 mt-auto">
+              <Button onClick={() => handleBookNow(turf._id)} className="w-full h-12 text-md bg-green-600 hover:bg-green-700 text-white shadow-md hover:shadow-lg transition-all rounded-xl font-semibold">
                 Book Now
               </Button>
             </CardFooter>

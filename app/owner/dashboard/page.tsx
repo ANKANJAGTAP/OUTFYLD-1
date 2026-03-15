@@ -19,7 +19,8 @@ import {
   Trash2,
   Eye,
   DollarSign,
-  Edit
+  Edit,
+  ChevronDown
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -237,20 +238,36 @@ function OwnerDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b sticky top-0 z-50">
+      <header className="bg-white/95 backdrop-blur-sm shadow-sm border-b border-gray-100 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-14 md:h-16">
+          <div className="flex justify-between items-center py-3 md:py-4">
             <div className="flex items-center">
               <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
-                <div className="bg-blue-500 rounded-lg p-1.5 md:p-2 mr-2 md:mr-3">
-                  <MapPin className="h-5 w-5 md:h-6 md:w-6 text-white" />
+                <div className="mr-2 md:mr-3">
+                  <img 
+                    src="/images/logo.png" 
+                    alt="OutFyld Logo" 
+                    className="h-10 w-10 md:h-12 md:w-12 object-contain"
+                  />
                 </div>
                 <div>
-                  <h1 className="text-lg md:text-xl font-bold text-blue-600">OutFyld</h1>
-                  <p className="text-xs text-gray-500 hidden sm:block">Owner Dashboard</p>
+                  <h1 className="text-xl md:text-2xl font-bold text-green-600">OutFyld</h1>
+                  {/* <p className="text-xs text-gray-500 hidden sm:block">Owner Dashboard</p> */}
                 </div>
               </Link>
             </div>
+
+            <nav className="hidden lg:flex items-center space-x-6 xl:space-x-8">
+              <Link href="/" className="text-sm font-medium text-gray-700 hover:text-green-600 transition-colors">
+                Home
+              </Link>
+              <Link href="/about" className="text-sm font-medium text-gray-700 hover:text-green-600 transition-colors">
+                About
+              </Link>
+              <Link href="/contact" className="text-sm font-medium text-gray-700 hover:text-green-600 transition-colors">
+                Contact
+              </Link>
+            </nav>
 
             <div className="flex items-center space-x-2 md:space-x-4">
               <DropdownMenu>
@@ -270,6 +287,7 @@ function OwnerDashboard() {
                         {user.subscriptionPlan.charAt(0).toUpperCase() + user.subscriptionPlan.slice(1)} Plan
                       </Badge>
                     )}
+                    <ChevronDown className="h-4 w-4 text-gray-500" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
@@ -294,16 +312,6 @@ function OwnerDashboard() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={logout}
-                className="text-gray-600 text-xs"
-              >
-                <span className="hidden md:inline">Logout</span>
-                <span className="md:hidden">Exit</span>
-              </Button>
             </div>
           </div>
         </div>

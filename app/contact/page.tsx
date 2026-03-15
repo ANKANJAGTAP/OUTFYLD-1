@@ -247,29 +247,8 @@ export default function ContactPage() {
                 <div className="text-xs text-gray-500 mt-2">{company.address}</div>
               </CardContent>
             </Card>
-
-            <Card className="p-4 shadow-lg">
-              <CardHeader>
-                <CardTitle>Press & Media</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-sm text-gray-700">For press enquiries, reach out to <a href={`mailto:${company.email}`} className="text-green-600 hover:underline">{company.email}</a></div>
-                <div className="text-sm text-gray-500 mt-2">Press kit and logos available on request.</div>
-              </CardContent>
-            </Card>
           </aside>
         </section>
-
-        <div className="bg-white p-6 rounded shadow-sm">
-          <h3 className="font-semibold text-lg mb-2">Need help integrating OutFyld?</h3>
-          <p className="text-sm text-gray-600 mb-4">If you run multiple turfs or a sports complex, our partnerships team can walk you through bulk onboarding and API integration.</p>
-          <div className="flex gap-3">
-            <Link href="/auth/register"><Button className="bg-green-500 hover:bg-green-600">Become a partner</Button></Link>
-            <Button variant="outline">Contact Partnerships</Button>
-          </div>
-        </div>
-
-        <div className="text-xs text-gray-400 mt-6">Surprising fact: The first widely used artificial turf, AstroTurf, cost around $20,000 to install in 1966 — about $180k in today's dollars. 🏟️</div>
       </main>
 
       <Footer />
