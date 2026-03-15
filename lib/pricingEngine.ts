@@ -59,10 +59,10 @@ export function getTimePeriod(hour: number): TimePeriod {
 
 /** Hour ranges for each period */
 const PERIOD_RANGES: Record<TimePeriod, [number, number]> = {
-  morning:   [6, 12],
+  morning: [6, 12],
   afternoon: [12, 18],
-  night:     [18, 24],
-  midnight:  [0, 6],
+  night: [18, 24],
+  midnight: [0, 6],
 };
 
 /** Convert "HH:MM" to a decimal hour (e.g. "14:30" → 14.5) */
@@ -105,9 +105,9 @@ export function countAvailableSlotsInPeriod(
     const daySlots = availableSlots.filter((s) => s.day === dayName);
     for (const slot of daySlots) {
       const slotStart = parseHour(slot.startTime);
-      const slotEnd   = parseHour(slot.endTime);
+      const slotEnd = parseHour(slot.endTime);
       const overlapStart = Math.max(slotStart, periodStart);
-      const overlapEnd   = Math.min(slotEnd, periodEnd);
+      const overlapEnd = Math.min(slotEnd, periodEnd);
       if (overlapEnd > overlapStart) {
         total += Math.floor(overlapEnd - overlapStart);
       }
@@ -234,8 +234,8 @@ export function calculateDynamicDiscount(
   }
 
   const discountPercent = Math.round(maxDiscountPercent * discountFraction);
-  const discountAmount  = Math.round((originalPrice * discountPercent) / 100);
-  const offerPrice      = originalPrice - discountAmount;
+  const discountAmount = Math.round((originalPrice * discountPercent) / 100);
+  const offerPrice = originalPrice - discountAmount;
 
   return {
     originalPrice,

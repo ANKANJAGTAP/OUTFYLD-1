@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
         let totalDiscountReceived = 0;
         let totalPointsUsed = 0;
         let totalAmountPaid = 0;
-        
+
         for (const booking of bookings) {
           totalDiscountReceived += (booking.loyaltyDiscountAmount || 0);
           totalPointsUsed += (booking.appliedLoyaltyPoints || 0);
@@ -230,12 +230,14 @@ export async function POST(request: NextRequest) {
           bookingId: bookings.map((b) => b._id.toString()).join(', '),
         };
 
-        // Email to owner
+        // Email to owner (Disabled per user request)
+        /*
         if (ownerData.email) {
           try {
             await sendBookingNotificationEmail(ownerData.email, ownerData.name || 'Owner', bookingDetails);
           } catch (e) { console.error('Email to owner failed:', e); }
         }
+        */
 
         // Confirmation email to customer
         if (customerData.email) {
