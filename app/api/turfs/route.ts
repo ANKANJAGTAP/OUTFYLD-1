@@ -5,6 +5,67 @@ import { enrichTurfsWithOffers } from "@/lib/pricingEngine";
 
 export const dynamic = "force-dynamic";
 
+// ─── Filter Options Cache ────────────────────────────────────────────
+// Cities, sports, and price range don't change every request.
+// Cache them for 5 minutes to avoid 3-4 extra DB queries per browse request.
+let filterCache: {
+  cities: string[];
+  sports: string[];
+  priceRange: { min: number; max: number };
+  cachedAt: number;
+} | null = null;
+
+const FILTER_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+async function getFilterOptions() {
+  // Return cache if still fresh
+  if (filterCache && Date.now() - filterCache.cachedAt < FILTER_CACHE_TTL) {
+    return filterCache;
+  }
+
+  // Run all 3 filter queries in parallel instead of sequential
+  const [cities, allSports, priceResults] = await Promise.all([
+    Turf.distinct("location.city", {
+      isActive: true,
+      "location.city": { $exists: true, $ne: "" },
+    }),
+
+    Turf.aggregate([
+      { $match: { isActive: true } },
+      { $unwind: "$sportsOffered" },
+      { $group: { _id: "$sportsOffered", count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+    ]),
+
+    // Single aggregation for both min and max price
+    // instead of two separate .find().sort().limit(1) queries
+    Turf.aggregate([
+      { $match: { isActive: true } },
+      {
+        $group: {
+          _id: null,
+          min: { $min: "$pricing" },
+          max: { $max: "$pricing" },
+        },
+      },
+    ]),
+  ]);
+
+  filterCache = {
+    cities: cities.filter((c: any) => c),
+    sports: allSports
+      .map((item: any) => item._id)
+      .filter((sport: any) => sport !== "Other"),
+    priceRange: {
+      min: priceResults[0]?.min || 0,
+      max: priceResults[0]?.max || 10000,
+    },
+    cachedAt: Date.now(),
+  };
+
+  return filterCache;
+}
+
 export async function GET(request: NextRequest) {
   try {
     await connectMongoDB();
@@ -22,7 +83,7 @@ export async function GET(request: NextRequest) {
     const minRating = parseFloat(searchParams.get("minRating") || "0");
     const sortBy = searchParams.get("sortBy") || "newest";
 
-    // ⭐ Geo params (only for distance sort)
+    // Geo params (only for distance sort)
     const lat = parseFloat(searchParams.get("lat") || "");
     const lng = parseFloat(searchParams.get("lng") || "");
     const isDistanceSort = sortBy === "distance" && !isNaN(lat) && !isNaN(lng);
@@ -98,7 +159,7 @@ export async function GET(request: NextRequest) {
       isDistanceSort ? `(lat: ${lat}, lng: ${lng})` : "",
     );
 
-    // ⭐ Owner verification stages (shared between both pipelines)
+    // Owner verification stages (shared between both pipelines)
     const ownerVerificationStages = [
       {
         $lookup: {
@@ -118,7 +179,7 @@ export async function GET(request: NextRequest) {
       },
     ];
 
-    // ⭐ Projection stage (shared) — keep maxDiscount and availableSlots for pricing engine
+    // Projection stage (shared) — keep maxDiscount and availableSlots for pricing engine
     const projectStage = {
       $project: {
         owner: 0,
@@ -131,7 +192,7 @@ export async function GET(request: NextRequest) {
     try {
       if (isDistanceSort) {
         // ═══════════════════════════════════════════════
-        // ⭐ DISTANCE SORT: Use $geoNear pipeline
+        // DISTANCE SORT: Use $geoNear pipeline
         // $geoNear MUST be first stage in pipeline
         // ═══════════════════════════════════════════════
 
@@ -176,43 +237,48 @@ export async function GET(request: NextRequest) {
           },
         };
 
-        // Main query
-        turfs = await Turf.aggregate([
-          geoNearStage,
-          ...ownerVerificationStages,
-          // Distance already sorted by $geoNear
-          { $skip: skip },
-          { $limit: limit },
-          distanceFields,
-          projectStage,
+        // Run main query and count query in parallel
+        const [turfsResult, countResult] = await Promise.all([
+          Turf.aggregate([
+            geoNearStage,
+            ...ownerVerificationStages,
+            { $skip: skip },
+            { $limit: limit },
+            distanceFields,
+            projectStage,
+          ]),
+          Turf.aggregate([
+            geoNearStage,
+            ...ownerVerificationStages,
+            { $count: "total" },
+          ]),
         ]);
 
-        // Count query
-        const countResult = await Turf.aggregate([
-          geoNearStage,
-          ...ownerVerificationStages,
-          { $count: "total" },
-        ]);
+        turfs = turfsResult;
         total = countResult[0]?.total || 0;
       } else {
         // ═══════════════════════════════════════════════
-        // NORMAL SORT: Existing pipeline (unchanged)
+        // NORMAL SORT: Existing pipeline
         // ═══════════════════════════════════════════════
 
-        turfs = await Turf.aggregate([
-          { $match: query },
-          ...ownerVerificationStages,
-          { $sort: sortOptions },
-          { $skip: skip },
-          { $limit: limit },
-          projectStage,
+        // Run main query and count query in parallel
+        const [turfsResult, countResult] = await Promise.all([
+          Turf.aggregate([
+            { $match: query },
+            ...ownerVerificationStages,
+            { $sort: sortOptions },
+            { $skip: skip },
+            { $limit: limit },
+            projectStage,
+          ]),
+          Turf.aggregate([
+            { $match: query },
+            ...ownerVerificationStages,
+            { $count: "total" },
+          ]),
         ]);
 
-        const countResult = await Turf.aggregate([
-          { $match: query },
-          ...ownerVerificationStages,
-          { $count: "total" },
-        ]);
+        turfs = turfsResult;
         total = countResult[0]?.total || 0;
       }
 
@@ -225,8 +291,12 @@ export async function GET(request: NextRequest) {
         isDistanceSort ? "(distance sort)" : "",
       );
 
-      // ⭐ Dynamic pricing: enrich turfs with offer data
-      const offerMap = await enrichTurfsWithOffers(turfs);
+      // Dynamic pricing: enrich turfs with offer data
+      // + fetch filter options — run BOTH in parallel
+      const [offerMap, filters] = await Promise.all([
+        enrichTurfsWithOffers(turfs),
+        getFilterOptions(),
+      ]);
 
       // Transform data for frontend
       const transformedTurfs = turfs.map((turf: any) => {
@@ -261,7 +331,7 @@ export async function GET(request: NextRequest) {
           owner: turf.ownerId,
           createdAt: turf.createdAt,
           updatedAt: turf.updatedAt,
-          // ⭐ Include distance fields when sorting by distance
+          // Include distance fields when sorting by distance
           ...(isDistanceSort && {
             distance: turf.distance,
             distanceInKm: turf.distanceInKm,
@@ -269,22 +339,6 @@ export async function GET(request: NextRequest) {
           }),
         };
       });
-
-      // Get available filter options (independent of sort)
-      const cities = await Turf.distinct("location.city", {
-        isActive: true,
-        "location.city": { $exists: true, $ne: "" },
-      });
-
-      const allSports = await Turf.aggregate([
-        { $match: { isActive: true } },
-        { $unwind: "$sportsOffered" },
-        { $group: { _id: "$sportsOffered", count: { $sum: 1 } } },
-        { $sort: { count: -1 } },
-      ]);
-      const sports = allSports
-        .map((item: any) => item._id)
-        .filter((sport: any) => sport !== "Other");
 
       return NextResponse.json({
         turfs: transformedTurfs,
@@ -296,27 +350,12 @@ export async function GET(request: NextRequest) {
           hasNextPage: page < Math.ceil(total / limit),
           hasPrevPage: page > 1,
         },
-        filters: {
-          cities: cities.filter((c: any) => c),
-          sports,
-          priceRange: {
-            min: await Turf.find(query)
-              .sort({ pricing: 1 })
-              .limit(1)
-              .select("pricing")
-              .then((res: any) => res[0]?.pricing || 0),
-            max: await Turf.find(query)
-              .sort({ pricing: -1 })
-              .limit(1)
-              .select("pricing")
-              .then((res: any) => res[0]?.pricing || 10000),
-          },
-        },
+        filters,
       });
     } catch (mongoError: any) {
       console.error("❌ Error in Turf query:", mongoError);
 
-      // ⭐ Handle geoNear specific errors gracefully
+      // Handle geoNear specific errors gracefully
       if (
         mongoError?.message?.includes("2dsphere") ||
         mongoError?.message?.includes("geoNear")
@@ -351,7 +390,6 @@ export async function GET(request: NextRequest) {
         mongoError?.message?.includes("connection")
       ) {
         console.log("MongoDB connection error");
-        // Your existing mock data fallback...
         const mockTurfs = [
           {
             _id: "mock1",

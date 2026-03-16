@@ -1,26 +1,55 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Mail, Phone, MapPin, Users, Star, Clock, Activity } from 'lucide-react';
+import { Mail, Phone, MapPin, Users, Star, Clock, Activity, Loader2 } from 'lucide-react';
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import { Footer } from '@/components/landing/Footer';
 
 // About Page - OutFyld
 // Single-file React component (Next.js app router compatible)
 // Uses the same UI primitives as your dashboards (Card, Button, Badge)
-// Replace dummy text/images with real content as needed.
 
 export default function AboutPage() {
+  const [statsData, setStatsData] = useState({
+    turfsListed: 0,
+    bookingsThisMonth: 0,
+    avgRating: '0',
+    cities: 0
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await fetch('/api/stats');
+        const data = await res.json();
+        if (data.success) {
+          setStatsData({
+            turfsListed: data.stats.turfsListed,
+            bookingsThisMonth: data.stats.bookingsThisMonth,
+            avgRating: data.stats.avgRating,
+            cities: data.stats.cities
+          });
+        }
+      } catch (err) {
+        console.error('Failed to fetch stats:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStats();
+  }, []);
+
   const stats = [
-    { id: 1, label: 'Turfs listed', value: '142' },
-    { id: 2, label: 'Bookings/month', value: '4.1k' },
-    { id: 3, label: 'Avg. rating', value: '4.6 ⭐' },
-    { id: 4, label: 'Cities', value: '12' }
+    { id: 1, label: 'Turfs listed', value: loading ? <Loader2 className="w-5 h-5 animate-spin" /> : statsData.turfsListed },
+    { id: 2, label: 'Bookings/month', value: loading ? <Loader2 className="w-5 h-5 animate-spin" /> : statsData.bookingsThisMonth },
+    { id: 3, label: 'Avg. rating', value: loading ? <Loader2 className="w-5 h-5 animate-spin" /> : `${statsData.avgRating} ⭐` },
+    { id: 4, label: 'Cities', value: loading ? <Loader2 className="w-5 h-5 animate-spin" /> : statsData.cities }
   ];
 
   const features = [

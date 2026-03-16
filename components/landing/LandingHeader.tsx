@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Menu, X, MapPin, User, LogOut, Shield, ChevronDown, ListOrdered, FileText, Award } from 'lucide-react';
@@ -19,8 +19,19 @@ import {
 
 export function LandingHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const { user, firebaseUser, logout, loading, initialLoading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+  const isHome = pathname === '/';
+
+  // Handle scroll to change header background on home page
+  useEffect(() => {
+    if (!isHome) return;
+    const handleScroll = () => setScrolled(window.scrollY > 50);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [isHome]);
 
   const handleLogout = async () => {
     try {
@@ -30,8 +41,20 @@ export function LandingHeader() {
     }
   };
 
+  const headerClasses = isHome
+    ? `fixed top-0 w-full z-50 transition-all duration-300 ${
+        scrolled ? 'bg-white/95 backdrop-blur-sm border-b border-green-100 shadow-sm' : 'bg-gradient-to-b from-black/80 to-transparent border-transparent'
+      }`
+    : 'sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-green-100 shadow-sm';
+
+  const textClasses = isHome && !scrolled ? 'text-white hover:text-gray-300' : 'text-gray-700 hover:text-green-600';
+  const logoTextClasses = isHome && !scrolled ? 'text-white' : 'text-green-600';
+  const userTextClasses = isHome && !scrolled ? 'text-white' : 'text-gray-900';
+  const iconClasses = isHome && !scrolled ? 'text-white' : 'text-gray-500';
+  const buttonVariant = isHome && !scrolled ? 'secondary' : 'outline';
+
   return (
-    <header className="bg-white/95 backdrop-blur-sm border-b border-green-100 sticky top-0 z-50 shadow-sm">
+    <header className={headerClasses}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-3 md:py-4">
           <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
@@ -41,28 +64,27 @@ export function LandingHeader() {
                 alt="OutFyld Logo" 
                 width={48} 
                 height={48} 
-                className="h-10 w-10 md:h-12 md:w-12 object-contain"
+                className={`h-10 w-10 md:h-12 md:w-12 object-contain ${isHome && !scrolled ? 'brightness-0 invert' : ''}`}
               />
             </div>
             <div>
-              <h1 className="text-xl md:text-2xl font-bold text-green-600">OutFyld</h1>
-              {/* <p className="text-xs text-gray-500 hidden sm:block">Sangli & Miraj</p> */}
+              <h1 className={`text-xl md:text-2xl font-bold ${logoTextClasses}`}>OutFyld</h1>
             </div>
           </Link>
 
           <nav className="hidden lg:flex items-center space-x-6 xl:space-x-8">
-            <Link href="/" className="text-sm font-medium text-gray-700 hover:text-green-600 transition-colors">
+            <Link href="/" className={`text-sm font-medium transition-colors ${textClasses}`}>
               Home
             </Link>
             {user?.role !== 'owner' && (
-              <Link href="/browse" className="text-sm font-medium text-gray-700 hover:text-green-600 transition-colors">
+              <Link href="/browse" className={`text-sm font-medium transition-colors ${textClasses}`}>
                 Browse Turfs
               </Link>
             )}
-            <Link href="/about" className="text-sm font-medium text-gray-700 hover:text-green-600 transition-colors">
+            <Link href="/about" className={`text-sm font-medium transition-colors ${textClasses}`}>
               About
             </Link>
-            <Link href="/contact" className="text-sm font-medium text-gray-700 hover:text-green-600 transition-colors">
+            <Link href="/contact" className={`text-sm font-medium transition-colors ${textClasses}`}>
               Contact
             </Link>
           </nav>
@@ -71,8 +93,8 @@ export function LandingHeader() {
             {initialLoading ? (
                // Show skeleton loader while determining auth state
                <div className="flex items-center space-x-3">
-                  <div className="h-9 w-20 bg-gray-200 animate-pulse rounded-md"></div>
-                  <div className="h-9 w-20 bg-gray-200 animate-pulse rounded-md"></div>
+                  <div className="h-9 w-20 bg-gray-200/50 animate-pulse rounded-md"></div>
+                  <div className="h-9 w-20 bg-gray-200/50 animate-pulse rounded-md"></div>
                </div>
             ) : firebaseUser && user ? (
               // User is logged in
@@ -81,7 +103,7 @@ export function LandingHeader() {
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="p-0 h-auto hover:bg-transparent flex items-center gap-2">
                       <div className="text-right hidden sm:block">
-                        <p className="text-sm font-medium text-gray-900">
+                        <p className={`text-sm font-medium ${userTextClasses}`}>
                           {user.name}
                         </p>
                         <Badge 
@@ -91,7 +113,7 @@ export function LandingHeader() {
                           {user.role === 'owner' ? 'Owner' : user.role === 'admin' ? 'Admin' : 'Customer'}
                         </Badge>
                       </div>
-                      <ChevronDown className="h-4 w-4 text-gray-500" />
+                      <ChevronDown className={`h-4 w-4 ${iconClasses}`} />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
@@ -159,12 +181,12 @@ export function LandingHeader() {
               // User is not logged in
               <>
                 <Link href="/auth/login">
-                  <Button variant="outline" size="sm" className="text-xs">
+                  <Button variant={buttonVariant as any} size="sm" className={`text-xs ${isHome && !scrolled ? 'bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm' : ''}`}>
                     Login
                   </Button>
                 </Link>
                 <Link href="/auth/register">
-                  <Button size="sm" className="bg-green-500 hover:bg-green-600 text-xs">
+                  <Button size="sm" className={`text-xs ${isHome && !scrolled ? 'bg-white text-green-700 hover:bg-gray-100' : 'bg-green-500 hover:bg-green-600'}`}>
                     Sign Up
                   </Button>
                 </Link>
@@ -173,11 +195,11 @@ export function LandingHeader() {
           </div>
 
           <button
-            className="lg:hidden p-2 hover:bg-gray-100 rounded-md transition-colors"
+            className={`lg:hidden p-2 rounded-md transition-colors ${isHome && !scrolled ? 'hover:bg-white/20 text-white' : 'hover:bg-gray-100 text-gray-700'}`}
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-label="Toggle menu"
           >
-            {isMenuOpen ? <X className="h-6 w-6 text-gray-700" /> : <Menu className="h-6 w-6 text-gray-700" />}
+            {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
         </div>
 

@@ -28,13 +28,25 @@ export async function GET(
       );
     }
 
-    const turf = await Turf.findById(id).select('pricing maxDiscount availableSlots');
+    // Validate date format
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      return NextResponse.json(
+        { error: 'Invalid date format. Use YYYY-MM-DD' },
+        { status: 400 }
+      );
+    }
+
+    // .lean() returns plain JS object — 3-5x faster than Mongoose document
+    const turf = await Turf.findById(id)
+      .select('pricing maxDiscount availableSlots')
+      .lean();
 
     if (!turf) {
       return NextResponse.json({ error: 'Turf not found' }, { status: 404 });
     }
 
-    const periodDiscounts = await calculatePeriodDiscountsForDate(turf, dateStr);
+    // calculatePeriodDiscountsForDate already handles maxDiscount=0 with early return
+    const periodDiscounts = await calculatePeriodDiscountsForDate(turf as any, dateStr);
 
     return NextResponse.json({ periodDiscounts });
   } catch (error) {

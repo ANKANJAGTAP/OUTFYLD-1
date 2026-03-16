@@ -202,11 +202,14 @@ export async function POST(request: NextRequest) {
             dates,
           );
 
+          const fillRate = totalSlots > 0 ? confirmedCount / totalSlots : 0;
+
           const discount = calculateDynamicDiscount(
             turf.pricing,
             turf.maxDiscount,
-            confirmedCount,
-            totalSlots,
+            fillRate,
+            { actualFillRate: fillRate },
+            turf.maxSurge || 0
           );
 
           perSlotDiscounts.push({

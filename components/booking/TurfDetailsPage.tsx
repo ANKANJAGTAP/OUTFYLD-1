@@ -19,10 +19,12 @@ import {
   Mail,
   Loader2,
   Lock,
-  Tag
+  Tag,
+  ExternalLink
 } from 'lucide-react';
 import Image from 'next/image';
 import { format, isSameDay, startOfWeek, endOfWeek, isWithinInterval, parseISO, addMonths, isAfter, startOfDay } from 'date-fns';
+import { GoogleMap, useLoadScript, MarkerF } from '@react-google-maps/api';
 // Import PaymentModal component
 import PaymentModal from '@/components/booking/PaymentModal';
 import { WeekCalendar } from '@/components/booking/WeekCalendar';
@@ -54,6 +56,14 @@ interface TurfData {
     city?: string;
     state?: string;
     pincode?: string;
+    coordinates?: {
+      latitude?: number;
+      longitude?: number;
+    };
+  };
+  geoLocation?: {
+    type: string;
+    coordinates: [number, number]; // [longitude, latitude]
   };
   availableSlots: Array<{
     day: string;
@@ -80,7 +90,17 @@ const amenityIcons: { [key: string]: React.ReactNode } = {
   'WiFi': <Wifi className="w-4 h-4" />
 };
 
+const mapContainerStyle = {
+  width: '100%',
+  height: '300px',
+  borderRadius: '0.5rem',
+};
+
 const TurfDetailsPage = memo(function TurfDetailsPage({ turfId }: TurfDetailsPageProps) {
+  const { isLoaded } = useLoadScript({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
+  });
+
   const { user } = useAuth();
   const [turf, setTurf] = useState<TurfData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -641,6 +661,47 @@ const TurfDetailsPage = memo(function TurfDetailsPage({ turfId }: TurfDetailsPag
                 </CardContent>
               </Card>
             </div>
+
+            {/* Location Map */}
+            {(() => {
+              const lat = turf.location?.coordinates?.latitude ?? turf.geoLocation?.coordinates?.[1];
+              const lng = turf.location?.coordinates?.longitude ?? turf.geoLocation?.coordinates?.[0];
+              
+              if (!lat || !lng || !isLoaded) return null;
+              
+              return (
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle>Location</CardTitle>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex items-center gap-2"
+                      onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank')}
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      Open in Maps
+                    </Button>
+                  </CardHeader>
+                  <CardContent className="p-0 overflow-hidden">
+                    <GoogleMap
+                      mapContainerStyle={mapContainerStyle}
+                      center={{ lat, lng }}
+                      zoom={15}
+                    >
+                      <MarkerF 
+                        position={{ lat, lng }} 
+                        animation={window.google?.maps?.Animation?.DROP}
+                      />
+                    </GoogleMap>
+                    <div className="p-4 text-sm text-gray-600 bg-gray-50 flex items-start gap-2 border-t">
+                      <MapPin className="w-5 h-5 text-gray-400 shrink-0" />
+                      <p>{turf.location?.address}, {turf.location?.city}, {turf.location?.state} - {turf.location?.pincode}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })()}
 
             {/* Calendar and Available Slots */}
             <div className="space-y-6">

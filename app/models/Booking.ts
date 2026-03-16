@@ -175,14 +175,25 @@ const BookingSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Create indexes for faster queries
+// ─── Indexes ─────────────────────────────────────────────────────────
+
+// Single-field indexes for general queries
 BookingSchema.index({ customerId: 1 });
 BookingSchema.index({ ownerId: 1 });
 BookingSchema.index({ turfId: 1 });
 BookingSchema.index({ status: 1 });
 BookingSchema.index({ 'slot.day': 1, 'slot.startTime': 1, 'slot.date': 1 });
 BookingSchema.index({ razorpayOrderId: 1 });
-// razorpayPaymentId index removed — already defined via schema field
+
+// ✅ NEW: Compound index for dynamic pricing aggregation queries
+// The pricing engine matches on { turfId, slot.date, status } together.
+// Without this, MongoDB uses the single turfId index and scans ALL bookings
+// for that turf across all dates, then filters in memory.
+// With this, it does a direct lookup: exact turfId + exact dates + confirmed status.
+BookingSchema.index(
+  { turfId: 1, 'slot.date': 1, status: 1 },
+  { name: 'idx_dynamic_pricing_lookup' }
+);
 
 // Pre-save middleware to validate booking data
 BookingSchema.pre('save', function(this: IBooking, next) {
