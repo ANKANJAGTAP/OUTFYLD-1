@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { MapPin, Search, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
-import { GoogleMap, useLoadScript, Marker, Autocomplete } from '@react-google-maps/api';
+import { GoogleMap, useLoadScript, MarkerF, Autocomplete } from '@react-google-maps/api';
 
 interface LocationPickerMapProps {
   address: string;
@@ -301,7 +301,7 @@ export default function LocationPickerMap({
             }}
           >
             {pinPosition && (
-              <Marker
+              <MarkerF
                 position={pinPosition}
                 draggable={true}
                 onDragEnd={handleMarkerDragEnd}

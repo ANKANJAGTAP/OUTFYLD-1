@@ -28,16 +28,33 @@ export async function POST(request: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
+    // Determine transformation based on folder
+    let transformation: any = [
+      { width: 500, height: 500, crop: 'limit' },
+      { quality: 'auto' }
+    ];
+
+    if (folder.includes('turf_banners')) {
+      // Banners need to be high resolution (e.g. 1920 width) without heavy compression
+      transformation = [
+        { width: 1920, crop: 'limit' },
+        { quality: 100 }
+      ];
+    } else if (folder.includes('turf_images')) {
+      // Standard turf images can comfortably sit at 1200px width
+      transformation = [
+        { width: 1200, crop: 'limit' },
+        { quality: 'auto' }
+      ];
+    }
+
     // Upload to Cloudinary
     const result = await new Promise((resolve, reject) => {
       cloudinary.uploader.upload_stream(
         {
           resource_type: 'image',
           folder: folder,
-          transformation: [
-            { width: 500, height: 500, crop: 'limit' },
-            { quality: 'auto' }
-          ]
+          transformation: transformation
         },
         (error: any, result: any) => {
           if (error) reject(error);

@@ -14,6 +14,7 @@ interface Turf {
   name: string;
   description: string;
   featuredImage: string;
+  bannerImage?: string;
   images: any[];
   distanceDisplay?: string;
   sportsOffered?: string[];
@@ -119,7 +120,8 @@ export function HeroBanner() {
 
       {/* Carousel Background Images */}
       {turfs.map((turf, idx) => {
-        let tImageUrl = turf.featuredImage || (turf.images && turf.images.length > 0 ? turf.images[0].url : 'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=1920&q=80');
+        // Fallback sequence: custom Banner Image -> First Image from array -> default
+        let tImageUrl = turf.bannerImage || turf.featuredImage || (turf.images && turf.images.length > 0 ? turf.images[0].url : 'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=1920&q=80');
         
         // Ensure high resolution for Cloudinary images (replace sizing params if any)
         // Many uploads might have w_500, q_auto type constraints saved in DB url.

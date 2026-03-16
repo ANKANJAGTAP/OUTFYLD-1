@@ -1,39 +1,31 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card, CardContent, CardDescription, CardHeader, CardTitle,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Building, 
-  Calendar, 
-  Users, 
-  TrendingUp, 
-  MapPin, 
-  Settings,
-  Plus,
-  BarChart3,
-  Clock,
-  Trash2,
-  Eye,
-  DollarSign,
-  Edit,
-  ChevronDown
+import { Separator } from '@/components/ui/separator';
+import {
+  Building, Calendar, Users, TrendingUp, MapPin, Settings,
+  Plus, BarChart3, Clock, Trash2, Eye, IndianRupee, Edit,
+  ChevronDown, ChevronRight, Sparkles, Star, CalendarCheck,
+  ArrowUpRight, Activity, Zap, AlertTriangle, ShieldCheck,
+  Loader2, X, ExternalLink, LayoutDashboard, RefreshCw,
+  LogOut, User as UserIcon, CreditCard,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
+// ─── Types ───────────────────────────────────────────────────────────
 interface Turf {
   _id: string;
   name: string;
@@ -51,6 +43,20 @@ interface Turf {
   reviewCount?: number;
 }
 
+interface Booking {
+  _id: string;
+  turfId: string | { _id: string };
+  status: string;
+  totalAmount: number;
+  slot: {
+    date: string;
+    startTime: string;
+    endTime: string;
+    day: string;
+  };
+  createdAt: string;
+}
+
 interface BookingStats {
   [turfId: string]: {
     pending: number;
@@ -59,74 +65,372 @@ interface BookingStats {
   };
 }
 
+interface DashboardStats {
+  totalTurfs: number;
+  totalBookings: number;
+  confirmedBookings: number;
+  pendingBookings: number;
+  activeBookings: number;
+  monthlyRevenue: number;
+  averageRating: number;
+  totalReviews: number;
+}
+
+// ─── Stat Card Component ─────────────────────────────────────────────
+function StatCard({
+  icon,
+  iconGradient,
+  label,
+  value,
+  subtext,
+  trend,
+  trendValue,
+}: {
+  icon: React.ReactNode;
+  iconGradient: string;
+  label: string;
+  value: string;
+  subtext: string;
+  trend?: 'up' | 'down' | 'neutral';
+  trendValue?: string;
+}) {
+  return (
+    <div
+      className="
+        group bg-white rounded-2xl border border-gray-100 shadow-sm
+        p-5 sm:p-6
+        hover:shadow-lg hover:shadow-emerald-50 hover:border-emerald-100
+        transition-all duration-300
+      "
+    >
+      <div className="flex items-center justify-between mb-4">
+        <div
+          className={`
+            w-11 h-11 rounded-xl bg-gradient-to-br ${iconGradient}
+            flex items-center justify-center text-white shadow-lg
+            group-hover:scale-110 transition-transform duration-300
+          `}
+        >
+          {icon}
+        </div>
+        {trend && trendValue && (
+          <div
+            className={`
+              flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold
+              ${trend === 'up'
+                ? 'bg-emerald-50 text-emerald-700'
+                : trend === 'down'
+                ? 'bg-red-50 text-red-600'
+                : 'bg-gray-50 text-gray-500'
+              }
+            `}
+          >
+            {trend === 'up' && <ArrowUpRight className="h-3 w-3" />}
+            {trendValue}
+          </div>
+        )}
+      </div>
+      <p className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
+        {value}
+      </p>
+      <p className="text-sm font-medium text-gray-900 mt-1">{label}</p>
+      <p className="text-xs text-gray-400 mt-0.5">{subtext}</p>
+    </div>
+  );
+}
+
+// ─── Turf Card Component ─────────────────────────────────────────────
+function TurfCard({
+  turf,
+  stats,
+  deleting,
+  onDelete,
+  onEdit,
+  onViewBookings,
+}: {
+  turf: Turf;
+  stats?: { pending: number; confirmed: number; total: number };
+  deleting: boolean;
+  onDelete: () => void;
+  onEdit: () => void;
+  onViewBookings: () => void;
+}) {
+  return (
+    <div
+      className="
+        group bg-white rounded-2xl border border-gray-100 shadow-sm
+        overflow-hidden
+        hover:shadow-xl hover:shadow-emerald-50 hover:border-emerald-100
+        transition-all duration-300
+      "
+    >
+      {/* Image */}
+      <div className="relative h-44 bg-gray-100 overflow-hidden">
+        {turf.images && turf.images.length > 0 ? (
+          <img
+            src={turf.images[0].url}
+            alt={turf.name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+            <Building className="h-12 w-12 text-gray-300" />
+          </div>
+        )}
+
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+
+        <Badge
+          className={`
+            absolute top-3 right-3 text-xs font-semibold px-2.5
+            ${turf.isActive
+              ? 'bg-emerald-500 text-white border-0 shadow-lg'
+              : 'bg-gray-500 text-white border-0'
+            }
+          `}
+        >
+          {turf.isActive ? '● Active' : 'Inactive'}
+        </Badge>
+
+        <div className="absolute bottom-3 left-3">
+          <span className="bg-white/95 backdrop-blur-sm text-gray-900 text-sm font-bold px-3 py-1.5 rounded-lg shadow-md">
+            ₹{turf.pricing}<span className="text-xs font-normal text-gray-500">/hr</span>
+          </span>
+        </div>
+
+        {turf.rating && turf.rating > 0 && (
+          <div className="absolute bottom-3 right-3 flex items-center gap-1 bg-white/95 backdrop-blur-sm px-2 py-1 rounded-lg shadow-md">
+            <Star className="h-3.5 w-3.5 text-amber-400 fill-amber-400" />
+            <span className="text-sm font-semibold text-gray-900">
+              {turf.rating.toFixed(1)}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Body */}
+      <div className="p-5">
+        <h3 className="font-bold text-gray-900 text-lg truncate group-hover:text-emerald-700 transition-colors">
+          {turf.name}
+        </h3>
+
+        <p className="text-sm text-gray-500 line-clamp-1 mt-1">
+          {turf.description}
+        </p>
+
+        <div className="flex items-center gap-1.5 text-sm text-gray-400 mt-3">
+          <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
+          <span className="truncate">
+            {[turf.location.city, turf.location.state].filter(Boolean).join(', ') || 'Location not set'}
+          </span>
+        </div>
+
+        <div className="flex flex-wrap gap-1.5 mt-3">
+          {turf.sportsOffered.slice(0, 3).map((sport, i) => (
+            <span
+              key={i}
+              className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-xs font-medium"
+            >
+              {sport}
+            </span>
+          ))}
+          {turf.sportsOffered.length > 3 && (
+            <span className="px-2 py-0.5 rounded-md bg-gray-100 text-gray-500 text-xs font-medium">
+              +{turf.sportsOffered.length - 3}
+            </span>
+          )}
+        </div>
+
+        {stats && (
+          <>
+            <Separator className="my-4" />
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-amber-400" />
+                <span className="text-xs text-gray-500">
+                  {stats.pending} pending
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                <span className="text-xs text-gray-500">
+                  {stats.confirmed} confirmed
+                </span>
+              </div>
+              <div className="text-xs text-gray-400 ml-auto">
+                {stats.total} total
+              </div>
+            </div>
+          </>
+        )}
+
+        <div className="flex gap-2 mt-4">
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1 rounded-xl border-gray-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition-all h-9 text-xs font-medium"
+            onClick={onViewBookings}
+          >
+            <Calendar className="h-3.5 w-3.5 mr-1.5" />
+            Bookings
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1 rounded-xl border-gray-200 hover:bg-green-50 hover:text-green-700 hover:border-green-200 transition-all h-9 text-xs font-medium"
+            onClick={onEdit}
+          >
+            <Edit className="h-3.5 w-3.5 mr-1.5" />
+            Edit
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="rounded-xl border-gray-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all h-9 w-9 p-0"
+            onClick={onDelete}
+            disabled={deleting}
+          >
+            {deleting ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Trash2 className="h-3.5 w-3.5" />
+            )}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Dashboard ──────────────────────────────────────────────────
 function OwnerDashboard() {
   const { user, firebaseUser, logout } = useAuth();
   const router = useRouter();
   const [turfs, setTurfs] = useState<Turf[]>([]);
+  const [allBookings, setAllBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
-  const [bookingStats, setBookingStats] = useState<BookingStats>({});
 
-  // No subscription check redirect - owner can always view dashboard
-  // Subscription check happens when clicking "Add Turf" button
-
-  // Fetch turfs on component mount
+  // ── Fetch turfs + ALL bookings in 2 parallel calls ──
   useEffect(() => {
     if (!user || !firebaseUser) {
       setLoading(false);
       return;
     }
-    const fetchTurfs = async () => {
-      if (!firebaseUser) return;
-      
+
+    const fetchDashboardData = async () => {
       setLoading(true);
       try {
         const idToken = await firebaseUser.getIdToken();
-        const response = await fetch('/api/turfs/manage', {
-          headers: {
-            'Authorization': `Bearer ${idToken}`,
-          },
-        });
 
-        if (response.ok) {
-          const data = await response.json();
-          setTurfs(data.turfs || []);
-          
-          // Fetch booking stats for each turf
-          const stats: BookingStats = {};
-          for (const turf of data.turfs || []) {
-            try {
-              const bookingResponse = await fetch(`/api/bookings/owner/${user.uid}?turfId=${turf._id}`, {
-                headers: {
-                  'Authorization': `Bearer ${idToken}`,
-                },
-              });
-              
-              if (bookingResponse.ok) {
-                const bookingData = await bookingResponse.json();
-                const bookings = bookingData.bookings || [];
-                stats[turf._id] = {
-                  pending: bookings.filter((b: any) => b.status === 'pending').length,
-                  confirmed: bookings.filter((b: any) => b.status === 'confirmed').length,
-                  total: bookings.length,
-                };
-              }
-            } catch (err) {
-              console.error(`Error fetching bookings for turf ${turf._id}:`, err);
-            }
-          }
-          setBookingStats(stats);
+        const [turfsRes, bookingsRes] = await Promise.all([
+          fetch('/api/turfs/manage', {
+            headers: { Authorization: `Bearer ${idToken}` },
+          }),
+          fetch(`/api/bookings/owner/${user.uid}`, {
+            headers: { Authorization: `Bearer ${idToken}` },
+          }),
+        ]);
+
+        if (turfsRes.ok) {
+          const turfsData = await turfsRes.json();
+          setTurfs(turfsData.turfs || []);
+        }
+
+        if (bookingsRes.ok) {
+          const bookingsData = await bookingsRes.json();
+          setAllBookings(bookingsData.bookings || []);
         }
       } catch (error) {
-        console.error('Error fetching turfs:', error);
+        console.error('Error fetching dashboard data:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchTurfs();
+    fetchDashboardData();
   }, [firebaseUser, user]);
 
+  // ── Compute all stats from bookings data ──
+  const { bookingStats, dashboardStats } = useMemo(() => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const todayStr = `${yyyy}-${mm}-${dd}`;
+
+    const stats: BookingStats = {};
+    for (const turf of turfs) {
+      stats[turf._id] = { pending: 0, confirmed: 0, total: 0 };
+    }
+
+    let totalBookings = 0;
+    let confirmedBookings = 0;
+    let pendingBookings = 0;
+    let activeBookings = 0;
+    let monthlyRevenue = 0;
+
+    for (const booking of allBookings) {
+      const turfId =
+        typeof booking.turfId === 'object' && booking.turfId !== null
+          ? (booking.turfId as any)._id?.toString() || ''
+          : booking.turfId?.toString() || '';
+
+      if (!stats[turfId]) {
+        stats[turfId] = { pending: 0, confirmed: 0, total: 0 };
+      }
+
+      stats[turfId].total++;
+      totalBookings++;
+
+      if (booking.status === 'confirmed') {
+        stats[turfId].confirmed++;
+        confirmedBookings++;
+
+        if (booking.slot?.date && booking.slot.date >= todayStr) {
+          activeBookings++;
+        }
+
+        const bookingDate = new Date(booking.createdAt || booking.slot?.date);
+        if (
+          bookingDate.getMonth() === currentMonth &&
+          bookingDate.getFullYear() === currentYear
+        ) {
+          monthlyRevenue += booking.totalAmount || 0;
+        }
+      }
+
+      if (booking.status === 'pending' || booking.status === 'pending_payment') {
+        stats[turfId].pending++;
+        pendingBookings++;
+      }
+    }
+
+    const ratedTurfs = turfs.filter((t) => t.rating && t.rating > 0);
+    const averageRating =
+      ratedTurfs.length > 0
+        ? ratedTurfs.reduce((sum, t) => sum + (t.rating || 0), 0) / ratedTurfs.length
+        : 0;
+    const totalReviews = turfs.reduce((sum, t) => sum + (t.reviewCount || 0), 0);
+
+    return {
+      bookingStats: stats,
+      dashboardStats: {
+        totalTurfs: turfs.length,
+        totalBookings,
+        confirmedBookings,
+        pendingBookings,
+        activeBookings,
+        monthlyRevenue,
+        averageRating,
+        totalReviews,
+      } as DashboardStats,
+    };
+  }, [turfs, allBookings]);
+
+  // ── Handlers ──
   const handleDeleteTurf = async (turfId: string) => {
     if (!firebaseUser) return;
     if (!confirm('Are you sure you want to delete this turf? This action cannot be undone.')) return;
@@ -138,13 +442,13 @@ function OwnerDashboard() {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${idToken}`,
+          Authorization: `Bearer ${idToken}`,
         },
         body: JSON.stringify({ turfId }),
       });
 
       if (response.ok) {
-        setTurfs(turfs.filter(turf => turf._id !== turfId));
+        setTurfs(turfs.filter((t) => t._id !== turfId));
         toast.success('Turf deleted successfully');
       } else {
         toast.error('Failed to delete turf');
@@ -157,425 +461,404 @@ function OwnerDashboard() {
     }
   };
 
-  // Handle Add Turf button click - check subscription first
   const handleAddTurf = async () => {
     if (!user?.uid) return;
-
     try {
-      // Check if owner has selected a subscription plan
       const response = await fetch(`/api/owner/subscription?uid=${user.uid}`);
       const data = await response.json();
 
       if (data.success) {
         if (!data.subscription.subscriptionPlan) {
-          // No plan selected - redirect to subscription page
           router.push('/owner/subscription');
           return;
         }
-
         if (data.subscription.verificationStatus === 'pending') {
-          // Plan selected but not approved yet
-          toast.info('Your subscription is pending admin approval. You will be able to add turfs once approved.');
+          toast.info('Your subscription is pending admin approval.');
           return;
         }
-
         if (data.subscription.verificationStatus === 'rejected') {
-          // Plan rejected
-          toast.error(`Your subscription was rejected. Reason: ${data.subscription.rejectionReason || 'No reason provided'}. Please contact support.`);
+          toast.error(`Subscription rejected: ${data.subscription.rejectionReason || 'Contact support.'}`);
           return;
         }
-
-        // Approved - check turf limits before redirecting
         if (data.subscription.verificationStatus === 'approved') {
           const plan = data.subscription.subscriptionPlan;
-          
           if ((plan === 'basic' || plan === 'starter') && turfs.length >= 1) {
-            toast.error('Basic plan members can only list 1 turf. Please upgrade your plan to add more turfs.');
+            toast.error('Basic plan: max 1 turf. Upgrade to add more.');
             return;
           }
-          
           if ((plan === 'premium' || plan === 'pro') && turfs.length >= 3) {
-            toast.error('Premium plan members can only list up to 3 turfs. Contact support to add more.');
+            toast.error('Premium plan: max 3 turfs. Contact support for more.');
             return;
           }
-
           router.push('/dashboard/turf-owner');
-          return;
         }
       }
-    } catch (error) {
-      console.error('Error checking subscription:', error);
-      // On error, try to go to subscription page
+    } catch {
       router.push('/owner/subscription');
     }
   };
 
-  // Calculate dashboard stats
-  const dashboardStats = {
-    totalTurfs: turfs.length,
-    totalBookings: 0,
-    monthlyRevenue: 0,
-    averageRating: 0,
-    pendingBookings: 0,
-    activeBookings: 0,
-  };
+  const greeting = (() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  })();
 
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#fafbfc] flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading dashboard...</p>
+          <div className="w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center mx-auto mb-4">
+            <Loader2 className="h-7 w-7 text-emerald-600 animate-spin" />
+          </div>
+          <p className="text-gray-500 font-medium">Loading dashboard...</p>
+          <p className="text-xs text-gray-400 mt-1">Fetching your turfs and bookings</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-      {/* Header */}
-      <header className="bg-white/95 backdrop-blur-sm shadow-sm border-b border-gray-100 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-3 md:py-4">
-            <div className="flex items-center">
-              <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
-                <div className="mr-2 md:mr-3">
-                  <img 
-                    src="/images/logo.png" 
-                    alt="OutFyld Logo" 
-                    className="h-10 w-10 md:h-12 md:w-12 object-contain"
-                  />
-                </div>
-                <div>
-                  <h1 className="text-xl md:text-2xl font-bold text-green-600">OutFyld</h1>
-                  {/* <p className="text-xs text-gray-500 hidden sm:block">Owner Dashboard</p> */}
-                </div>
-              </Link>
-            </div>
+    <div className="min-h-screen bg-[#fafbfc]">
 
-            <nav className="hidden lg:flex items-center space-x-6 xl:space-x-8">
-              <Link href="/" className="text-sm font-medium text-gray-700 hover:text-green-600 transition-colors">
-                Home
-              </Link>
-              <Link href="/about" className="text-sm font-medium text-gray-700 hover:text-green-600 transition-colors">
-                About
-              </Link>
-              <Link href="/contact" className="text-sm font-medium text-gray-700 hover:text-green-600 transition-colors">
-                Contact
-              </Link>
+      {/* ─────────── HEADER ─────────── */}
+      <header className="bg-white/80 backdrop-blur-xl border-b border-gray-100 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <Link href="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
+              <img
+                src="/images/logo.png"
+                alt="OutFyld Logo"
+                className="h-9 w-9 sm:h-10 sm:w-10 object-contain"
+              />
+              <h1 className="text-lg sm:text-xl font-bold text-emerald-600 tracking-tight">
+                OutFyld
+              </h1>
+            </Link>
+
+            <nav className="hidden lg:flex items-center gap-8">
+              {[
+                { label: 'Home', href: '/' },
+                { label: 'About', href: '/about' },
+                { label: 'Contact', href: '/contact' },
+              ].map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="text-sm font-medium text-gray-500 hover:text-emerald-600 transition-colors"
+                >
+                  {link.label}
+                </Link>
+              ))}
             </nav>
 
-            <div className="flex items-center space-x-2 md:space-x-4">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="p-0 h-auto hover:bg-transparent flex items-center gap-2">
-                    <div className="text-right hidden lg:block">
-                      <p className="text-sm font-medium text-gray-900">
-                        {user.name}
-                      </p>
-                      <p className="text-xs text-gray-500">{user.businessName || 'Turf Owner'}</p>
-                    </div>
-                    <Badge variant="secondary" className="bg-blue-100 text-blue-800 hidden md:flex">
-                      Owner
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="h-auto p-1.5 hover:bg-gray-50 rounded-xl flex items-center gap-3"
+                >
+                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center text-white text-sm font-bold shadow-md">
+                    {(user.name || 'O').charAt(0).toUpperCase()}
+                  </div>
+                  <div className="text-right hidden lg:block">
+                    <p className="text-sm font-semibold text-gray-900 leading-none">
+                      {user.name}
+                    </p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">
+                      {user.businessName || 'Turf Owner'}
+                    </p>
+                  </div>
+                  {user.subscriptionPlan && (
+                    <Badge className="hidden md:flex bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-50 text-[10px] font-semibold">
+                      {user.subscriptionPlan.charAt(0).toUpperCase() + user.subscriptionPlan.slice(1)}
                     </Badge>
-                    {user.subscriptionPlan && (
-                      <Badge variant={user.subscriptionPlan === 'premium' || user.subscriptionPlan === 'pro' ? 'default' : 'secondary'} className="hidden md:flex relative group">
-                        {user.subscriptionPlan.charAt(0).toUpperCase() + user.subscriptionPlan.slice(1)} Plan
-                      </Badge>
-                    )}
-                    <ChevronDown className="h-4 w-4 text-gray-500" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => router.push('/owner/profile')}>
-                    <Users className="mr-2 h-4 w-4" />
-                    <span>My Profile</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push('/owner/bank-details')}>
-                    <DollarSign className="mr-2 h-4 w-4" />
-                    <span>Payment Receiving Details</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push('/owner/analytics')}>
-                    <BarChart3 className="mr-2 h-4 w-4" />
-                    <span>Analytics</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem className="text-red-600" onClick={logout}>
-                    <Trash2 className="mr-2 h-4 w-4 rotate-180" />
-                    <span>Log out</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+                  )}
+                  <ChevronDown className="h-4 w-4 text-gray-400" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 rounded-xl shadow-xl border-gray-100 p-1">
+                <DropdownMenuLabel className="text-xs text-gray-400 font-medium px-3">
+                  My Account
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => router.push('/owner/profile')} className="rounded-lg cursor-pointer">
+                  <UserIcon className="mr-2 h-4 w-4 text-gray-400" />
+                  My Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push('/owner/bank-details')} className="rounded-lg cursor-pointer">
+                  <CreditCard className="mr-2 h-4 w-4 text-gray-400" />
+                  Payment Details
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push('/owner/analytics')} className="rounded-lg cursor-pointer">
+                  <BarChart3 className="mr-2 h-4 w-4 text-gray-400" />
+                  Analytics
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={logout} className="rounded-lg cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Log out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
-        {/* Verification Status Alert */}
-        {user.verificationStatus === 'pending' && (
-          <div className="mb-4 md:mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-3 md:p-4">
-            <div className="flex items-start">
-              <Clock className="h-5 w-5 text-yellow-600 mt-0.5 mr-2 md:mr-3 flex-shrink-0" />
-              <div>
-                <h3 className="font-semibold text-yellow-800 text-sm md:text-base">Verification Pending</h3>
-                <p className="text-xs md:text-sm text-yellow-700 mt-1">
-                  Your account is awaiting admin verification. You will be able to list your turfs once approved.
-                </p>
+      {/* ─────────── HERO BANNER ─────────── */}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-600 via-green-600 to-teal-700" />
+        <div
+          className="absolute inset-0 opacity-10"
+          style={{
+            backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
+            backgroundSize: '24px 24px',
+          }}
+        />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3 blur-3xl" />
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-20 sm:pb-24">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-5">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-2xl sm:text-3xl font-bold text-white">
+                  {greeting}, {user.name?.split(' ')[0]}!
+                </h1>
+                <Badge className="bg-white/15 text-white border-white/20 hover:bg-white/20 text-[10px]">
+                  <Sparkles className="h-3 w-3 mr-1" />
+                  Dashboard
+                </Badge>
               </div>
+              <p className="text-emerald-200 text-sm">
+                Manage your turf facilities and bookings from one place.
+              </p>
             </div>
+            <Button
+              onClick={handleAddTurf}
+              className="bg-white text-emerald-700 hover:bg-gray-100 rounded-xl h-11 px-6 font-semibold shadow-xl transition-all duration-200"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add New Turf
+            </Button>
           </div>
-        )}
-        
-        {user.verificationStatus === 'rejected' && (
-          <div className="mb-4 md:mb-6 bg-red-50 border border-red-200 rounded-lg p-3 md:p-4">
-            <div className="flex items-start">
-              <Clock className="h-5 w-5 text-red-600 mt-0.5 mr-2 md:mr-3 flex-shrink-0" />
-              <div>
-                <h3 className="font-semibold text-red-800 text-sm md:text-base">Application Rejected</h3>
-                <p className="text-xs md:text-sm text-red-700 mt-1">
-                  Your application has been rejected. Reason: {user.rejectionReason || 'No reason provided'}
-                </p>
-                <p className="text-xs md:text-sm text-red-700 mt-2">
-                  Please contact support for more information or to reapply.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {/* Welcome Section */}
-        <div className="mb-6 md:mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-              Welcome back, {user.name}!
-            </h1>
-            <p className="text-sm md:text-base text-gray-600">
-              Manage your turf facilities and bookings from your dashboard.
-            </p>
-          </div>
-          <Button 
-            onClick={handleAddTurf}
-            className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add New Turf
-          </Button>
         </div>
+      </div>
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Turfs</CardTitle>
-              <Building className="h-4 w-4 text-blue-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{dashboardStats.totalTurfs}</div>
-              <p className="text-xs text-muted-foreground">
-                {dashboardStats.totalTurfs === 0 ? 'No turfs added yet' : 'Active facilities'}
-              </p>
-            </CardContent>
-          </Card>
+      {/* ─────────── MAIN CONTENT ─────────── */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-12 relative z-10 pb-12">
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
-              <Calendar className="h-4 w-4 text-green-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{dashboardStats.totalBookings}</div>
-              <p className="text-xs text-muted-foreground">
-                All-time bookings
+        {/* Verification Alerts */}
+        {user.verificationStatus === 'pending' && (
+          <div className="mb-5 flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-2xl p-5">
+            <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
+              <Clock className="h-5 w-5 text-amber-600" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-amber-800 text-sm">Verification Pending</h3>
+              <p className="text-xs text-amber-600 mt-1 leading-relaxed">
+                Your account is awaiting admin verification. You can list turfs once approved.
               </p>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
+        )}
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
-              <DollarSign className="h-4 w-4 text-yellow-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">₹{dashboardStats.monthlyRevenue}</div>
-              <p className="text-xs text-muted-foreground">
-                This month
+        {user.verificationStatus === 'rejected' && (
+          <div className="mb-5 flex items-start gap-3 bg-red-50 border border-red-200 rounded-2xl p-5">
+            <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-red-800 text-sm">Application Rejected</h3>
+              <p className="text-xs text-red-600 mt-1">
+                Reason: {user.rejectionReason || 'No reason provided'}. Contact support to reapply.
               </p>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
+        )}
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Bookings</CardTitle>
-              <Clock className="h-4 w-4 text-purple-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{dashboardStats.activeBookings}</div>
-              <p className="text-xs text-muted-foreground">
-                Current bookings
-              </p>
-            </CardContent>
-          </Card>
+        {/* Stat Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+          <StatCard
+            icon={<Building className="h-5 w-5" />}
+            iconGradient="from-emerald-500 to-green-600"
+            label="Total Turfs"
+            value={String(dashboardStats.totalTurfs)}
+            subtext={
+              dashboardStats.totalTurfs === 0
+                ? 'No turfs added yet'
+                : `${turfs.filter((t) => t.isActive).length} active`
+            }
+          />
+          <StatCard
+            icon={<CalendarCheck className="h-5 w-5" />}
+            iconGradient="from-green-500 to-teal-500"
+            label="Total Bookings"
+            value={String(dashboardStats.totalBookings)}
+            subtext={`${dashboardStats.confirmedBookings} confirmed · ${dashboardStats.pendingBookings} pending`}
+            trend={dashboardStats.totalBookings > 0 ? 'up' : 'neutral'}
+            trendValue={dashboardStats.totalBookings > 0 ? `${dashboardStats.confirmedBookings} ✓` : '—'}
+          />
+          <StatCard
+            icon={<IndianRupee className="h-5 w-5" />}
+            iconGradient="from-teal-500 to-cyan-500"
+            label="Monthly Revenue"
+            value={`₹${dashboardStats.monthlyRevenue.toLocaleString('en-IN')}`}
+            subtext="This month's confirmed earnings"
+            trend={dashboardStats.monthlyRevenue > 0 ? 'up' : 'neutral'}
+            trendValue={dashboardStats.monthlyRevenue > 0 ? 'This month' : '—'}
+          />
+          <StatCard
+            icon={<Activity className="h-5 w-5" />}
+            iconGradient="from-cyan-500 to-sky-500"
+            label="Active Bookings"
+            value={String(dashboardStats.activeBookings)}
+            subtext="Upcoming confirmed bookings"
+            trend={dashboardStats.activeBookings > 0 ? 'up' : 'neutral'}
+            trendValue={dashboardStats.activeBookings > 0 ? 'Live' : '—'}
+          />
         </div>
 
         {/* My Turfs Section */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">My Turfs</h2>
+        <div className="mt-8">
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">My Turfs</h2>
+              <p className="text-xs text-gray-400 mt-0.5">
+                {turfs.length} {turfs.length === 1 ? 'facility' : 'facilities'} listed
+              </p>
+            </div>
+            {turfs.length > 0 && (
+              <Button
+                onClick={handleAddTurf}
+                variant="outline"
+                size="sm"
+                className="rounded-xl border-emerald-200 text-emerald-700 hover:bg-emerald-50 h-9 px-4 text-xs font-medium"
+              >
+                <Plus className="h-3.5 w-3.5 mr-1.5" />
+                Add Turf
+              </Button>
+            )}
+          </div>
+
           {turfs.length === 0 ? (
-            <Card className="border-dashed">
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <Building className="h-16 w-16 text-gray-300 mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No turfs added yet</h3>
-                <p className="text-gray-500 mb-6 text-center max-w-md">
-                  Get started by adding your first turf facility. You can add multiple turfs to manage all your properties in one place.
-                </p>
-                <Button 
-                  onClick={handleAddTurf}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Your First Turf
-                </Button>
-              </CardContent>
-            </Card>
+            <div className="bg-white rounded-2xl border-2 border-dashed border-gray-200 p-10 sm:p-14 text-center">
+              <div className="relative mx-auto w-20 h-20 mb-6">
+                <div className="w-20 h-20 rounded-2xl bg-emerald-50 flex items-center justify-center">
+                  <Building className="h-9 w-9 text-emerald-400" />
+                </div>
+              </div>
+              <h3 className="text-lg font-bold text-gray-900">No turfs added yet</h3>
+              <p className="text-sm text-gray-400 mt-2 max-w-md mx-auto leading-relaxed">
+                Get started by adding your first turf facility. Set pricing,
+                availability, and start receiving bookings from players.
+              </p>
+              <Button
+                onClick={handleAddTurf}
+                className="mt-6 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl h-11 px-6 font-semibold shadow-lg shadow-emerald-200 hover:shadow-xl hover:shadow-emerald-300 transition-all duration-200"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Your First Turf
+              </Button>
+            </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {turfs.map((turf) => (
-                <Card key={turf._id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                  <div className="relative h-48 bg-gray-200">
-                    {turf.images && turf.images.length > 0 ? (
-                      <img
-                        src={turf.images[0].url}
-                        alt={turf.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Building className="h-12 w-12 text-gray-400" />
-                      </div>
-                    )}
-                    <Badge 
-                      className="absolute top-2 right-2"
-                      variant={turf.isActive ? "default" : "secondary"}
-                    >
-                      {turf.isActive ? 'Active' : 'Inactive'}
-                    </Badge>
-                  </div>
-                  <CardHeader>
-                    <CardTitle className="text-xl">{turf.name}</CardTitle>
-                    <CardDescription className="line-clamp-2">
-                      {turf.description}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    <div className="flex items-center text-sm text-gray-600">
-                      <MapPin className="h-4 w-4 mr-2" />
-                      <span className="line-clamp-1">
-                        {turf.location.city}, {turf.location.state}
-                      </span>
-                    </div>
-                    <div className="flex items-center text-sm text-gray-600">
-                      <DollarSign className="h-4 w-4 mr-2" />
-                      <span>₹{turf.pricing}/hour</span>
-                    </div>
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {turf.sportsOffered.slice(0, 3).map((sport, index) => (
-                        <Badge key={index} variant="outline" className="text-xs">
-                          {sport}
-                        </Badge>
-                      ))}
-                      {turf.sportsOffered.length > 3 && (
-                        <Badge variant="outline" className="text-xs">
-                          +{turf.sportsOffered.length - 3}
-                        </Badge>
-                      )}
-                    </div>
-                    
-                    {/* Booking Stats */}
-                    {bookingStats[turf._id] && (
-                      <div className="flex gap-2 pt-2 border-t mt-2">
-                        <div className="flex items-center gap-1 text-xs">
-                          <Badge variant="outline" className="bg-orange-50 text-orange-600 border-orange-300">
-                            {bookingStats[turf._id].pending} Pending
-                          </Badge>
-                        </div>
-                        <div className="flex items-center gap-1 text-xs">
-                          <Badge variant="outline" className="bg-green-50 text-green-600 border-green-300">
-                            {bookingStats[turf._id].confirmed} Confirmed
-                          </Badge>
-                        </div>
-                      </div>
-                    )}
-                    
-                    <div className="flex gap-2 pt-4">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="flex-1"
-                        onClick={() => router.push(`/owner/bookings?turfId=${turf._id}`)}
-                      >
-                        <Calendar className="h-4 w-4 mr-1" />
-                        Bookings
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="flex-1"
-                        onClick={() => router.push(`/dashboard/turf-owner?turfId=${turf._id}`)}
-                      >
-                        <Edit className="h-4 w-4 mr-1" />
-                        Edit
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        onClick={() => handleDeleteTurf(turf._id)}
-                        disabled={deleting === turf._id}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                <TurfCard
+                  key={turf._id}
+                  turf={turf}
+                  stats={bookingStats[turf._id]}
+                  deleting={deleting === turf._id}
+                  onDelete={() => handleDeleteTurf(turf._id)}
+                  onEdit={() => router.push(`/dashboard/turf-owner?turfId=${turf._id}`)}
+                  onViewBookings={() => router.push(`/owner/bookings?turfId=${turf._id}`)}
+                />
               ))}
             </div>
           )}
         </div>
 
         {/* Getting Started Guide */}
-        {dashboardStats.totalTurfs === 0 && (
-          <Card className="border-blue-200 bg-blue-50">
-            <CardHeader>
-              <CardTitle className="text-blue-800">🚀 Getting Started</CardTitle>
-              <CardDescription className="text-blue-700">
-                Welcome to OutFyld! Here&apos;s how to set up your turf business:
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="text-blue-700">
-              <ol className="list-decimal list-inside space-y-2">
-                <li>Add your first turf facility with photos and details</li>
-                <li>Set pricing and availability hours</li>
-                <li>Configure booking rules and policies</li>
-                <li>Start receiving bookings from customers!</li>
-              </ol>
-              <div className="mt-6">
-                <Button className="bg-blue-600 hover:bg-blue-700">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Your First Turf
-                </Button>
+        {turfs.length === 0 && (
+          <div className="mt-6">
+            <div className="bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 rounded-2xl p-6 sm:p-8 relative overflow-hidden">
+              <div
+                className="absolute inset-0 opacity-10"
+                style={{
+                  backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
+                  backgroundSize: '20px 20px',
+                }}
+              />
+              <div className="relative">
+                <div className="flex items-center gap-2 mb-4">
+                  <Zap className="h-5 w-5 text-emerald-200" />
+                  <h3 className="text-lg font-bold text-white">Getting Started</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {[
+                    { step: '01', title: 'Add your turf', desc: 'Upload photos, set location and sports' },
+                    { step: '02', title: 'Set pricing', desc: 'Configure hourly rates and discounts' },
+                    { step: '03', title: 'Set availability', desc: 'Define your operating hours and slots' },
+                    { step: '04', title: 'Start earning', desc: 'Receive and manage bookings' },
+                  ].map((item, i) => (
+                    <div key={i} className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
+                      <span className="text-emerald-200 text-xs font-bold">STEP {item.step}</span>
+                      <h4 className="text-white font-semibold mt-1 text-sm">{item.title}</h4>
+                      <p className="text-emerald-100 text-xs mt-1">{item.desc}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         )}
-      </main>
+
+        {/* Quick Links */}
+        {turfs.length > 0 && (
+          <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[
+              {
+                icon: <BarChart3 className="h-5 w-5" />,
+                label: 'View Analytics',
+                desc: 'Track performance and trends',
+                href: '/owner/analytics',
+                gradient: 'from-emerald-500 to-green-600',
+              },
+              {
+                icon: <Calendar className="h-5 w-5" />,
+                label: 'All Bookings',
+                desc: 'Manage upcoming bookings',
+                href: '/owner/bookings',
+                gradient: 'from-green-500 to-teal-500',
+              },
+              {
+                icon: <Settings className="h-5 w-5" />,
+                label: 'Settings',
+                desc: 'Account and preferences',
+                href: '/owner/settings',
+                gradient: 'from-gray-600 to-gray-800',
+              },
+            ].map((item, i) => (
+              <Link key={i} href={item.href}>
+                <div className="group bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:border-emerald-200 hover:shadow-lg hover:shadow-emerald-50 transition-all duration-300 cursor-pointer h-full">
+                  <div className="flex items-start justify-between">
+                    <div
+                      className={`w-11 h-11 rounded-xl bg-gradient-to-br ${item.gradient} flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform duration-300`}
+                    >
+                      {item.icon}
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-gray-300 group-hover:text-emerald-400 group-hover:translate-x-1 transition-all duration-200" />
+                  </div>
+                  <h4 className="font-semibold text-gray-900 mt-4 text-sm">{item.label}</h4>
+                  <p className="text-xs text-gray-400 mt-1">{item.desc}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

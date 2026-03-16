@@ -31,6 +31,7 @@ import Link from "next/link";
 
 // Import our custom components
 import { TurfImagesUploader } from "@/components/owner/TurfImagesUploader";
+import { BannerImageUploader } from "@/components/owner/BannerImageUploader";
 import { SportsSelection } from "@/components/owner/SportsSelection";
 import { AmenitiesSelector } from "@/components/owner/AmenitiesSelector";
 import { AboutSection } from "@/components/owner/AboutSection";
@@ -52,6 +53,7 @@ interface OwnerFormData {
   ownerName: string;
   phone: string;
   turfImages: CloudinaryImage[];
+  bannerImage?: string;
   sportsOffered: string[];
   customSport: string;
   amenities: string[];
@@ -91,6 +93,7 @@ function TurfOwnerDashboard() {
     hasSubscription: boolean;
     status: string;
     rejectionReason?: string;
+    plan?: string;
   } | null>(null);
   const [checkingSubscription, setCheckingSubscription] = useState(true);
 
@@ -130,6 +133,7 @@ function TurfOwnerDashboard() {
             hasSubscription: !!data.subscription.subscriptionPlan,
             status: data.subscription.verificationStatus || "none",
             rejectionReason: data.subscription.rejectionReason,
+            plan: data.subscription.subscriptionPlan,
           });
         }
       } catch (err) {
@@ -175,6 +179,7 @@ function TurfOwnerDashboard() {
               ownerName: turf.contactInfo?.ownerName || "",
               phone: turf.contactInfo?.phone || "",
               turfImages: turf.images || [],
+              bannerImage: turf.bannerImage || '',
               sportsOffered: turf.sportsOffered || [],
               customSport: turf.customSport || "",
               amenities: turf.amenities || [],
@@ -210,6 +215,7 @@ function TurfOwnerDashboard() {
               ownerName: ownerData.ownerName || user?.name || "",
               phone: ownerData.phone || "",
               turfImages: ownerData.turfImages || [],
+              bannerImage: ownerData.bannerImage || '',
               sportsOffered: ownerData.sportsOffered || [],
               customSport: ownerData.customSport || "",
               amenities: ownerData.amenities || [],
@@ -338,6 +344,7 @@ function TurfOwnerDashboard() {
         phone: formData.phone,
         description: formData.about,
         images: formData.turfImages,
+        bannerImage: formData.bannerImage,
         sportsOffered: formData.sportsOffered,
         customSport: formData.customSport,
         amenities: formData.amenities,
@@ -734,6 +741,19 @@ function TurfOwnerDashboard() {
                 })
               }
             />
+
+            {/* Premium Banner Image Upload */}
+            {subscriptionStatus?.plan === 'pro' && (
+              <BannerImageUploader
+                value={formData.bannerImage}
+                onChange={(url) =>
+                  setFormData({
+                    ...formData,
+                    bannerImage: url,
+                  })
+                }
+              />
+            )}
 
             {/* Sports Selection */}
             <SportsSelection

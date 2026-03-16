@@ -99,6 +99,7 @@ export async function POST(request: NextRequest) {
       phone, // Added
       description,
       images,
+      bannerImage,
       sportsOffered,
       customSport,
       amenities,
@@ -153,6 +154,7 @@ export async function POST(request: NextRequest) {
       description,
       images,
       featuredImage: images[0].url, // First image as featured
+      bannerImage,
       sportsOffered,
       customSport: sportsOffered.includes('Other') ? customSport : undefined,
       amenities: amenities || [],
@@ -254,6 +256,7 @@ export async function PUT(request: NextRequest) {
       phone, // Added
       description,
       images,
+      bannerImage,
       sportsOffered,
       customSport,
       amenities,
@@ -295,6 +298,7 @@ export async function PUT(request: NextRequest) {
         description,
         images,
         featuredImage: images && images.length > 0 ? images[0].url : existingTurf.featuredImage,
+        bannerImage: bannerImage !== undefined ? bannerImage : existingTurf.bannerImage,
         sportsOffered,
         customSport: sportsOffered && sportsOffered.includes('Other') ? customSport : undefined,
         amenities: amenities || [],

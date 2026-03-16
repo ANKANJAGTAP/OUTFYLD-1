@@ -96,6 +96,7 @@ interface ITurf extends Document {
   rating?: number;
   reviewCount?: number;
   featuredImage?: string;
+  bannerImage?: string;
   maxSurge: number;
 }
 
@@ -139,6 +140,10 @@ const TurfSchema = new mongoose.Schema(
     featuredImage: {
       type: String,
       required: true,
+    },
+    bannerImage: {
+      type: String,
+      required: false,
     },
 
     // Sports and amenities
