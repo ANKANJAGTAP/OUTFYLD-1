@@ -41,6 +41,8 @@ export default function BrowsePage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [browseData, setBrowseData] = useState<BrowseData | null>(null);
 
+  const SPORT_CHIPS = ['All', 'Football', 'Cricket', 'Tennis', 'Basketball', 'Badminton', 'Volleyball'];
+
   // ⭐ Geolocation for "Nearest" sort
   const {
     location: userLocation,
@@ -79,10 +81,10 @@ export default function BrowsePage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-green-50">
       <BrowseHeader />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
         
         {/* Header Section */}
-        <div className="sticky top-[72px] lg:top-[80px] z-30 bg-gradient-to-br from-gray-50 to-green-50/95 backdrop-blur-md pt-4 pb-4 border-b border-gray-200 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center">
+        <div className="sticky top-[72px] lg:top-[80px] z-30 bg-white/70 backdrop-blur-xl border-b border-gray-200/50 shadow-sm pt-4 pb-4 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center rounded-xl px-4 md:px-6 mt-4 transition-all">
           <div>
             <h2 className="text-xl md:text-2xl font-bold text-gray-900">Browse Turfs</h2>
             <p className="text-sm text-gray-500 mt-1">
@@ -155,33 +157,58 @@ export default function BrowsePage() {
           </div>
         )}
 
-        <div className="grid lg:grid-cols-4 gap-4 md:gap-6 lg:gap-8 relative">
-          <div className="lg:col-span-1 self-start sticky top-[150px] max-h-[calc(100vh-160px)] overflow-y-auto lg:border-r lg:border-gray-200 lg:pr-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pb-4">
-            <FilterSidebar 
-                filters={filters}
-                onFiltersChange={setFilters}
-                availableCities={browseData?.filters.cities || []}
-                availableSports={browseData?.filters.sports || []}
-                priceRange={browseData?.filters.priceRange || { min: 0, max: 10000 }}
-              />
-          </div>
+        <div className="flex flex-col lg:flex-row gap-6 relative min-h-[calc(100vh-200px)]">
           
-          <div className="lg:col-span-3">
-            <TurfGrid 
-              searchQuery={searchQuery}
-              selectedSports={filters.sport ? [filters.sport] : []}
-              priceRange={filters.priceRange as [number, number]}
-              selectedAmenities={filters.amenities}
-              selectedLocation={filters.location}
-              selectedRating={filters.rating}
-              sortBy={sortBy}
-              // ⭐ Pass location only when sorting by distance
-              userLat={sortBy === 'distance' ? userLocation?.lat : undefined}
-              userLng={sortBy === 'distance' ? userLocation?.lng : undefined}
-              availableCities={browseData?.filters.cities || []}
-              availableSports={browseData?.filters.sports || []}
-              onDataLoad={setBrowseData}
-            />
+          {/* Main Listings */}
+          <div className="w-full flex-col flex">
+            
+            {/* Sport Filter Chips */}
+            <div className="flex overflow-x-auto gap-2 mb-6 pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              {SPORT_CHIPS.map((sport) => {
+                const isSelected = filters.sport === (sport === 'All' ? '' : sport);
+                return (
+                  <button
+                    key={sport}
+                    onClick={() => setFilters({ ...filters, sport: sport === 'All' ? '' : sport })}
+                    className={`px-4 py-2 rounded-full whitespace-nowrap text-sm font-medium transition-all ${
+                      isSelected 
+                        ? 'bg-green-600 text-white shadow-md' 
+                        : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+                    }`}
+                  >
+                    {sport}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="grid lg:grid-cols-4 gap-6 lg:gap-8 relative pb-10">
+              <div className="lg:col-span-1 self-start sticky top-[160px] max-h-[calc(100vh-180px)] overflow-y-auto pr-2 [&::-webkit-scrollbar]:hidden pb-4">
+                <FilterSidebar 
+                  filters={filters}
+                  onFiltersChange={setFilters}
+                  availableCities={browseData?.filters.cities || []}
+                  availableSports={browseData?.filters.sports || []}
+                  priceRange={browseData?.filters.priceRange || { min: 0, max: 10000 }}
+                />
+              </div>
+              <div className="lg:col-span-3 min-w-0">
+                <TurfGrid 
+                  searchQuery={searchQuery}
+                  selectedSports={filters.sport ? [filters.sport] : []}
+                  priceRange={filters.priceRange as [number, number]}
+                  selectedAmenities={filters.amenities}
+                  selectedLocation={filters.location}
+                  selectedRating={filters.rating}
+                  sortBy={sortBy}
+                  userLat={sortBy === 'distance' ? userLocation?.lat : undefined}
+                  userLng={sortBy === 'distance' ? userLocation?.lng : undefined}
+                  availableCities={browseData?.filters.cities || []}
+                  availableSports={browseData?.filters.sports || []}
+                  onDataLoad={setBrowseData}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>

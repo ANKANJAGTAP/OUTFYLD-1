@@ -6,6 +6,8 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { StarRating } from '@/components/ui/star-rating';
+import { Skeleton } from '@/components/ui/skeleton';
+import TurfCardCarousel from '@/components/browse/TurfCardCarousel';
 import { MapPin, Users, Loader2 } from 'lucide-react';
 
 interface TurfData {
@@ -180,10 +182,28 @@ export default function TurfGrid({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="flex items-center space-x-2">
-          <Loader2 className="h-6 w-6 animate-spin" />
-          <span>Loading turfs...</span>
+      <div className="space-y-6">
+        <Skeleton className="h-5 w-32" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-8">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Card key={i} className="rounded-2xl border border-gray-100 shadow-sm bg-white h-[420px] flex flex-col overflow-hidden">
+              <Skeleton className="h-48 w-full rounded-none" />
+              <CardContent className="p-5 flex-grow space-y-4">
+                <Skeleton className="h-6 w-3/4" />
+                <div className="space-y-3">
+                  <Skeleton className="h-4 w-1/4" />
+                  <Skeleton className="h-4 w-2/3" />
+                  <div className="flex gap-2 pt-2">
+                    <Skeleton className="h-5 w-16 rounded-md" />
+                    <Skeleton className="h-5 w-16 rounded-md" />
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter className="p-5 pt-0 mt-auto">
+                <Skeleton className="h-12 w-full rounded-xl" />
+              </CardFooter>
+            </Card>
+          ))}
         </div>
       </div>
     );
@@ -238,15 +258,10 @@ export default function TurfGrid({
           <Card key={turf._id} className="group flex flex-col overflow-hidden rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 bg-white h-full">
             <CardHeader className="p-0 relative">
               <div className="relative h-48 w-full bg-gray-200 overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent z-10 transition-opacity duration-300 group-hover:opacity-80" />
-                <img
-                  src={getImageUrl(turf)}
+                <TurfCardCarousel 
+                  images={turf.images || []}
+                  featuredImage={turf.featuredImage}
                   alt={getDisplayName(turf)}
-                  className="w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-110"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.src = 'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=500&h=300&fit=crop';
-                  }}
                 />
                 {/* Price badge — top right */}
                 <div className="absolute top-3 right-3 z-20">

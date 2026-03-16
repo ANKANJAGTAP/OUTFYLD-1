@@ -28,6 +28,7 @@ import { GoogleMap, useLoadScript, MarkerF } from '@react-google-maps/api';
 // Import PaymentModal component
 import PaymentModal from '@/components/booking/PaymentModal';
 import { WeekCalendar } from '@/components/booking/WeekCalendar';
+import TurfImageGallery from '@/components/booking/TurfImageGallery';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface TurfData {
@@ -596,24 +597,7 @@ const TurfDetailsPage = memo(function TurfDetailsPage({ turfId }: TurfDetailsPag
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Image Gallery */}
-            <Card>
-              <CardContent className="p-0">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {turf.turfImages.slice(0, 4).map((image, index) => (
-                    <div key={index} className={`relative ${index === 0 ? 'md:row-span-2' : ''} h-64 md:h-48 ${index === 0 ? 'md:h-96' : ''}`}>
-                      <Image
-                        src={image.url}
-                        alt={`${turf.businessName} - Image ${index + 1}`}
-                        fill
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                        priority={index === 0}
-                        className="object-cover rounded-lg"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            <TurfImageGallery images={turf.turfImages} altFallback={turf.businessName} />
 
             {/* About */}
             <Card>
