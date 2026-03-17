@@ -1,14 +1,32 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { BrowseHeader } from '@/components/browse/BrowseHeader';
-import { FilterSidebar } from '@/components/browse/FilterSidebar';
-import TurfGrid from '@/components/browse/TurfGrid';
-import { Footer } from '@/components/landing/Footer';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, MapPin, Loader2, X } from 'lucide-react';
-import { useGeolocation } from '@/hooks/useGeolocation';
+import { useState, useEffect } from "react";
+import { BrowseHeader } from "@/components/browse/BrowseHeader";
+import { FilterSidebar } from "@/components/browse/FilterSidebar";
+import TurfGrid from "@/components/browse/TurfGrid";
+import { Footer } from "@/components/landing/Footer";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Search,
+  MapPin,
+  Loader2,
+  X,
+  SlidersHorizontal,
+  ArrowUpDown,
+  Compass,
+  AlertTriangle,
+  CheckCircle2,
+} from "lucide-react";
+import { useGeolocation } from "@/hooks/useGeolocation";
 
 interface BrowseData {
   turfs: any[];
@@ -27,192 +45,332 @@ interface BrowseData {
   };
 }
 
+interface Filters {
+  location: string;
+  sport: string;
+  priceRange: number[];
+  rating: number;
+  amenities: string[];
+}
+
 export default function BrowsePage() {
-  const [filters, setFilters] = useState({
-    location: '',
-    sport: '',
+  const [filters, setFilters] = useState<Filters>({
+    location: "",
+    sport: "",
     priceRange: [0, 10000],
     rating: 0,
-    amenities: []
+    amenities: [],
   });
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState('distance');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState("distance");
   const [currentPage, setCurrentPage] = useState(1);
   const [browseData, setBrowseData] = useState<BrowseData | null>(null);
 
-  const SPORT_CHIPS = ['All', 'Football', 'Cricket', 'Tennis', 'Basketball', 'Badminton', 'Volleyball'];
+  const SPORT_CHIPS = [
+    "All",
+    "Football",
+    "Cricket",
+    "Tennis",
+    "Basketball",
+    "Badminton",
+    "Volleyball",
+  ];
 
-  // ⭐ Geolocation for "Nearest" sort
   const {
     location: userLocation,
     error: locationError,
     loading: locationLoading,
     permissionState,
     isDenied: isLocationDenied,
-    requestLocation
+    requestLocation,
   } = useGeolocation();
 
-  // ⭐ When user selects "Nearest" sort, request location
   const handleSortChange = (value: string) => {
     setSortBy(value);
-
-    if (value === 'distance' && !userLocation && !locationLoading) {
+    if (value === "distance" && !userLocation && !locationLoading) {
       requestLocation();
     }
   };
 
-  // ⭐ Request location on mount if default sort is "distance"
   useEffect(() => {
-    if (sortBy === 'distance' && !userLocation && !locationLoading && !locationError) {
+    if (
+      sortBy === "distance" &&
+      !userLocation &&
+      !locationLoading &&
+      !locationError
+    ) {
       requestLocation();
     }
   }, [sortBy, userLocation, locationLoading, locationError, requestLocation]);
 
-  // ⭐ If location is denied while on "distance" sort, revert
   useEffect(() => {
-    if (locationError && sortBy === 'distance') {
+    if (locationError && sortBy === "distance") {
       // Keep sort as distance but show error
-      // User can manually change sort or retry
     }
   }, [locationError, sortBy]);
 
+  // Count active filters for the badge
+  const activeFilterCount = [
+    filters.location,
+    filters.sport,
+    filters.rating > 0,
+    filters.amenities.length > 0,
+    filters.priceRange[0] !== 0 || filters.priceRange[1] !== 10000,
+  ].filter(Boolean).length;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-green-50">
+    <div className="min-h-screen bg-[#fafbfc]">
       <BrowseHeader />
-      
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
-        
-        {/* Header Section */}
-        <div className="sticky top-[72px] lg:top-[80px] z-30 bg-white/70 backdrop-blur-xl border-b border-gray-200/50 shadow-sm pt-4 pb-4 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center rounded-xl px-4 md:px-6 mt-4 transition-all">
-          <div>
-            <h2 className="text-xl md:text-2xl font-bold text-gray-900">Browse Turfs</h2>
-            <p className="text-sm text-gray-500 mt-1">
-              <span className="font-semibold text-gray-700">{browseData?.pagination.totalItems || 0}</span> items found
-            </p>
+
+      {/* ─────────── HERO STRIP ─────────── */}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-600 via-green-600 to-teal-700" />
+        <div
+          className="absolute inset-0 opacity-10"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at 2px 2px, white 1px, transparent 0)",
+            backgroundSize: "24px 24px",
+          }}
+        />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3 blur-3xl" />
+
+        <div className="relative max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <Badge className="bg-white/15 text-white border-white/20 hover:bg-white/20 text-[10px] mb-3">
+                <Compass className="h-3 w-3 mr-1" />
+                Discover Turfs
+              </Badge>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                Browse Turfs
+              </h1>
+              <p className="text-emerald-200 text-sm mt-1">
+                <span className="text-white font-semibold">
+                  {browseData?.pagination.totalItems || 0}
+                </span>{" "}
+                turfs available near you
+              </p>
+            </div>
           </div>
-          
-          <div className="flex flex-col sm:flex-row w-full md:w-auto items-center space-y-3 sm:space-y-0 sm:space-x-4 mt-4 md:mt-0">
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+        </div>
+      </div>
+
+      {/* ─────────── MAIN CONTENT ─────────── */}
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 -mt-6 relative z-10 pb-12">
+        {/* ── Sticky Search + Sort Bar ── */}
+        <div className="sticky top-[72px] lg:top-[80px] z-30 bg-white rounded-2xl border border-gray-100 shadow-xl shadow-gray-200/50 px-4 sm:px-6 py-4 mb-6 transition-all">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            {/* Search */}
+            <div className="relative w-full md:w-80">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
                 placeholder="Search turfs, locations..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 h-10 w-full bg-white border-gray-300 pointer-events-auto"
+                className="pl-10 h-11 w-full rounded-xl border-gray-200 bg-gray-50/50 text-sm focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100 transition-all"
               />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500 transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
             </div>
-            
-            <div className="flex items-center space-x-2 w-full sm:w-auto">
-              <span className="text-sm text-gray-500 whitespace-nowrap">Sort by:</span>
+
+            {/* Sort */}
+            <div className="flex items-center gap-3 w-full md:w-auto">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
+                  <ArrowUpDown className="h-3.5 w-3.5 text-emerald-600" />
+                </div>
+                <span className="text-xs font-medium text-gray-400 uppercase tracking-wider hidden sm:block">
+                  Sort
+                </span>
+              </div>
               <Select value={sortBy} onValueChange={handleSortChange}>
-                <SelectTrigger className="w-full sm:w-48 h-10 bg-white border-gray-300 font-medium text-gray-700">
+                <SelectTrigger className="w-full sm:w-52 h-11 rounded-xl bg-gray-50/50 border-gray-200 font-medium text-gray-700 text-sm focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100">
                   <SelectValue placeholder="Sort" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="distance">Nearest</SelectItem>
-                  <SelectItem value="newest">Newest</SelectItem>
-                  <SelectItem value="popularity">Popular</SelectItem>
-                  <SelectItem value="rating">Highest Rated</SelectItem>
-                  <SelectItem value="price-low">Price: Low to High</SelectItem>
-                  <SelectItem value="price-high">Price: High to Low</SelectItem>
+                <SelectContent className="rounded-xl border-gray-200">
+                  <SelectItem value="distance">📍 Nearest</SelectItem>
+                  <SelectItem value="newest">🆕 Newest</SelectItem>
+                  <SelectItem value="popularity">🔥 Popular</SelectItem>
+                  <SelectItem value="rating">⭐ Highest Rated</SelectItem>
+                  <SelectItem value="price-low">
+                    💰 Price: Low → High
+                  </SelectItem>
+                  <SelectItem value="price-high">
+                    💎 Price: High → Low
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
         </div>
 
-        {/* ⭐ Location status banner (only visible when "Nearest" sort is active) */}
-        {sortBy === 'distance' && (
-          <div className="mb-4">
+        {/* ── Location Status Banner ── */}
+        {sortBy === "distance" && (
+          <div className="mb-5">
             {locationLoading && (
-              <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Getting your location...
+              <div className="flex items-center gap-3 bg-white rounded-xl border border-emerald-100 shadow-sm px-4 py-3">
+                <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
+                  <Loader2 className="h-4 w-4 text-emerald-600 animate-spin" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-700">
+                    Getting your location...
+                  </p>
+                  <p className="text-[11px] text-gray-400">
+                    This helps show turfs nearest to you
+                  </p>
+                </div>
               </div>
             )}
-            
+
             {isLocationDenied && (
-              <div className="flex items-center justify-between text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-4 py-2">
-                <div className="flex items-center gap-2">
-                  <span>⚠️ Location access denied. Cannot sort by nearest.</span>
-                </div>
+              <div className="flex items-center justify-between bg-white rounded-xl border border-red-100 shadow-sm px-4 py-3">
                 <div className="flex items-center gap-3">
-                  <button onClick={requestLocation} className="underline font-medium hover:text-red-900 transition-colors">
-                    Retry Setup
-                  </button>
-                  <button onClick={() => setSortBy('newest')} className="text-gray-500 hover:text-gray-800 transition-colors" title="Clear sort">
+                  <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center">
+                    <AlertTriangle className="h-4 w-4 text-red-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-700">
+                      Location access denied
+                    </p>
+                    <p className="text-[11px] text-gray-400">
+                      Enable location to sort by nearest turfs
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={requestLocation}
+                    size="sm"
+                    variant="outline"
+                    className="rounded-lg h-8 text-xs border-red-200 text-red-600 hover:bg-red-50"
+                  >
+                    Retry
+                  </Button>
+                  <button
+                    onClick={() => setSortBy("newest")}
+                    className="text-gray-300 hover:text-gray-500 transition-colors p-1"
+                    title="Dismiss"
+                  >
                     <X className="h-4 w-4" />
                   </button>
                 </div>
               </div>
             )}
-            
-            {userLocation && !locationLoading && !isLocationDenied && !locationError && (
-              <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-4 py-2">
-                <MapPin className="h-4 w-4" />
-                Showing turfs nearest to your location
-              </div>
-            )}
+
+            {userLocation &&
+              !locationLoading &&
+              !isLocationDenied &&
+              !locationError && (
+                <div className="flex items-center gap-3 bg-white rounded-xl border border-emerald-100 shadow-sm px-4 py-3">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-700">
+                      Showing turfs nearest to your location
+                    </p>
+                    <p className="text-[11px] text-gray-400">
+                      Results are sorted by distance from you
+                    </p>
+                  </div>
+                </div>
+              )}
           </div>
         )}
 
-        <div className="flex flex-col lg:flex-row gap-6 relative min-h-[calc(100vh-200px)]">
-          
-          {/* Main Listings */}
-          <div className="w-full flex-col flex">
-            
-            {/* Sport Filter Chips */}
-            <div className="flex overflow-x-auto gap-2 mb-6 pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-              {SPORT_CHIPS.map((sport) => {
-                const isSelected = filters.sport === (sport === 'All' ? '' : sport);
-                return (
-                  <button
-                    key={sport}
-                    onClick={() => setFilters({ ...filters, sport: sport === 'All' ? '' : sport })}
-                    className={`px-4 py-2 rounded-full whitespace-nowrap text-sm font-medium transition-all ${
-                      isSelected 
-                        ? 'bg-green-600 text-white shadow-md' 
-                        : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
-                    }`}
-                  >
-                    {sport}
-                  </button>
-                );
-              })}
-            </div>
+        {/* ── Sport Filter Chips ── */}
+        <div className="flex overflow-x-auto gap-2 mb-6 pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          {SPORT_CHIPS.map((sport) => {
+            const isSelected = filters.sport === (sport === "All" ? "" : sport);
+            return (
+              <button
+                key={sport}
+                onClick={() =>
+                  setFilters({
+                    ...filters,
+                    sport: sport === "All" ? "" : sport,
+                  })
+                }
+                className={`px-4 py-2.5 rounded-xl whitespace-nowrap text-sm font-medium transition-all duration-200 ${
+                  isSelected
+                    ? "bg-emerald-600 text-white shadow-lg shadow-emerald-200"
+                    : "bg-white text-gray-600 hover:bg-emerald-50 hover:text-emerald-700 border border-gray-100 hover:border-emerald-200"
+                }`}
+              >
+                {sport}
+              </button>
+            );
+          })}
+        </div>
 
-            <div className="grid lg:grid-cols-4 gap-6 lg:gap-8 relative pb-10">
-              <div className="lg:col-span-1 self-start sticky top-[160px] max-h-[calc(100vh-180px)] overflow-y-auto pr-2 [&::-webkit-scrollbar]:hidden pb-4">
-                <FilterSidebar 
+        {/* ── Grid Layout: Sidebar + Turfs ── */}
+        <div className="grid lg:grid-cols-4 gap-6 lg:gap-8 relative min-h-[calc(100vh-200px)]">
+          {/* Sidebar */}
+          <div className="lg:col-span-1 self-start sticky top-[160px] max-h-[calc(100vh-180px)] overflow-y-auto [&::-webkit-scrollbar]:hidden pb-4">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
+                    <SlidersHorizontal className="h-4 w-4 text-emerald-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 text-sm">
+                      Filters
+                    </h3>
+                    <p className="text-[11px] text-gray-400">
+                      Refine your search
+                    </p>
+                  </div>
+                </div>
+                {activeFilterCount > 0 && (
+                  <Badge className="bg-emerald-100 text-emerald-700 border-0 text-[10px] h-5">
+                    {activeFilterCount}
+                  </Badge>
+                )}
+              </div>
+              <div className="p-4">
+                <FilterSidebar
                   filters={filters}
                   onFiltersChange={setFilters}
                   availableCities={browseData?.filters.cities || []}
                   availableSports={browseData?.filters.sports || []}
-                  priceRange={browseData?.filters.priceRange || { min: 0, max: 10000 }}
-                />
-              </div>
-              <div className="lg:col-span-3 min-w-0">
-                <TurfGrid 
-                  searchQuery={searchQuery}
-                  selectedSports={filters.sport ? [filters.sport] : []}
-                  priceRange={filters.priceRange as [number, number]}
-                  selectedAmenities={filters.amenities}
-                  selectedLocation={filters.location}
-                  selectedRating={filters.rating}
-                  sortBy={sortBy}
-                  userLat={sortBy === 'distance' ? userLocation?.lat : undefined}
-                  userLng={sortBy === 'distance' ? userLocation?.lng : undefined}
-                  availableCities={browseData?.filters.cities || []}
-                  availableSports={browseData?.filters.sports || []}
-                  onDataLoad={setBrowseData}
+                  priceRange={
+                    browseData?.filters.priceRange || { min: 0, max: 10000 }
+                  }
                 />
               </div>
             </div>
           </div>
+
+          {/* Turf Grid */}
+          <div className="lg:col-span-3 min-w-0 pb-10">
+            <TurfGrid
+              searchQuery={searchQuery}
+              selectedSports={filters.sport ? [filters.sport] : []}
+              priceRange={filters.priceRange as [number, number]}
+              selectedAmenities={filters.amenities}
+              selectedLocation={filters.location}
+              selectedRating={filters.rating}
+              sortBy={sortBy}
+              userLat={sortBy === "distance" ? userLocation?.lat : undefined}
+              userLng={sortBy === "distance" ? userLocation?.lng : undefined}
+              availableCities={browseData?.filters.cities || []}
+              availableSports={browseData?.filters.sports || []}
+              onDataLoad={setBrowseData}
+            />
+          </div>
         </div>
       </div>
-      
+
       <Footer />
     </div>
   );

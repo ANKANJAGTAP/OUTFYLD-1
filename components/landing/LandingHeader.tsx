@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Menu, X, MapPin, User, LogOut, Shield, ChevronDown, ListOrdered, FileText, Award } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useHoverDropdown } from '@/hooks/useHoverDropdown';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,6 +19,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 export function LandingHeader() {
+  const { isOpen, setIsOpen, handleMouseEnter, handleMouseLeave } = useHoverDropdown();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { user, firebaseUser, logout, loading, initialLoading } = useAuth();
@@ -99,80 +101,115 @@ export function LandingHeader() {
             ) : firebaseUser && user ? (
               // User is logged in
               <div className="flex items-center space-x-3">
-                <DropdownMenu>
+                <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="p-0 h-auto hover:bg-transparent flex items-center gap-2">
+                    <Button 
+                      variant="ghost" 
+                      className="p-0 h-auto hover:bg-transparent flex items-center gap-2 focus-visible:ring-0 focus-visible:outline-none focus:ring-0 border-none outline-none"
+                      onMouseEnter={handleMouseEnter}
+                      onMouseLeave={handleMouseLeave}
+                    >
                       <div className="text-right hidden sm:block">
                         <p className={`text-sm font-medium ${userTextClasses}`}>
                           {user.name}
                         </p>
-                        <Badge 
-                          variant="secondary" 
-                          className={user.role === 'owner' ? 'bg-blue-100 text-blue-800' : user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800'}
-                        >
-                          {user.role === 'owner' ? 'Owner' : user.role === 'admin' ? 'Admin' : 'Customer'}
-                        </Badge>
                       </div>
                       <ChevronDown className={`h-4 w-4 ${iconClasses}`} />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
+                  <DropdownMenuContent 
+                    align="end" 
+                    className="w-64 p-2 rounded-xl shadow-lg border-gray-100"
+                    onMouseEnter={handleMouseEnter}
+                    onMouseLeave={handleMouseLeave}
+                  >
+                    <DropdownMenuLabel className="font-semibold text-gray-900 px-3 py-2">My Account</DropdownMenuLabel>
+                    <DropdownMenuSeparator className="my-1" />
                     
                     {user.role === 'admin' && (
-                      <DropdownMenuItem onClick={() => router.push('/admin/dashboard')}>
-                        <Shield className="mr-2 h-4 w-4" />
-                        <span>Admin Dashboard</span>
+                      <DropdownMenuItem 
+                        onClick={() => router.push('/admin/dashboard')}
+                        className="cursor-pointer rounded-lg px-3 py-2.5 transition-colors focus:bg-green-50 focus:text-green-700"
+                      >
+                        <Shield className="mr-3 h-5 w-5" />
+                        <span className="text-base">Admin Dashboard</span>
                       </DropdownMenuItem>
                     )}
                     
                     {user.role === 'owner' && (
                       <>
-                        <DropdownMenuItem onClick={() => router.push('/owner/dashboard')}>
-                          <MapPin className="mr-2 h-4 w-4" />
-                          <span>Owner Dashboard</span>
+                        <DropdownMenuItem 
+                          onClick={() => router.push('/owner/dashboard')}
+                          className="cursor-pointer rounded-lg px-3 py-2.5 transition-colors focus:bg-green-50 focus:text-green-700"
+                        >
+                          <MapPin className="mr-3 h-5 w-5" />
+                          <span className="text-base">Owner Dashboard</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => router.push('/owner/profile')}>
-                          <User className="mr-2 h-4 w-4" />
-                          <span>My Profile</span>
+                        <DropdownMenuItem 
+                          onClick={() => router.push('/owner/profile')}
+                          className="cursor-pointer rounded-lg px-3 py-2.5 transition-colors focus:bg-green-50 focus:text-green-700"
+                        >
+                          <User className="mr-3 h-5 w-5" />
+                          <span className="text-base">My Profile</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => router.push('/owner/bank-details')}>
-                          <FileText className="mr-2 h-4 w-4" />
-                          <span>Payment Details</span>
+                        <DropdownMenuItem 
+                          onClick={() => router.push('/owner/bank-details')}
+                          className="cursor-pointer rounded-lg px-3 py-2.5 transition-colors focus:bg-green-50 focus:text-green-700"
+                        >
+                          <FileText className="mr-3 h-5 w-5" />
+                          <span className="text-base">Payment Details</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => router.push('/owner/analytics')}>
-                          <ListOrdered className="mr-2 h-4 w-4" />
-                          <span>Analytics</span>
+                        <DropdownMenuItem 
+                          onClick={() => router.push('/owner/analytics')}
+                          className="cursor-pointer rounded-lg px-3 py-2.5 transition-colors focus:bg-green-50 focus:text-green-700"
+                        >
+                          <ListOrdered className="mr-3 h-5 w-5" />
+                          <span className="text-base">Analytics</span>
                         </DropdownMenuItem>
                       </>
                     )}
 
                     {user.role === 'customer' && (
                       <>
-                        <DropdownMenuItem onClick={() => router.push('/dashboard/player')}>
-                          <ListOrdered className="mr-2 h-4 w-4" />
-                          <span>Player Dashboard</span>
+                        <DropdownMenuItem 
+                          onClick={() => router.push('/dashboard/player')}
+                          className="cursor-pointer rounded-lg px-3 py-2.5 transition-colors focus:bg-green-50 focus:text-green-700"
+                        >
+                          <ListOrdered className="mr-3 h-5 w-5" />
+                          <span className="text-base">Player Dashboard</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => router.push('/dashboard/player/profile')}>
-                          <User className="mr-2 h-4 w-4" />
-                          <span>My Profile</span>
+                        <DropdownMenuItem 
+                          onClick={() => router.push('/dashboard/player/profile')}
+                          className="cursor-pointer rounded-lg px-3 py-2.5 transition-colors focus:bg-green-50 focus:text-green-700"
+                        >
+                          <User className="mr-3 h-5 w-5" />
+                          <span className="text-base">My Profile</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => router.push('/dashboard/player/bookings')}>
-                          <FileText className="mr-2 h-4 w-4" />
-                          <span>Booking History</span>
+                        <DropdownMenuItem 
+                          onClick={() => router.push('/dashboard/player/bookings')}
+                          className="cursor-pointer rounded-lg px-3 py-2.5 transition-colors focus:bg-green-50 focus:text-green-700"
+                        >
+                          <FileText className="mr-3 h-5 w-5" />
+                          <span className="text-base">Booking History</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => router.push('/dashboard/player/loyalty')}>
-                          <Award className="mr-2 h-4 w-4" />
-                          <span>Loyalty Points</span>
+                        <DropdownMenuItem 
+                          onClick={() => router.push('/dashboard/player/loyalty')}
+                          className="cursor-pointer rounded-lg px-3 py-2.5 transition-colors focus:bg-green-50 focus:text-green-700"
+                        >
+                          <Award className="mr-3 h-5 w-5" />
+                          <span className="text-base">Loyalty Points</span>
                         </DropdownMenuItem>
                       </>
                     )}
                     
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-red-600" onClick={handleLogout} disabled={loading}>
-                      <LogOut className="mr-2 h-4 w-4" />
-                      <span>Log out</span>
+                    <DropdownMenuSeparator className="my-1" />
+                    <DropdownMenuItem 
+                      className="cursor-pointer rounded-lg px-3 py-2.5 text-red-600 focus:bg-red-50 focus:text-red-700 transition-colors" 
+                      onClick={handleLogout} 
+                      disabled={loading}
+                    >
+                      <LogOut className="mr-3 h-5 w-5" />
+                      <span className="text-base font-medium">Log out</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -247,41 +284,35 @@ export function LandingHeader() {
                 ) : firebaseUser && user ? (
                   // Mobile: User is logged in
                   <>
-                    <div className="text-center py-3 bg-gray-50 rounded-md">
-                      <p className="text-sm font-medium text-gray-900">
+                    <div className="text-center py-4 bg-gray-50 rounded-xl mb-2">
+                      <p className="text-lg font-semibold text-gray-900">
                         {user.name}
                       </p>
-                      <Badge 
-                        variant="secondary" 
-                        className={`mt-1 ${user.role === 'owner' ? 'bg-blue-100 text-blue-800' : user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800'}`}
-                      >
-                        {user.role === 'owner' ? 'Owner' : user.role === 'admin' ? 'Admin' : 'Customer'}
-                      </Badge>
                     </div>
                     
                     {user.role === 'owner' && (
                       <>
                         <Link href="/owner/dashboard" onClick={() => setIsMenuOpen(false)}>
-                          <Button variant="outline" size="sm" className="w-full justify-start">
-                            <MapPin className="h-4 w-4 mr-2" />
+                          <Button variant="ghost" className="w-full justify-start h-12 text-base font-medium transition-colors hover:bg-green-50 hover:text-green-700">
+                            <MapPin className="h-5 w-5 mr-3" />
                             Owner Dashboard
                           </Button>
                         </Link>
                         <Link href="/owner/profile" onClick={() => setIsMenuOpen(false)}>
-                          <Button variant="outline" size="sm" className="w-full justify-start">
-                            <User className="h-4 w-4 mr-2" />
+                          <Button variant="ghost" className="w-full justify-start h-12 text-base font-medium transition-colors hover:bg-green-50 hover:text-green-700">
+                            <User className="h-5 w-5 mr-3" />
                             My Profile
                           </Button>
                         </Link>
                         <Link href="/owner/bank-details" onClick={() => setIsMenuOpen(false)}>
-                          <Button variant="outline" size="sm" className="w-full justify-start">
-                            <FileText className="h-4 w-4 mr-2" />
+                          <Button variant="ghost" className="w-full justify-start h-12 text-base font-medium transition-colors hover:bg-green-50 hover:text-green-700">
+                            <FileText className="h-5 w-5 mr-3" />
                             Payment Details
                           </Button>
                         </Link>
                         <Link href="/owner/analytics" onClick={() => setIsMenuOpen(false)}>
-                          <Button variant="outline" size="sm" className="w-full justify-start">
-                            <ListOrdered className="h-4 w-4 mr-2" />
+                          <Button variant="ghost" className="w-full justify-start h-12 text-base font-medium transition-colors hover:bg-green-50 hover:text-green-700">
+                            <ListOrdered className="h-5 w-5 mr-3" />
                             Analytics
                           </Button>
                         </Link>
@@ -290,24 +321,52 @@ export function LandingHeader() {
 
                     {user.role === 'admin' && (
                       <Link href="/admin/dashboard" onClick={() => setIsMenuOpen(false)}>
-                        <Button variant="outline" size="sm" className="w-full">
-                          <Shield className="h-4 w-4 mr-2" />
+                        <Button variant="ghost" className="w-full justify-start h-12 text-base font-medium transition-colors hover:bg-green-50 hover:text-green-700">
+                          <Shield className="h-5 w-5 mr-3" />
                           Admin Dashboard
                         </Button>
                       </Link>
                     )}
+
+                    {user.role === 'customer' && (
+                      <>
+                        <Link href="/dashboard/player" onClick={() => setIsMenuOpen(false)}>
+                          <Button variant="ghost" className="w-full justify-start h-12 text-base font-medium transition-colors hover:bg-green-50 hover:text-green-700">
+                            <ListOrdered className="h-5 w-5 mr-3" />
+                            Player Dashboard
+                          </Button>
+                        </Link>
+                        <Link href="/dashboard/player/profile" onClick={() => setIsMenuOpen(false)}>
+                          <Button variant="ghost" className="w-full justify-start h-12 text-base font-medium transition-colors hover:bg-green-50 hover:text-green-700">
+                            <User className="h-5 w-5 mr-3" />
+                            My Profile
+                          </Button>
+                        </Link>
+                        <Link href="/dashboard/player/bookings" onClick={() => setIsMenuOpen(false)}>
+                          <Button variant="ghost" className="w-full justify-start h-12 text-base font-medium transition-colors hover:bg-green-50 hover:text-green-700">
+                            <FileText className="h-5 w-5 mr-3" />
+                            Booking History
+                          </Button>
+                        </Link>
+                        <Link href="/dashboard/player/loyalty" onClick={() => setIsMenuOpen(false)}>
+                          <Button variant="ghost" className="w-full justify-start h-12 text-base font-medium transition-colors hover:bg-green-50 hover:text-green-700">
+                            <Award className="h-5 w-5 mr-3" />
+                            Loyalty Points
+                          </Button>
+                        </Link>
+                      </>
+                    )}
                     
                     <Button 
                       variant="ghost" 
-                      size="sm" 
-                      className="w-full text-red-600 hover:bg-red-50"
+                      className="w-full justify-start h-12 text-base font-semibold text-red-600 hover:bg-red-50 hover:text-red-700 mt-2"
                       onClick={() => {
                         handleLogout();
                         setIsMenuOpen(false);
                       }}
                       disabled={loading}
                     >
-                      <LogOut className="h-4 w-4 mr-2" />
+                      <LogOut className="h-5 w-5 mr-3" />
                       Logout
                     </Button>
                   </>

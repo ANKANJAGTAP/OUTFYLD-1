@@ -1,219 +1,494 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Slider } from '@/components/ui/slider';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Star } from 'lucide-react';
+import {
+  Search, X, ChevronDown, ChevronUp, MapPin,
+  Trophy, Star, DollarSign, Sparkles, RotateCcw,
+  Check,
+} from 'lucide-react';
 
-interface FilterSidebarProps {
-  filters: {
-    location: string;
-    sport: string;
-    priceRange: number[];
-    rating: number;
-    amenities: string[];
-  };
-  onFiltersChange: (filters: any) => void;
-  availableCities?: string[];
-  availableSports?: string[];
-  priceRange?: {
-    min: number;
-    max: number;
-  };
+interface Filters {
+  location: string;
+  sport: string;
+  priceRange: number[];
+  rating: number;
+  amenities: string[];
 }
 
-export function FilterSidebar({ 
-  filters, 
-  onFiltersChange, 
-  availableCities = [],
-  availableSports = [],
-  priceRange = { min: 0, max: 2000 }
+interface FilterSidebarProps {
+  filters: Filters;
+  onFiltersChange: (filters: Filters) => void;
+  availableCities: string[];
+  availableSports: string[];
+  priceRange: { min: number; max: number };
+}
+
+// ─── Collapsible Section ─────────────────────────────────────────────
+
+function FilterSection({
+  title,
+  icon,
+  children,
+  defaultOpen = true,
+  count,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+  count?: number;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  return (
+    <div className="border-b border-gray-50 last:border-0">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between py-3 px-1 group"
+      >
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 group-hover:bg-emerald-100 transition-colors">
+            {icon}
+          </div>
+          <span className="text-sm font-semibold text-gray-800">{title}</span>
+          {count !== undefined && count > 0 && (
+            <Badge className="bg-emerald-100 text-emerald-700 border-0 text-[10px] h-5 px-1.5">
+              {count}
+            </Badge>
+          )}
+        </div>
+        <div className="text-gray-400 group-hover:text-gray-600 transition-colors">
+          {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </div>
+      </button>
+      {open && <div className="pb-4 px-1">{children}</div>}
+    </div>
+  );
+}
+
+// ─── Searchable Chip List ────────────────────────────────────────────
+
+function SearchableChipList({
+  items,
+  selected,
+  onSelect,
+  placeholder,
+  maxVisible = 6,
+  emptyText = 'No items found',
+}: {
+  items: string[];
+  selected: string;
+  onSelect: (value: string) => void;
+  placeholder: string;
+  maxVisible?: number;
+  emptyText?: string;
+}) {
+  const [search, setSearch] = useState('');
+  const [showAll, setShowAll] = useState(false);
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return items;
+    return items.filter((item) =>
+      item.toLowerCase().includes(search.toLowerCase())
+    );
+  }, [items, search]);
+
+  const visible = showAll ? filtered : filtered.slice(0, maxVisible);
+  const remaining = filtered.length - maxVisible;
+
+  return (
+    <div className="space-y-2.5">
+      {items.length > 5 && (
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-300 h-3.5 w-3.5" />
+          <Input
+            placeholder={placeholder}
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setShowAll(true);
+            }}
+            className="pl-8 h-8 text-xs rounded-lg border-gray-200 bg-gray-50/50 focus:border-emerald-300 focus:ring-1 focus:ring-emerald-100"
+          />
+          {search && (
+            <button
+              onClick={() => {
+                setSearch('');
+                setShowAll(false);
+              }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          )}
+        </div>
+      )}
+
+      {visible.length > 0 ? (
+        <div className="flex flex-wrap gap-1.5">
+          {visible.map((item) => {
+            const isSelected = selected === item;
+            return (
+              <button
+                key={item}
+                onClick={() => onSelect(isSelected ? '' : item)}
+                className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all duration-200 ${
+                  isSelected
+                    ? 'bg-emerald-600 text-white shadow-md shadow-emerald-200'
+                    : 'bg-gray-50 text-gray-600 hover:bg-emerald-50 hover:text-emerald-700 border border-gray-100 hover:border-emerald-200'
+                }`}
+              >
+                {isSelected && <Check className="h-3 w-3" />}
+                {item}
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="text-[11px] text-gray-400 text-center py-2">{emptyText}</p>
+      )}
+
+      {!search && remaining > 0 && (
+        <button
+          onClick={() => setShowAll(!showAll)}
+          className="flex items-center gap-1 text-[11px] text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
+        >
+          {showAll ? (
+            <>
+              <ChevronUp className="h-3 w-3" />
+              Show less
+            </>
+          ) : (
+            <>
+              <ChevronDown className="h-3 w-3" />
+              Show {remaining} more
+            </>
+          )}
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ─── Price Range Filter ──────────────────────────────────────────────
+
+function PriceRangeFilter({
+  value,
+  range,
+  onChange,
+}: {
+  value: number[];
+  range: { min: number; max: number };
+  onChange: (value: number[]) => void;
+}) {
+  const presets = [
+    { label: 'Any', value: [range.min, range.max] },
+    { label: '< ₹500', value: [range.min, 500] },
+    { label: '₹500–1K', value: [500, 1000] },
+    { label: '₹1K–2K', value: [1000, 2000] },
+    { label: '₹2K+', value: [2000, range.max] },
+  ];
+
+  const isPresetActive = (preset: number[]) =>
+    value[0] === preset[0] && value[1] === preset[1];
+
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap gap-1.5">
+        {presets.map((preset) => (
+          <button
+            key={preset.label}
+            onClick={() => onChange(preset.value)}
+            className={`px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all duration-200 ${
+              isPresetActive(preset.value)
+                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-200'
+                : 'bg-gray-50 text-gray-600 hover:bg-emerald-50 hover:text-emerald-700 border border-gray-100 hover:border-emerald-200'
+            }`}
+          >
+            {preset.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-400">₹</span>
+          <Input
+            type="number"
+            value={value[0]}
+            onChange={(e) => onChange([Number(e.target.value), value[1]])}
+            min={range.min}
+            max={value[1]}
+            className="pl-5 h-8 text-xs rounded-lg border-gray-200 bg-gray-50/50 focus:border-emerald-300 focus:ring-1 focus:ring-emerald-100"
+            placeholder="Min"
+          />
+        </div>
+        <span className="text-gray-300 text-xs">—</span>
+        <div className="relative flex-1">
+          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-400">₹</span>
+          <Input
+            type="number"
+            value={value[1]}
+            onChange={(e) => onChange([value[0], Number(e.target.value)])}
+            min={value[0]}
+            max={range.max}
+            className="pl-5 h-8 text-xs rounded-lg border-gray-200 bg-gray-50/50 focus:border-emerald-300 focus:ring-1 focus:ring-emerald-100"
+            placeholder="Max"
+          />
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] text-gray-400">
+          ₹{value[0].toLocaleString()} – ₹{value[1].toLocaleString()}
+        </span>
+        {!isPresetActive([range.min, range.max]) && (
+          <button
+            onClick={() => onChange([range.min, range.max])}
+            className="text-[10px] text-emerald-600 hover:text-emerald-700 font-medium"
+          >
+            Reset
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Rating Filter ───────────────────────────────────────────────────
+
+function RatingFilter({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (rating: number) => void;
+}) {
+  const ratings = [
+    { label: 'Any', value: 0 },
+    { label: '4+', value: 4, stars: 4 },
+    { label: '3+', value: 3, stars: 3 },
+    { label: '2+', value: 2, stars: 2 },
+  ];
+
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {ratings.map((r) => (
+        <button
+          key={r.value}
+          onClick={() => onChange(r.value === value ? 0 : r.value)}
+          className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all duration-200 ${
+            value === r.value
+              ? 'bg-emerald-600 text-white shadow-md shadow-emerald-200'
+              : 'bg-gray-50 text-gray-600 hover:bg-emerald-50 hover:text-emerald-700 border border-gray-100 hover:border-emerald-200'
+          }`}
+        >
+          {r.stars && (
+            <Star
+              className={`h-3 w-3 ${
+                value === r.value ? 'text-white fill-white' : 'text-yellow-400 fill-yellow-400'
+              }`}
+            />
+          )}
+          {r.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ─── Amenities Filter ────────────────────────────────────────────────
+
+function AmenitiesFilter({
+  selected,
+  onChange,
+}: {
+  selected: string[];
+  onChange: (amenities: string[]) => void;
+}) {
+  const [showAll, setShowAll] = useState(false);
+
+  const ALL_AMENITIES = [
+    'Parking', 'Washroom', 'Drinking Water', 'Changing Room',
+    'First Aid', 'Floodlights', 'Seating Area', 'Cafeteria',
+    'Wi-Fi', 'Shower', 'Locker', 'Equipment Rental',
+  ];
+
+  const maxVisible = 6;
+  const visible = showAll ? ALL_AMENITIES : ALL_AMENITIES.slice(0, maxVisible);
+  const remaining = ALL_AMENITIES.length - maxVisible;
+
+  const toggle = (amenity: string) => {
+    if (selected.includes(amenity)) {
+      onChange(selected.filter((a) => a !== amenity));
+    } else {
+      onChange([...selected, amenity]);
+    }
+  };
+
+  return (
+    <div className="space-y-2.5">
+      <div className="flex flex-wrap gap-1.5">
+        {visible.map((amenity) => {
+          const isSelected = selected.includes(amenity);
+          return (
+            <button
+              key={amenity}
+              onClick={() => toggle(amenity)}
+              className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all duration-200 ${
+                isSelected
+                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-200'
+                  : 'bg-gray-50 text-gray-600 hover:bg-emerald-50 hover:text-emerald-700 border border-gray-100 hover:border-emerald-200'
+              }`}
+            >
+              {isSelected && <Check className="h-3 w-3" />}
+              {amenity}
+            </button>
+          );
+        })}
+      </div>
+
+      {remaining > 0 && (
+        <button
+          onClick={() => setShowAll(!showAll)}
+          className="flex items-center gap-1 text-[11px] text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
+        >
+          {showAll ? (
+            <>
+              <ChevronUp className="h-3 w-3" />
+              Show less
+            </>
+          ) : (
+            <>
+              <ChevronDown className="h-3 w-3" />
+              Show {remaining} more
+            </>
+          )}
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ─── Main FilterSidebar (exported) ───────────────────────────────────
+
+export function FilterSidebar({
+  filters,
+  onFiltersChange,
+  availableCities,
+  availableSports,
+  priceRange,
 }: FilterSidebarProps) {
-  const locations = availableCities.length > 0 ? availableCities : ['Sangli Central', 'Miraj Station Road', 'Sangli MIDC', 'Miraj City', 'Sangli Market'];
-  const sports = availableSports.length > 0 ? availableSports : ['Football', 'Cricket', 'Basketball', 'Badminton', 'Tennis'];
-  const amenities = ['Floodlights', 'Parking', 'Washroom', 'Equipment'];
+  const activeCount = [
+    filters.location,
+    filters.sport,
+    filters.rating > 0,
+    filters.amenities.length > 0,
+    filters.priceRange[0] !== priceRange.min || filters.priceRange[1] !== priceRange.max,
+  ].filter(Boolean).length;
 
-  const handleLocationChange = (location: string, checked: boolean) => {
-    onFiltersChange({
-      ...filters,
-      location: checked ? location : ''
-    });
-  };
-
-  const handleSportChange = (sport: string, checked: boolean) => {
-    onFiltersChange({
-      ...filters,
-      sport: checked ? sport : ''
-    });
-  };
-
-  const handleAmenityChange = (amenity: string, checked: boolean) => {
-    const updatedAmenities = checked
-      ? [...filters.amenities, amenity]
-      : filters.amenities.filter(a => a !== amenity);
-    
-    onFiltersChange({
-      ...filters,
-      amenities: updatedAmenities
-    });
-  };
-
-  const clearFilters = () => {
+  const resetAll = () => {
     onFiltersChange({
       location: '',
       sport: '',
-      priceRange: [0, 2000],
+      priceRange: [priceRange.min, priceRange.max],
       rating: 0,
-      amenities: []
+      amenities: [],
     });
   };
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg">Filters</CardTitle>
-            <Button variant="ghost" size="sm" onClick={clearFilters}>
-              Clear All
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Location Filter */}
-          <div>
-            <h4 className="font-medium mb-3 flex items-center">
-              <MapPin className="h-4 w-4 mr-2 text-green-500" />
-              Location
-            </h4>
-            <div className="space-y-3">
-              {locations.map((location) => (
-                <div key={location} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={location}
-                    checked={filters.location === location}
-                    onCheckedChange={(checked) => handleLocationChange(location, checked as boolean)}
-                  />
-                  <label htmlFor={location} className="text-sm text-gray-700 cursor-pointer">
-                    {location}
-                  </label>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Sports Filter */}
-          <div>
-            <h4 className="font-medium mb-3">Sports Available</h4>
-            <div className="space-y-3">
-              {sports.map((sport) => (
-                <div key={sport} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={sport}
-                    checked={filters.sport === sport}
-                    onCheckedChange={(checked) => handleSportChange(sport, checked as boolean)}
-                  />
-                  <label htmlFor={sport} className="text-sm text-gray-700 cursor-pointer">
-                    {sport}
-                  </label>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Price Range */}
-          <div>
-            <h4 className="font-medium mb-3">Price Range (per hour)</h4>
-            <div className="px-2">
-              <Slider
-                value={filters.priceRange}
-                onValueChange={(value) => onFiltersChange({ ...filters, priceRange: value })}
-                max={2000}
-                min={0}
-                step={100}
-                className="mb-4"
-              />
-              <div className="flex justify-between text-sm text-gray-600">
-                <span>₹{filters.priceRange[0]}</span>
-                <span>₹{filters.priceRange[1]}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Rating Filter */}
-          <div>
-            <h4 className="font-medium mb-3 flex items-center">
-              <Star className="h-4 w-4 mr-2 text-yellow-500" />
-              Minimum Rating
-            </h4>
-            <div className="space-y-2">
-              {[4, 3, 2, 1].map((rating) => (
-                <div key={rating} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`rating-${rating}`}
-                    checked={filters.rating === rating}
-                    onCheckedChange={(checked) => 
-                      onFiltersChange({ ...filters, rating: checked ? rating : 0 })
-                    }
-                  />
-                  <label htmlFor={`rating-${rating}`} className="text-sm text-gray-700 cursor-pointer flex items-center">
-                    {rating}+ <Star className="h-3 w-3 ml-1 text-yellow-500 fill-current" />
-                  </label>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Amenities */}
-          <div>
-            <h4 className="font-medium mb-3">Amenities</h4>
-            <div className="space-y-3">
-              {amenities.map((amenity) => (
-                <div key={amenity} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={amenity}
-                    checked={filters.amenities.includes(amenity)}
-                    onCheckedChange={(checked) => handleAmenityChange(amenity, checked as boolean)}
-                  />
-                  <label htmlFor={amenity} className="text-sm text-gray-700 cursor-pointer">
-                    {amenity}
-                  </label>
-                </div>
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Active Filters */}
-      {(filters.location || filters.sport || filters.amenities.length > 0) && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm">Active Filters</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {filters.location && (
-                <Badge variant="secondary" className="bg-green-100 text-green-800">
-                  {filters.location}
-                </Badge>
-              )}
-              {filters.sport && (
-                <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                  {filters.sport}
-                </Badge>
-              )}
-              {filters.amenities.map((amenity) => (
-                <Badge key={amenity} variant="secondary" className="bg-purple-100 text-purple-800">
-                  {amenity}
-                </Badge>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+    <div className="space-y-1">
+      {activeCount > 0 && (
+        <div className="flex items-center justify-between px-1 pb-3 border-b border-gray-50">
+          <Badge className="bg-emerald-100 text-emerald-700 border-0 text-[10px] h-5">
+            {activeCount} active
+          </Badge>
+          <button
+            onClick={resetAll}
+            className="inline-flex items-center gap-1 text-[11px] text-gray-400 hover:text-red-500 font-medium transition-colors"
+          >
+            <RotateCcw className="h-3 w-3" />
+            Reset all
+          </button>
+        </div>
       )}
+
+      <FilterSection
+        title="Location"
+        icon={<MapPin className="h-3.5 w-3.5" />}
+        defaultOpen={true}
+        count={filters.location ? 1 : 0}
+      >
+        <SearchableChipList
+          items={availableCities}
+          selected={filters.location}
+          onSelect={(val) => onFiltersChange({ ...filters, location: val })}
+          placeholder="Search cities..."
+          maxVisible={6}
+          emptyText="No cities found"
+        />
+      </FilterSection>
+
+      <FilterSection
+        title="Sports"
+        icon={<Trophy className="h-3.5 w-3.5" />}
+        defaultOpen={true}
+        count={filters.sport ? 1 : 0}
+      >
+        <SearchableChipList
+          items={availableSports}
+          selected={filters.sport}
+          onSelect={(val) => onFiltersChange({ ...filters, sport: val })}
+          placeholder="Search sports..."
+          maxVisible={6}
+          emptyText="No sports found"
+        />
+      </FilterSection>
+
+      <FilterSection
+        title="Price Range"
+        icon={<DollarSign className="h-3.5 w-3.5" />}
+        defaultOpen={true}
+        count={
+          filters.priceRange[0] !== priceRange.min || filters.priceRange[1] !== priceRange.max
+            ? 1
+            : 0
+        }
+      >
+        <PriceRangeFilter
+          value={filters.priceRange}
+          range={priceRange}
+          onChange={(val) => onFiltersChange({ ...filters, priceRange: val })}
+        />
+      </FilterSection>
+
+      <FilterSection
+        title="Rating"
+        icon={<Star className="h-3.5 w-3.5" />}
+        defaultOpen={true}
+        count={filters.rating > 0 ? 1 : 0}
+      >
+        <RatingFilter
+          value={filters.rating}
+          onChange={(val) => onFiltersChange({ ...filters, rating: val })}
+        />
+      </FilterSection>
+
+      <FilterSection
+        title="Amenities"
+        icon={<Sparkles className="h-3.5 w-3.5" />}
+        defaultOpen={false}
+        count={filters.amenities.length}
+      >
+        <AmenitiesFilter
+          selected={filters.amenities}
+          onChange={(val) => onFiltersChange({ ...filters, amenities: val as never[] })}
+        />
+      </FilterSection>
     </div>
   );
 }

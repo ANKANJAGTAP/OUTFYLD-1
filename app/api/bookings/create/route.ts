@@ -7,10 +7,7 @@ import SlotReservation from '@/app/models/SlotReservation';
 import { createOrder } from '@/lib/razorpay';
 import {
   getTimePeriod,
-  getNextDates,
-  countAvailableSlotsInPeriod,
-  countBookingsAllPeriodsBatch,
-  calculateDynamicDiscount,
+  calculatePeriodDiscountsForDate,
 } from '@/lib/pricingEngine';
 
 export const dynamic = 'force-dynamic';
@@ -179,15 +176,9 @@ export async function POST(request: NextRequest) {
       appliedPromoCode = 'WELCOME100';
       finalAmount -= promoDiscountAmount;
     } else {
-      // Dynamic discount based on demand — per-slot calculation
+      // Dynamic discount based on demand — per-slot calculation using centralized logic
       if (turf.maxDiscount && turf.maxDiscount > 0) {
-        const dates = getNextDates(4); // 4-day demand window
-
-        // Fetch booking counts for all periods in one query
-        const allBookingCounts = await countBookingsAllPeriodsBatch([turfId], dates);
-        const periodCounts = allBookingCounts.get(turfId) || new Map();
-
-        // Calculate discount for each slot based on its time period
+        // Calculate discount for each slot based on its specific date and time period
         let totalDynamicDiscount = 0;
         const perSlotDiscounts: Array<{ discountPercent: number; discountAmount: number }> = [];
 
@@ -195,28 +186,22 @@ export async function POST(request: NextRequest) {
           const slotHour = parseInt(slot.startTime.split(':')[0], 10);
           const slotPeriod = getTimePeriod(slotHour);
 
-          const confirmedCount = periodCounts.get(slotPeriod) || 0;
-          const totalSlots = countAvailableSlotsInPeriod(
-            turf.availableSlots || [],
-            slotPeriod,
-            dates,
-          );
+          // Get period discounts specific to THIS slot's date
+          const dateDiscounts = await calculatePeriodDiscountsForDate(turf, slot.date);
+          const periodDiscount = dateDiscounts[slotPeriod];
 
-          const fillRate = totalSlots > 0 ? confirmedCount / totalSlots : 0;
-
-          const discount = calculateDynamicDiscount(
-            turf.pricing,
-            turf.maxDiscount,
-            fillRate,
-            { actualFillRate: fillRate },
-            turf.maxSurge || 0
-          );
-
-          perSlotDiscounts.push({
-            discountPercent: discount.discountPercent,
-            discountAmount: discount.discountAmount,
-          });
-          totalDynamicDiscount += discount.discountAmount;
+          if (periodDiscount && periodDiscount.discountPercent > 0) {
+            perSlotDiscounts.push({
+              discountPercent: periodDiscount.discountPercent,
+              discountAmount: periodDiscount.discountAmount,
+            });
+            totalDynamicDiscount += periodDiscount.discountAmount;
+          } else {
+            perSlotDiscounts.push({
+              discountPercent: 0,
+              discountAmount: 0,
+            });
+          }
         }
 
         dynamicDiscountPercent = perSlotDiscounts.length > 0

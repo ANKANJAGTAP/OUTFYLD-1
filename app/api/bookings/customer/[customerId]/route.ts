@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectMongoDB } from '@/lib/mongodb';
 import Booking from '@/app/models/Booking';
 import User from '@/app/models/User';
+import '@/app/models/Turf'; // Needed for population
+import Turf from '@/app/models/Turf';
 
 // Tell Next.js this route should be dynamic (not statically generated)
 export const dynamic = 'force-dynamic';
@@ -12,6 +14,11 @@ export async function GET(
 ) {
   try {
     await connectMongoDB();
+
+    // Ensure Turf is loaded to prevent MissingSchemaError during populate
+    if (Turf) {
+      console.log('Turf model loaded');
+    }
 
     const { customerId } = params;
 

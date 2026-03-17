@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Menu, X, User, LogOut, FileText, ChevronDown, ListOrdered, Award, Shield } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useHoverDropdown } from '@/hooks/useHoverDropdown';
 import { useRouter } from 'next/navigation';
 import {
   DropdownMenu,
@@ -19,6 +20,7 @@ import {
 
 export function BrowseHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { isOpen, setIsOpen, handleMouseEnter, handleMouseLeave } = useHoverDropdown();
   const { user, firebaseUser, logout } = useAuth();
   const router = useRouter();
 
@@ -69,9 +71,9 @@ export function BrowseHeader() {
             {firebaseUser && user ? (
               // User is logged in
               <div className="flex items-center space-x-3">
-                <DropdownMenu>
+                <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="p-0 h-auto hover:bg-transparent flex items-center gap-2">
+                    <Button variant="ghost" className="p-0 h-auto hover:bg-transparent flex items-center gap-2" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
                       <div className="text-right">
                         <p className="text-sm font-medium text-gray-900">
                           {user.name}
@@ -86,7 +88,7 @@ export function BrowseHeader() {
                       <ChevronDown className="h-4 w-4 text-gray-500" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuContent align="end" className="w-56" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
                     <DropdownMenuLabel>My Account</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     

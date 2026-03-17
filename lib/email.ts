@@ -436,4 +436,58 @@ export async function sendBookingConfirmationEmail(
   }
 }
 
+export async function sendFeedbackRequestEmail(
+  customerEmail: string,
+  customerName: string,
+  turfName: string,
+  bookingId: string
+) {
+  try {
+    const feedbackUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://outfyld.in'}/feedback/${bookingId}`;
+    
+    const mailOptions = {
+      from: `"OutFyld Support" <${process.env.SMTP_USER}>`,
+      to: customerEmail,
+      subject: `How was your experience at ${turfName}?`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-w: 600px; margin: 0 auto; background-color: #f9f9f9; padding: 20px; border-radius: 8px;">
+          <div style="background-color: #ffffff; padding: 30px; border-radius: 8px; border-top: 4px solid #10b981; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h2 style="color: #10b981; margin-top: 0;">We'd love your feedback!</h2>
+            
+            <p style="color: #4b5563; font-size: 16px; line-height: 1.5;">Hi ${customerName},</p>
+            
+            <p style="color: #4b5563; font-size: 16px; line-height: 1.5;">
+              We hope you had a great time playing at <strong>${turfName}</strong>. 
+            </p>
+            
+            <p style="color: #4b5563; font-size: 16px; line-height: 1.5;">
+              Your feedback is incredibly valuable to us and helps other players make better decisions. Please take a moment to rate your experience.
+            </p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${feedbackUrl}" style="background-color: #10b981; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px; display: inline-block;">Leave a Review</a>
+            </div>
+            
+            <p style="color: #4b5563; font-size: 14px; line-height: 1.5; margin-top: 30px;">
+              Thanks for choosing OutFyld!
+            </p>
+            
+            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;" />
+            <p style="color: #9ca3af; font-size: 12px; text-align: center; margin: 0;">
+              If you have any questions, reply to this email or contact support at <a href="mailto:admin@outfyld.in" style="color: #10b981; text-decoration: none;">admin@outfyld.in</a>
+            </p>
+          </div>
+        </div>
+      `,
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`✅ Feedback request email sent to customer successfully`);
+    console.log('📬 Message ID:', info.messageId);
+    console.log('📧 Sent to:', customerEmail);
+  } catch (error: any) {
+    console.error('❌ Error sending feedback request email:', error);
+  }
+}
+
 export default transporter;

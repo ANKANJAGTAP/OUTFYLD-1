@@ -15,6 +15,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { Loader2, CheckCircle, XCircle, Shield, CreditCard } from 'lucide-react';
 import { format } from 'date-fns';
+import { useRouter } from 'next/navigation';
 import Script from 'next/script';
 import { cn } from '@/lib/utils';
 
@@ -50,6 +51,7 @@ interface PaymentModalProps {
   totalAmount: number;
   promoCode?: string;
   promoDiscountAmount?: number;
+  dynamicDiscountAmount?: number;
   onSuccess: () => void;
   paymentTimer?: number;
 }
@@ -62,9 +64,11 @@ export default function PaymentModal({
   totalAmount,
   promoCode: appliedPromoCode,
   promoDiscountAmount = 0,
+  dynamicDiscountAmount = 0,
   onSuccess,
   paymentTimer = 0
 }: PaymentModalProps) {
+  const router = useRouter();
   const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState<'ready' | 'processing' | 'success' | 'error'>('ready');
   const [processing, setProcessing] = useState(false);
@@ -109,8 +113,8 @@ export default function PaymentModal({
   const loyaltyDiscount = useLoyaltyPoints ? Math.min(rawDiscount, totalAmount) : 0;
 
   // Calculate dynamic discount (auto-applied if no promo)
-  const hasDynamicDiscount = !appliedPromoCode && (turf.discountPercent ?? 0) > 0;
-  const dynamicDiscountTotal = hasDynamicDiscount ? (turf.discountAmount ?? 0) * selectedSlots.length : 0;
+  const hasDynamicDiscount = !appliedPromoCode && dynamicDiscountAmount > 0;
+  const dynamicDiscountTotal = hasDynamicDiscount ? dynamicDiscountAmount : 0;
   const promoTotal = appliedPromoCode ? promoDiscountAmount : 0;
   const activeDiscount = appliedPromoCode ? promoTotal : dynamicDiscountTotal;
 
@@ -203,6 +207,11 @@ export default function PaymentModal({
               onSuccess();
               onClose();
               resetModal();
+              if (verifyData?.bookings?.length > 0) {
+                router.push(`/bookings/${verifyData.bookings[0]._id}?success=true`);
+              } else if (createData?.bookingIds?.length > 0) {
+                router.push(`/bookings/${createData.bookingIds[0]}?success=true`);
+              }
             }, 3000);
           } catch (verifyError: any) {
             setError(verifyError.message || 'Payment verification failed');
@@ -243,7 +252,13 @@ export default function PaymentModal({
         setProcessing(false);
       });
       rzp.open();
+      
+      // Order created successfully and modal opened. 
+      // Revert the background UI so it's ready if the user cancels Razorpay.
+      setCurrentStep('ready');
+      setProcessing(false);
     } catch (error: any) {
+      setRazorpayOpen(false);
       setError(error.message || 'An unexpected error occurred');
       setCurrentStep('error');
       setProcessing(false);
@@ -348,7 +363,7 @@ export default function PaymentModal({
                 </div>
                 {hasDynamicDiscount && (
                   <div className="flex justify-between text-sm text-green-600">
-                    <span>🔥 Dynamic Discount ({turf.discountPercent}% OFF):</span>
+                    <span>🔥 Dynamic Discount:</span>
                     <span>-₹{dynamicDiscountTotal}</span>
                   </div>
                 )}

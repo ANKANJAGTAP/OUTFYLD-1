@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useHoverDropdown } from '@/hooks/useHoverDropdown';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import {
   Card, CardContent, CardDescription, CardHeader, CardTitle,
@@ -304,6 +305,7 @@ function TurfCard({
 
 // ─── Main Dashboard ──────────────────────────────────────────────────
 function OwnerDashboard() {
+  const { isOpen, setIsOpen, handleMouseEnter, handleMouseLeave } = useHoverDropdown();
   const { user, firebaseUser, logout } = useAuth();
   const router = useRouter();
   const [turfs, setTurfs] = useState<Turf[]>([]);
@@ -555,52 +557,59 @@ function OwnerDashboard() {
               ))}
             </nav>
 
-            <DropdownMenu>
+            <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="h-auto p-1.5 hover:bg-gray-50 rounded-xl flex items-center gap-3"
+                  className="h-auto p-1.5 hover:bg-gray-50 rounded-xl flex items-center gap-3 focus-visible:ring-0 focus-visible:outline-none focus:ring-0 border-none outline-none"
+                  onMouseEnter={handleMouseEnter}
+                  onMouseLeave={handleMouseLeave}
                 >
-                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center text-white text-sm font-bold shadow-md">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center text-white text-base font-bold shadow-md">
                     {(user.name || 'O').charAt(0).toUpperCase()}
                   </div>
                   <div className="text-right hidden lg:block">
                     <p className="text-sm font-semibold text-gray-900 leading-none">
                       {user.name}
                     </p>
-                    <p className="text-[10px] text-gray-400 mt-0.5">
+                    <p className="text-[11px] text-gray-500 mt-1">
                       {user.businessName || 'Turf Owner'}
                     </p>
                   </div>
                   {user.subscriptionPlan && (
-                    <Badge className="hidden md:flex bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-50 text-[10px] font-semibold">
+                    <Badge className="hidden md:flex bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-50 text-[10px] font-semibold tracking-wide">
                       {user.subscriptionPlan.charAt(0).toUpperCase() + user.subscriptionPlan.slice(1)}
                     </Badge>
                   )}
                   <ChevronDown className="h-4 w-4 text-gray-400" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 rounded-xl shadow-xl border-gray-100 p-1">
-                <DropdownMenuLabel className="text-xs text-gray-400 font-medium px-3">
+              <DropdownMenuContent 
+                align="end" 
+                className="w-64 p-2 rounded-xl shadow-lg border-gray-100" 
+                onMouseEnter={handleMouseEnter} 
+                onMouseLeave={handleMouseLeave}
+              >
+                <DropdownMenuLabel className="font-semibold text-gray-900 px-3 py-2">
                   My Account
                 </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => router.push('/owner/profile')} className="rounded-lg cursor-pointer">
-                  <UserIcon className="mr-2 h-4 w-4 text-gray-400" />
-                  My Profile
+                <DropdownMenuSeparator className="my-1" />
+                <DropdownMenuItem onClick={() => router.push('/owner/profile')} className="cursor-pointer rounded-lg px-3 py-2.5 transition-colors focus:bg-emerald-50 focus:text-emerald-700">
+                  <UserIcon className="mr-3 h-5 w-5" />
+                  <span className="text-base">My Profile</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push('/owner/bank-details')} className="rounded-lg cursor-pointer">
-                  <CreditCard className="mr-2 h-4 w-4 text-gray-400" />
-                  Payment Details
+                <DropdownMenuItem onClick={() => router.push('/owner/bank-details')} className="cursor-pointer rounded-lg px-3 py-2.5 transition-colors focus:bg-emerald-50 focus:text-emerald-700">
+                  <CreditCard className="mr-3 h-5 w-5" />
+                  <span className="text-base">Payment Details</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push('/owner/analytics')} className="rounded-lg cursor-pointer">
-                  <BarChart3 className="mr-2 h-4 w-4 text-gray-400" />
-                  Analytics
+                <DropdownMenuItem onClick={() => router.push('/owner/analytics')} className="cursor-pointer rounded-lg px-3 py-2.5 transition-colors focus:bg-emerald-50 focus:text-emerald-700">
+                  <BarChart3 className="mr-3 h-5 w-5" />
+                  <span className="text-base">Analytics</span>
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={logout} className="rounded-lg cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Log out
+                <DropdownMenuSeparator className="my-1" />
+                <DropdownMenuItem onClick={logout} className="cursor-pointer rounded-lg px-3 py-2.5 text-red-600 focus:bg-red-50 focus:text-red-700 transition-colors">
+                  <LogOut className="mr-3 h-5 w-5" />
+                  <span className="text-base font-medium">Log out</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

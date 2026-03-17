@@ -1,7 +1,6 @@
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import { HeroBanner } from '@/components/landing/HeroBanner';
 import { FeaturesSection } from '@/components/landing/FeaturesSection';
-import { PopularTurfs } from '@/components/landing/PopularTurfs';
 import { TestimonialsSection } from '@/components/landing/TestimonialsSection';
 import { Footer } from '@/components/landing/Footer';
 
@@ -11,7 +10,6 @@ export default function Home() {
       <LandingHeader />
       <HeroBanner />
       <FeaturesSection />
-      <PopularTurfs />
       <TestimonialsSection />
       <Footer />
     </main>

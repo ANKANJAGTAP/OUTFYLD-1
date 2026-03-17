@@ -35,6 +35,8 @@ interface IBooking extends Document {
   refundStatus?: 'pending' | 'processed' | 'failed';
   refundProcessedAt?: Date;
 
+  feedbackEmailSent?: boolean;
+
   // Loyalty attributes
   appliedLoyaltyPoints?: number;
   loyaltyDiscountAmount?: number;
@@ -170,6 +172,11 @@ const BookingSchema = new mongoose.Schema({
   paymentScreenshot: {
     type: PaymentScreenshotSchema,
     required: false
+  },
+  
+  feedbackEmailSent: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: true

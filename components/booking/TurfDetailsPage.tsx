@@ -648,10 +648,15 @@ const TurfDetailsPage = memo(function TurfDetailsPage({ turfId }: TurfDetailsPag
 
             {/* Location Map */}
             {(() => {
-              const lat = turf.location?.coordinates?.latitude ?? turf.geoLocation?.coordinates?.[1];
-              const lng = turf.location?.coordinates?.longitude ?? turf.geoLocation?.coordinates?.[0];
+              const rawLat = turf.location?.coordinates?.latitude ?? turf.geoLocation?.coordinates?.[1];
+              const rawLng = turf.location?.coordinates?.longitude ?? turf.geoLocation?.coordinates?.[0];
               
-              if (!lat || !lng || !isLoaded) return null;
+              if (!rawLat || !rawLng || !isLoaded) return null;
+
+              const lat = Number(rawLat);
+              const lng = Number(rawLng);
+
+              if (isNaN(lat) || isNaN(lng)) return null;
               
               return (
                 <Card>
@@ -998,6 +1003,7 @@ const TurfDetailsPage = memo(function TurfDetailsPage({ turfId }: TurfDetailsPag
           totalAmount={turf.pricing * selectedSlots.length}
           promoCode={promoApplied ? 'WELCOME100' : undefined}
           promoDiscountAmount={promoApplied ? Math.min(100, turf.pricing * selectedSlots.length) : 0}
+          dynamicDiscountAmount={(turf.pricing * selectedSlots.length) - selectedSlotsTotal}
           onSuccess={handleBookingSuccess}
           paymentTimer={paymentModalTimer}
         />
