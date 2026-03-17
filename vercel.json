@@ -1,11 +1,5 @@
 {
   "buildCommand": "next build",
   "cleanUrls": true,
-  "trailingSlash": false,
-  "crons": [
-    {
-      "path": "/api/cron/request-feedback",
-      "schedule": "0 * * * *"
-    }
-  ]
+  "trailingSlash": false
 }
