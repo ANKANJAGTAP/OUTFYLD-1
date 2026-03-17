@@ -564,8 +564,7 @@ function OwnerDashboard() {
                   className="h-auto p-1.5 hover:bg-gray-50 rounded-xl flex items-center gap-3 focus-visible:ring-0 focus-visible:outline-none focus:ring-0 border-none outline-none"
                   onMouseEnter={handleMouseEnter}
                   onMouseLeave={handleMouseLeave}
-                >
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center text-white text-base font-bold shadow-md">
+                >                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center text-white text-base font-bold shadow-md">
                     {(user.name || 'O').charAt(0).toUpperCase()}
                   </div>
                   <div className="text-right hidden lg:block">
