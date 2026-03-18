@@ -112,11 +112,11 @@ export default function PaymentModal({
   const rawDiscount = Math.floor(cappedLoyaltyPoints / 10);
   const loyaltyDiscount = useLoyaltyPoints ? Math.min(rawDiscount, totalAmount) : 0;
 
-  // Calculate dynamic discount (auto-applied if no promo)
-  const hasDynamicDiscount = !appliedPromoCode && dynamicDiscountAmount > 0;
+  // Calculate dynamic discount and promo (can stack)
+  const hasDynamicDiscount = dynamicDiscountAmount > 0;
   const dynamicDiscountTotal = hasDynamicDiscount ? dynamicDiscountAmount : 0;
   const promoTotal = appliedPromoCode ? promoDiscountAmount : 0;
-  const activeDiscount = appliedPromoCode ? promoTotal : dynamicDiscountTotal;
+  const activeDiscount = promoTotal + dynamicDiscountTotal;
 
   const finalAmountToPay = Math.max(0, totalAmount - activeDiscount - loyaltyDiscount);
 

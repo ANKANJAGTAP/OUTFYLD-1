@@ -42,8 +42,9 @@ export function BookingSummary({
 
   const basePrice = turf.price * selectedSlots.length;
   const dynamicDiscount = dynamicDiscountPerSlot * selectedSlots.length;
-  const promoDiscount = promoApplied ? Math.min(100, basePrice) : 0; // WELCOME100 = flat ₹100
-  const activeDiscount = promoApplied ? promoDiscount : dynamicDiscount;
+  const remainderAfterDynamic = Math.max(0, basePrice - dynamicDiscount);
+  const promoDiscount = promoApplied ? Math.min(100, remainderAfterDynamic) : 0; // WELCOME100 = flat ₹100
+  const activeDiscount = dynamicDiscount + promoDiscount;
   const platformFee = selectedSlots.length > 0 ? 50 : 0;
   const taxes = (basePrice - activeDiscount + platformFee) * 0.18; // 18% GST
   const totalAmount = Math.max(0, basePrice - activeDiscount + platformFee + taxes);
@@ -255,7 +256,7 @@ export function BookingSummary({
                   <span>₹{basePrice}</span>
                 </div>
 
-                {/* Dynamic discount (auto-applied, mutually exclusive with promo) */}
+                {/* Dynamic discount */}
                 {hasDynamicDiscount && (
                   <div className="flex justify-between text-sm text-green-600">
                     <span>🔥 Dynamic Discount ({turf.discountPercent}% OFF)</span>
@@ -304,11 +305,6 @@ export function BookingSummary({
                   <Tag className="h-4 w-4 mr-2" />
                   Promo Code
                 </Label>
-                {hasDynamicDiscount && !promoApplied && (
-                  <p className="text-xs text-amber-600">
-                    ⚠️ Applying a promo code will replace the current dynamic discount.
-                  </p>
-                )}
                 <div className="flex gap-2">
                   <Input
                     id="promo"

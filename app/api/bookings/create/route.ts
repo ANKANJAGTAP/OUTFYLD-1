@@ -157,7 +157,41 @@ export async function POST(request: NextRequest) {
     let appliedPromoCode = '';
     let finalAmount = parseFloat(totalAmount.toString());
 
-    // --- A) Promo code OR Dynamic discount (cannot stack) ---
+    // --- Calculate A) Dynamic discount and B) Promo code (they can stack) ---
+    if (turf.maxDiscount && turf.maxDiscount > 0) {
+      // Calculate discount for each slot based on its specific date and time period
+      let totalDynamicDiscount = 0;
+      const perSlotDiscounts: Array<{ discountPercent: number; discountAmount: number }> = [];
+
+      for (const slot of slots) {
+        const slotHour = parseInt(slot.startTime.split(':')[0], 10);
+        const slotPeriod = getTimePeriod(slotHour);
+
+        // Get period discounts specific to THIS slot's date
+        const dateDiscounts = await calculatePeriodDiscountsForDate(turf, slot.date);
+        const periodDiscount = dateDiscounts[slotPeriod];
+
+        if (periodDiscount && periodDiscount.discountPercent > 0) {
+          perSlotDiscounts.push({
+            discountPercent: periodDiscount.discountPercent,
+            discountAmount: periodDiscount.discountAmount,
+          });
+          totalDynamicDiscount += periodDiscount.discountAmount;
+        } else {
+          perSlotDiscounts.push({
+            discountPercent: 0,
+            discountAmount: 0,
+          });
+        }
+      }
+
+      dynamicDiscountPercent = perSlotDiscounts.length > 0
+        ? Math.max(...perSlotDiscounts.map(d => d.discountPercent))
+        : 0;
+      dynamicDiscountAmount = totalDynamicDiscount;
+      finalAmount -= dynamicDiscountAmount;
+    }
+
     if (promoCode && promoCode.toUpperCase() === 'WELCOME100') {
       // WELCOME100: flat ₹100 off for first-time users only
       const previousBookings = await Booking.countDocuments({
@@ -172,47 +206,12 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      promoDiscountAmount = Math.min(100, finalAmount); // ₹100 off, capped at total
+      promoDiscountAmount = Math.min(100, finalAmount); // ₹100 off, capped at remaining total
       appliedPromoCode = 'WELCOME100';
       finalAmount -= promoDiscountAmount;
-    } else {
-      // Dynamic discount based on demand — per-slot calculation using centralized logic
-      if (turf.maxDiscount && turf.maxDiscount > 0) {
-        // Calculate discount for each slot based on its specific date and time period
-        let totalDynamicDiscount = 0;
-        const perSlotDiscounts: Array<{ discountPercent: number; discountAmount: number }> = [];
-
-        for (const slot of slots) {
-          const slotHour = parseInt(slot.startTime.split(':')[0], 10);
-          const slotPeriod = getTimePeriod(slotHour);
-
-          // Get period discounts specific to THIS slot's date
-          const dateDiscounts = await calculatePeriodDiscountsForDate(turf, slot.date);
-          const periodDiscount = dateDiscounts[slotPeriod];
-
-          if (periodDiscount && periodDiscount.discountPercent > 0) {
-            perSlotDiscounts.push({
-              discountPercent: periodDiscount.discountPercent,
-              discountAmount: periodDiscount.discountAmount,
-            });
-            totalDynamicDiscount += periodDiscount.discountAmount;
-          } else {
-            perSlotDiscounts.push({
-              discountPercent: 0,
-              discountAmount: 0,
-            });
-          }
-        }
-
-        dynamicDiscountPercent = perSlotDiscounts.length > 0
-          ? Math.max(...perSlotDiscounts.map(d => d.discountPercent))
-          : 0;
-        dynamicDiscountAmount = totalDynamicDiscount;
-        finalAmount -= dynamicDiscountAmount;
-      }
     }
 
-    // --- B) Loyalty points (stacks with either promo OR dynamic, capped at 500 points) ---
+    // --- C) Loyalty points (stacks with promo and dynamic, capped at 500 points) ---
     if (useLoyaltyPoints && customer.loyaltyPoints > 0) {
       const maxLoyaltyPoints = Math.min(customer.loyaltyPoints, 500); // Cap at 500 points
       const calculatedDiscount = maxLoyaltyPoints / 10; // 10 points = ₹1, max ₹50

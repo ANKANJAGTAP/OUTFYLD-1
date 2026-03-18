@@ -1,5 +1,7 @@
 import nodemailer from 'nodemailer';
 
+import { getBookingReceiptBuffer } from './receiptGenerator';
+
 // Check if email is configured
 const isEmailConfigured = !!(
   process.env.EMAIL_HOST && 
@@ -86,7 +88,7 @@ export async function sendBookingNotificationEmail(
     const mailOptions = {
       from: `"${senderName}" <${fromEmail}>`,
       to: ownerEmail,
-      subject: `🔔 New Booking Request - ${turfName}`,
+      subject: `🔔 New Booking Alert - ${turfName}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -347,7 +349,7 @@ export async function sendBookingConfirmationEmail(
     const senderName = process.env.EMAIL_SENDER_NAME || 'OutFyld';
     const fromEmail = process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@outfyld.in';
     
-    const mailOptions = {
+    const mailOptions: any = {
       from: `"${senderName}" <${fromEmail}>`,
       to: customerEmail,
       subject,
@@ -406,6 +408,7 @@ export async function sendBookingConfirmationEmail(
                   <li>Time: ${bookingTime}</li>
                   <li>Amount: ₹${totalAmount}</li>
                 </ul>
+                <p>Please find your booking receipt attached to this email.</p>
                 <p>See you on the turf!</p>
               ` : `
                 <p>Your payment will be refunded within 5-7 business days.</p>
@@ -419,6 +422,25 @@ export async function sendBookingConfirmationEmail(
         </html>
       `,
     };
+
+    if (isConfirmed && bookingDetails.bookingId) {
+      try {
+        // Splitting since multiple bookingIds might be comma-separated in bulk bookings!
+        const primaryBookingId = bookingDetails.bookingId.split(',')[0].trim();
+        const receiptBuffer = await getBookingReceiptBuffer(primaryBookingId);
+        if (receiptBuffer) {
+          mailOptions.attachments = [
+            {
+              filename: `Receipt-${primaryBookingId.slice(0, 8).toUpperCase()}.pdf`,
+              content: receiptBuffer,
+              contentType: 'application/pdf'
+            }
+          ];
+        }
+      } catch (err) {
+        console.error('Failed to generate receipt attachment for email', err);
+      }
+    }
 
     const info = await transporter.sendMail(mailOptions);
     console.log(`✅ Booking ${status} email sent to customer successfully`);

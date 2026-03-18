@@ -447,7 +447,7 @@ export default function BookingDetailsPage({
                       discount
                     />
                   )}
-                  {booking.dynamicDiscountAmount > 0 && !booking.promoDiscountAmount && (
+                  {booking.dynamicDiscountAmount > 0 && (
                     <PaymentLine
                       label="Special Discount"
                       value={`-₹${booking.dynamicDiscountAmount}`}

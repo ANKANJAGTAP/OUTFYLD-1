@@ -513,19 +513,24 @@ const TurfDetailsPage = memo(function TurfDetailsPage({ turfId }: TurfDetailsPag
     return { offerPrice: turf.pricing, discountPercent: 0, discountAmount: 0 };
   }, [turf, periodDiscounts]);
 
-  // Calculate per-slot total for selected slots
-  const selectedSlotsTotal = useMemo(() => {
+  const basePriceTotal = useMemo(() => turf ? turf.pricing * selectedSlots.length : 0, [turf, selectedSlots]);
+
+  const dynamicDiscountAmount = useMemo(() => {
     if (!turf) return 0;
-    if (promoApplied) {
-      // WELCOME100: base price minus ₹100
-      const base = turf.pricing * selectedSlots.length;
-      return Math.max(0, base - Math.min(100, base));
-    }
-    return selectedSlots.reduce((sum, slot) => {
+    const discountedTotal = selectedSlots.reduce((sum, slot) => {
       const { offerPrice } = getSlotOfferPrice(slot.startTime);
       return sum + offerPrice;
     }, 0);
-  }, [turf, selectedSlots, promoApplied, getSlotOfferPrice]);
+    return basePriceTotal - discountedTotal;
+  }, [basePriceTotal, getSlotOfferPrice, selectedSlots, turf]);
+
+  const selectedSlotsTotal = useMemo(() => {
+    let total = basePriceTotal - dynamicDiscountAmount;
+    if (promoApplied) {
+      total = Math.max(0, total - Math.min(100, total));
+    }
+    return total;
+  }, [basePriceTotal, dynamicDiscountAmount, promoApplied]);
 
   if (loading) {
     return (
@@ -857,11 +862,11 @@ const TurfDetailsPage = memo(function TurfDetailsPage({ turfId }: TurfDetailsPag
                       )}
                       <Separator className="my-4" />
 
-                      {/* Dynamic discount summary (only if not using promo) */}
-                      {!promoApplied && selectedSlots.some(s => getSlotOfferPrice(s.startTime).discountPercent > 0) && (
+                      {/* Dynamic discount summary */}
+                      {dynamicDiscountAmount > 0 && (
                         <div className="flex justify-between text-sm text-green-600 mb-1">
                           <span>🔥 Dynamic Discount</span>
-                          <span>-₹{(turf.pricing * selectedSlots.length) - selectedSlotsTotal}</span>
+                          <span>-₹{dynamicDiscountAmount}</span>
                         </div>
                       )}
 
@@ -941,11 +946,6 @@ const TurfDetailsPage = memo(function TurfDetailsPage({ turfId }: TurfDetailsPag
                             </Button>
                           </div>
                           {promoError && <p className="text-xs text-red-500 mt-1">{promoError}</p>}
-                          {turf.discountPercent && turf.discountPercent > 0 && (
-                            <p className="text-xs text-amber-600 mt-1">
-                              ⚠️ Promo will replace the current dynamic discount.
-                            </p>
-                          )}
                         </div>
                       )}
 
@@ -1002,8 +1002,8 @@ const TurfDetailsPage = memo(function TurfDetailsPage({ turfId }: TurfDetailsPag
           selectedSlots={selectedSlots.map(slot => ({ ...slot, date: selectedDate }))}
           totalAmount={turf.pricing * selectedSlots.length}
           promoCode={promoApplied ? 'WELCOME100' : undefined}
-          promoDiscountAmount={promoApplied ? Math.min(100, turf.pricing * selectedSlots.length) : 0}
-          dynamicDiscountAmount={(turf.pricing * selectedSlots.length) - selectedSlotsTotal}
+          promoDiscountAmount={promoApplied ? Math.min(100, Math.max(0, (turf.pricing * selectedSlots.length) - dynamicDiscountAmount)) : 0}
+          dynamicDiscountAmount={dynamicDiscountAmount}
           onSuccess={handleBookingSuccess}
           paymentTimer={paymentModalTimer}
         />

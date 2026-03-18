@@ -570,7 +570,7 @@ function PlayerLoyaltyContent() {
                 {
                   tier: 'Silver',
                   emoji: '🥈',
-                  points: '500+',
+                  points: '1000+',
                   perks: ['Earn 12 pts/₹100', 'Priority booking'],
                   gradient: 'from-gray-100 to-gray-50',
                   border: 'border-gray-300',

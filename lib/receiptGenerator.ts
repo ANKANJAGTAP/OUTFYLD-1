@@ -45,66 +45,152 @@ export async function getBookingReceiptBuffer(bookingId: string): Promise<Buffer
     const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
     // Header
-    page.drawText('OUTFYLD - Booking Receipt', {
+    page.drawText('OUTFYLD', {
       x: 50,
       y: 780,
-      size: 24,
+      size: 28,
       font: helveticaBold,
-      color: rgb(0, 0.5, 0),
+      color: rgb(0.12, 0.64, 0.28), // primary green
+    });
+    
+    page.drawText('BOOKING RECEIPT', {
+      x: 350,
+      y: 780,
+      size: 20,
+      font: helveticaBold,
+      color: rgb(0.2, 0.2, 0.2),
     });
 
     page.drawText(`Receipt ID: ${booking._id.toString().slice(0, 8).toUpperCase()}`, {
-        x: 50,
-        y: 750,
-        size: 12,
+        x: 350,
+        y: 755,
+        size: 10,
         font: helvetica,
-        color: rgb(0.3, 0.3, 0.3),
+        color: rgb(0.4, 0.4, 0.4),
+    });
+    
+    page.drawText(`Date: ${new Date().toLocaleDateString()}`, {
+        x: 350,
+        y: 740,
+        size: 10,
+        font: helvetica,
+        color: rgb(0.4, 0.4, 0.4),
     });
 
-    let yOffset = 700;
-    const lineSpacing = 25;
+    // Customer Info
+    page.drawText('Billed To:', { x: 50, y: 720, size: 10, font: helveticaBold, color: rgb(0.4, 0.4, 0.4) });
+    page.drawText(booking.customerId?.name || 'Guest User', { x: 50, y: 705, size: 12, font: helveticaBold });
+    page.drawText(booking.customerId?.email || '', { x: 50, y: 690, size: 10, font: helvetica, color: rgb(0.3, 0.3, 0.3) });
+    if (booking.customerId?.phone) {
+        page.drawText(booking.customerId.phone, { x: 50, y: 675, size: 10, font: helvetica, color: rgb(0.3, 0.3, 0.3) });
+    }
 
-    const drawRow = (label: string, value: string) => {
-        page.drawText(label, { x: 50, y: yOffset, size: 12, font: helveticaBold });
-        page.drawText(value, { x: 200, y: yOffset, size: 12, font: helvetica });
-        yOffset -= lineSpacing;
+    // Divider
+    page.drawLine({
+      start: { x: 50, y: 650 },
+      end: { x: 545, y: 650 },
+      thickness: 1,
+      color: rgb(0.8, 0.8, 0.8),
+    });
+
+    // Table Header
+    let yOffset = 620;
+    page.drawText('Item Description', { x: 50, y: yOffset, size: 10, font: helveticaBold, color: rgb(0.4, 0.4, 0.4) });
+    page.drawText('Qty/Slots', { x: 350, y: yOffset, size: 10, font: helveticaBold, color: rgb(0.4, 0.4, 0.4) });
+    page.drawText('Amount', { x: 480, y: yOffset, size: 10, font: helveticaBold, color: rgb(0.4, 0.4, 0.4) });
+    
+    // Divider
+    yOffset -= 15;
+    page.drawLine({
+      start: { x: 50, y: yOffset },
+      end: { x: 545, y: yOffset },
+      thickness: 1,
+      color: rgb(0.8, 0.8, 0.8),
+    });
+
+    // Main Item
+    yOffset -= 25;
+    const turfName = booking.turfId?.businessName || booking.turfId?.name || 'OutFyld Turf';
+    page.drawText(`Turf Booking: ${turfName}`, { x: 50, y: yOffset, size: 12, font: helveticaBold });
+    page.drawText(`Date: ${booking.slot.date}`, { x: 50, y: yOffset - 15, size: 10, font: helvetica, color: rgb(0.4, 0.4, 0.4) });
+    
+    const slotsInfo = allBookingsForOrder.length > 1 
+      ? `${allBookingsForOrder.length} slots` 
+      : `${booking.slot.startTime} - ${booking.slot.endTime}`;
+      
+    page.drawText(slotsInfo, { x: 350, y: yOffset, size: 11, font: helvetica });
+    page.drawText(`INR ${totalBaseAmount.toFixed(2)}`, { x: 480, y: yOffset, size: 11, font: helvetica });
+
+    // Summary Section
+    yOffset -= 80;
+    page.drawLine({
+      start: { x: 320, y: yOffset },
+      end: { x: 545, y: yOffset },
+      thickness: 1,
+      color: rgb(0.8, 0.8, 0.8),
+    });
+
+    yOffset -= 25;
+    const drawSummaryRow = (label: string, value: string, isBold: boolean = false, isGreen: boolean = false) => {
+        const font = isBold ? helveticaBold : helvetica;
+        const color = isGreen ? rgb(0.12, 0.64, 0.28) : rgb(0.2, 0.2, 0.2);
+        page.drawText(label, { x: 320, y: yOffset, size: 11, font });
+        // Align text to right roughly
+        page.drawText(value, { x: 480, y: yOffset, size: 11, font, color });
+        yOffset -= 20;
     };
 
-    drawRow('Turf:', booking.turfId?.businessName || booking.turfId?.name || 'OutFyld Turf');
-    drawRow('Date:', booking.slot.date);
-    
-    if (allBookingsForOrder.length > 1) {
-        drawRow('Time Slots:', `${allBookingsForOrder.length} slots booked`);
-    } else {
-        drawRow('Time Slot:', `${booking.slot.startTime} - ${booking.slot.endTime}`);
-    }
-    
-    drawRow('Status:', booking.status.toUpperCase());
-    yOffset -= 15;
-    
-    drawRow('Base Amount:', `INR ${totalBaseAmount}`);
+    drawSummaryRow('Subtotal:', `INR ${totalBaseAmount.toFixed(2)}`);
     
     let totalDiscount = 0;
     if (totalPromoDiscount > 0) {
-        drawRow('Promo Discount:', `- INR ${totalPromoDiscount}`);
+        drawSummaryRow('Promo Discount:', `- INR ${totalPromoDiscount.toFixed(2)}`, false, true);
         totalDiscount += totalPromoDiscount;
-    } else if (totalDynamicDiscount > 0) {
-        drawRow('Special Discount:', `- INR ${totalDynamicDiscount}`);
+    } 
+    // Removed 'else', so it can stack!
+    if (totalDynamicDiscount > 0) {
+        drawSummaryRow('Dynamic Discount:', `- INR ${totalDynamicDiscount.toFixed(2)}`, false, true);
         totalDiscount += totalDynamicDiscount;
     }
     
     if (totalLoyaltyDiscount > 0) {
-        drawRow('Loyalty Used:', `- INR ${totalLoyaltyDiscount}`);
+        drawSummaryRow('Loyalty Used:', `- INR ${totalLoyaltyDiscount.toFixed(2)}`, false, true);
         totalDiscount += totalLoyaltyDiscount;
     }
     
-    yOffset -= 15;
-    const totalPaid = totalBaseAmount - totalDiscount;
-    drawRow('Total Paid:', `INR ${totalPaid}`);
+    yOffset -= 5;
+    page.drawLine({
+      start: { x: 320, y: yOffset + 15 },
+      end: { x: 545, y: yOffset + 15 },
+      thickness: 1,
+      color: rgb(0.8, 0.8, 0.8),
+    });
     
-    yOffset -= 15;
-    drawRow('Payment Method:', 'Razorpay');
-    drawRow('Payment Ref:', booking.razorpayPaymentId || 'N/A');
+    const totalPaid = totalBaseAmount - totalDiscount;
+    drawSummaryRow('Total Paid:', `INR ${totalPaid.toFixed(2)}`, true);
+    
+    // Status and Payment info
+    yOffset -= 20;
+    page.drawText('Payment Info', { x: 50, y: yOffset + 160, size: 10, font: helveticaBold, color: rgb(0.4, 0.4, 0.4) });
+    page.drawText(`Status: ${booking.status.toUpperCase()}`, { x: 50, y: yOffset + 145, size: 10, font: helvetica, color: booking.status === 'confirmed' ? rgb(0.12, 0.64, 0.28) : rgb(0.4, 0.4, 0.4) });
+    page.drawText(`Method: Razorpay`, { x: 50, y: yOffset + 130, size: 10, font: helvetica });
+    page.drawText(`Reference: ${booking.razorpayPaymentId || 'N/A'}`, { x: 50, y: yOffset + 115, size: 10, font: helvetica });
+
+    // Footer
+    page.drawText('Thank you for booking with OUTFYLD!', { 
+      x: 50, 
+      y: 50, 
+      size: 10, 
+      font: helveticaBold,
+      color: rgb(0.4, 0.4, 0.4)
+    });
+    page.drawText('For any queries, please contact support@outfyld.in', { 
+      x: 50, 
+      y: 35, 
+      size: 9, 
+      font: helvetica,
+      color: rgb(0.5, 0.5, 0.5)
+    });
 
     const pdfBytes = await pdfDoc.save();
     return Buffer.from(pdfBytes);
