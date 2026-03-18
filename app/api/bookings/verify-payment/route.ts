@@ -77,11 +77,14 @@ export async function POST(request: NextRequest) {
       // use default
     }
 
-    // Calculate total amount and split
-    const totalAmount = bookings.reduce((sum, b) => sum + b.totalAmount, 0);
-    const platformCommission = Math.round((totalAmount * commissionPercent / 100) * 100) / 100;
-    const gatewayFee = Math.round((totalAmount * 2 / 100) * 100) / 100;
-    const ownerShare = Math.round((totalAmount - platformCommission - gatewayFee) * 100) / 100;
+    // Calculate net amount for calculations
+    const getNetAmount = (b: any) => (b.totalAmount || 0) - (b.promoDiscountAmount || 0) - (b.dynamicDiscountAmount || 0) - (b.loyaltyDiscountAmount || 0);
+    const netTotalAmount = bookings.reduce((sum, b) => sum + getNetAmount(b), 0);
+    
+    // Calculate total amount and split based on net revenue
+    const platformCommission = Math.round((netTotalAmount * commissionPercent / 100) * 100) / 100;
+    const gatewayFee = Math.round((netTotalAmount * 2 / 100) * 100) / 100;
+    const ownerShare = Math.round((netTotalAmount - platformCommission - gatewayFee) * 100) / 100;
 
     // Update all bookings to confirmed
     for (const booking of bookings) {
@@ -89,9 +92,11 @@ export async function POST(request: NextRequest) {
       booking.paymentStatus = 'paid';
       booking.razorpayPaymentId = razorpay_payment_id;
       booking.razorpaySignature = razorpay_signature;
-      booking.platformCommission = Math.round((booking.totalAmount * commissionPercent / 100) * 100) / 100;
-      booking.gatewayFee = Math.round((booking.totalAmount * 2 / 100) * 100) / 100;
-      booking.ownerShare = Math.round((booking.totalAmount - booking.platformCommission - booking.gatewayFee) * 100) / 100;
+      
+      const netAmount = getNetAmount(booking);
+      booking.platformCommission = Math.round((netAmount * commissionPercent / 100) * 100) / 100;
+      booking.gatewayFee = Math.round((netAmount * 2 / 100) * 100) / 100;
+      booking.ownerShare = Math.round((netAmount - booking.platformCommission - booking.gatewayFee) * 100) / 100;
       await booking.save();
     }
 
@@ -226,7 +231,7 @@ export async function POST(request: NextRequest) {
           turfLocation: `${turfData.location?.city || ''}, ${turfData.location?.state || ''}`.trim(),
           bookingDate: `${slots[0].day}, ${slots[0].date}`,
           bookingTime: timeSlotsText,
-          totalAmount,
+          totalAmount: netTotalAmount,
           bookingId: bookings.map((b) => b._id.toString()).join(', '),
         };
 

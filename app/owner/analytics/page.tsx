@@ -53,6 +53,9 @@ interface Booking {
   customerId: string | { _id: string };
   status: string;
   totalAmount: number;
+  promoDiscountAmount?: number;
+  dynamicDiscountAmount?: number;
+  loyaltyDiscountAmount?: number;
   slot: {
     date: string;
     startTime: string;
@@ -563,7 +566,10 @@ function AnalyticsOverview() {
 
       if (booking.status === "confirmed") {
         confirmedBookings++;
-        const amount = booking.totalAmount || 0;
+        const amount = (booking.totalAmount || 0) 
+          - (booking.promoDiscountAmount || 0) 
+          - (booking.dynamicDiscountAmount || 0) 
+          - (booking.loyaltyDiscountAmount || 0);
         totalRevenue += amount;
 
         const bookingDate = new Date(booking.createdAt || booking.slot?.date);

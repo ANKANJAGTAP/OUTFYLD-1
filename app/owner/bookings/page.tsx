@@ -30,6 +30,9 @@ interface Booking {
   customerId: string | { _id: string; name?: string };
   status: string;
   totalAmount: number;
+  promoDiscountAmount?: number;
+  dynamicDiscountAmount?: number;
+  loyaltyDiscountAmount?: number;
   slot: {
     date: string;
     startTime: string;
@@ -195,7 +198,7 @@ function TurfOwnerBookings() {
 
       if (booking.status === 'confirmed') {
         confirmed++;
-        totalRevenue += booking.totalAmount || 0;
+        totalRevenue += (booking.totalAmount || 0) - (booking.promoDiscountAmount || 0) - (booking.dynamicDiscountAmount || 0) - (booking.loyaltyDiscountAmount || 0);
 
         if (booking.slot?.date === todayStr) {
           todayBookings++;

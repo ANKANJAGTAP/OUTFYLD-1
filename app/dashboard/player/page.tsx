@@ -314,7 +314,8 @@ function PlayerDashboard() {
       if (isConfirmed && isFuture) upcomingGames++;
       if (b.status === 'cancelled') cancelledBookings++;
       if (isConfirmed || b.paymentStatus === 'paid') {
-        totalSpent += b.totalAmount || 0;
+        const netAmount = (b.totalAmount || 0) - (b.promoDiscountAmount || 0) - (b.dynamicDiscountAmount || 0) - (b.loyaltyDiscountAmount || 0);
+        totalSpent += netAmount;
       }
     }
 
@@ -359,7 +360,7 @@ function PlayerDashboard() {
         day: b.slot?.day || '',
         time: `${b.slot?.startTime || ''} - ${b.slot?.endTime || ''}`,
         status: displayStatus,
-        amount: b.totalAmount || 0,
+        amount: (b.totalAmount || 0) - (b.promoDiscountAmount || 0) - (b.dynamicDiscountAmount || 0) - (b.loyaltyDiscountAmount || 0),
         sport: b.turfId?.sportsOffered?.[0] || 'Sports',
       };
     });
@@ -602,7 +603,7 @@ function PlayerDashboard() {
                     icon: <Trophy className="h-4 w-4" />,
                     label: 'Rewards & Points',
                     desc: `${loyaltyPoints} points available`,
-                    href: '/dashboard/player/rewards',
+                    href: '/dashboard/player/loyalty',
                   },
                   {
                     icon: <User className="h-4 w-4" />,

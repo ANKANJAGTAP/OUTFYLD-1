@@ -82,7 +82,17 @@ export async function GET(request: NextRequest) {
         $group: {
           _id: '$turfId',
           totalBookings: { $sum: 1 },
-          totalRevenue: { $sum: '$totalAmount' }
+        totalRevenue: {
+          $sum: {
+            $subtract: [
+              { $subtract: [
+                { $subtract: [{ $ifNull: ['$totalAmount', 0] }, { $ifNull: ['$promoDiscountAmount', 0] }] },
+                { $ifNull: ['$dynamicDiscountAmount', 0] }
+              ] },
+              { $ifNull: ['$loyaltyDiscountAmount', 0] }
+            ]
+          }
+        }
         }
       }
     ]);

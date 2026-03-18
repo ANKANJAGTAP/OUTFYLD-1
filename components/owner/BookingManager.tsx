@@ -52,8 +52,9 @@ interface BookingData {
     endTime: string;
   };
   status: 'pending' | 'confirmed' | 'rejected';
-  totalAmount: number;
-  paymentScreenshot?: {
+  totalAmount: number;  promoDiscountAmount?: number;
+  dynamicDiscountAmount?: number;
+  loyaltyDiscountAmount?: number;  paymentScreenshot?: {
     url: string;
     public_id: string;
   };
@@ -248,7 +249,9 @@ export default function BookingManager({ ownerId, turfId, turfName }: BookingMan
             
             <div className="flex justify-between items-center">
               <span className="font-medium">Total Amount:</span>
-              <span className="text-lg font-bold text-green-600">₹{booking.totalAmount}</span>
+              <span className="text-lg font-bold text-green-600">
+                ₹{(booking.totalAmount || 0) - (booking.promoDiscountAmount || 0) - (booking.dynamicDiscountAmount || 0) - (booking.loyaltyDiscountAmount || 0)}
+              </span>
             </div>
           </div>
 
@@ -379,7 +382,7 @@ export default function BookingManager({ ownerId, turfId, turfName }: BookingMan
               <div>
                 <p className="text-sm text-gray-600">Total Revenue</p>
                 <p className="text-2xl font-bold text-blue-600">
-                  ₹{confirmedBookings.reduce((sum, booking) => sum + booking.totalAmount, 0)}
+                  ₹{confirmedBookings.reduce((sum, booking) => sum + ((booking.totalAmount || 0) - (booking.promoDiscountAmount || 0) - (booking.dynamicDiscountAmount || 0) - (booking.loyaltyDiscountAmount || 0)), 0)}
                 </p>
               </div>
               <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
@@ -486,7 +489,7 @@ export default function BookingManager({ ownerId, turfId, turfName }: BookingMan
                   </div>
                   <div>
                     <span className="text-gray-600">Amount:</span>
-                    <span className="ml-2 font-medium">₹{selectedBooking.totalAmount}</span>
+                    <span className="ml-2 font-medium">₹{(selectedBooking.totalAmount || 0) - (selectedBooking.promoDiscountAmount || 0) - (selectedBooking.dynamicDiscountAmount || 0) - (selectedBooking.loyaltyDiscountAmount || 0)}</span>
                   </div>
                   <div>
                     <span className="text-gray-600">Slot:</span>

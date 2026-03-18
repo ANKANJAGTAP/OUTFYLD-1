@@ -49,6 +49,9 @@ interface Booking {
   turfId: string | { _id: string };
   status: string;
   totalAmount: number;
+  promoDiscountAmount?: number;
+  dynamicDiscountAmount?: number;
+  loyaltyDiscountAmount?: number;
   slot: {
     date: string;
     startTime: string;
@@ -400,7 +403,11 @@ function OwnerDashboard() {
           bookingDate.getMonth() === currentMonth &&
           bookingDate.getFullYear() === currentYear
         ) {
-          monthlyRevenue += booking.totalAmount || 0;
+          const finalAmount = (booking.totalAmount || 0) 
+            - (booking.promoDiscountAmount || 0) 
+            - (booking.dynamicDiscountAmount || 0) 
+            - (booking.loyaltyDiscountAmount || 0);
+          monthlyRevenue += finalAmount;
         }
       }
 

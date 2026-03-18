@@ -57,7 +57,21 @@ export async function GET(request: NextRequest) {
         Booking.countDocuments({}),
         Booking.aggregate([
             { $match: { status: 'confirmed' } },
-            { $group: { _id: null, totalRevenue: { $sum: '$totalPrice' } } }
+            { $group: { 
+                _id: null, 
+                totalRevenue: { 
+                  $sum: {
+                    $subtract: [
+                      '$totalAmount',
+                      { $add: [
+                        { $ifNull: ['$promoDiscountAmount', 0] },
+                        { $ifNull: ['$dynamicDiscountAmount', 0] },
+                        { $ifNull: ['$loyaltyDiscountAmount', 0] }
+                      ]}
+                    ]
+                  } 
+                } 
+            } }
         ])
     ]);
 

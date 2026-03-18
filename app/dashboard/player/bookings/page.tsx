@@ -23,6 +23,9 @@ interface BookingRaw {
   turfId: any;
   status: string;
   totalAmount: number;
+  promoDiscountAmount?: number;
+  dynamicDiscountAmount?: number;
+  loyaltyDiscountAmount?: number;
   paymentStatus: string;
   slot: {
     date: string;
@@ -330,7 +333,8 @@ function PlayerBookings() {
       if (displayStatus === 'pending' || displayStatus === 'pending_payment') pending++;
       if (displayStatus === 'cancelled') cancelled++;
       if (b.status === 'confirmed' || b.paymentStatus === 'paid') {
-        totalSpent += b.totalAmount || 0;
+        const netAmount = (b.totalAmount || 0) - (b.promoDiscountAmount || 0) - (b.dynamicDiscountAmount || 0) - (b.loyaltyDiscountAmount || 0);
+        totalSpent += netAmount;
       }
 
       return {
@@ -349,7 +353,7 @@ function PlayerBookings() {
         day: b.slot?.day || '',
         time: `${b.slot?.startTime || ''} - ${b.slot?.endTime || ''}`,
         status: displayStatus,
-        amount: b.totalAmount || 0,
+        amount: (b.totalAmount || 0) - (b.promoDiscountAmount || 0) - (b.dynamicDiscountAmount || 0) - (b.loyaltyDiscountAmount || 0),
         sport: b.turfId?.sportsOffered?.[0] || 'Sports',
         createdAt: b.createdAt,
       };

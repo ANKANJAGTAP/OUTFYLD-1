@@ -353,7 +353,7 @@ function PlayerProfile() {
               icon={<Trophy className="h-5 w-5" />}
               label="Rewards"
               description="View loyalty points and rewards"
-              href="/dashboard/player/rewards"
+              href="/dashboard/player/loyalty"
               gradient="from-amber-500 to-orange-500"
             />
             <QuickAction
