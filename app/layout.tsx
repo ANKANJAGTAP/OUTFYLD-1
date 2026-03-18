@@ -15,10 +15,20 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: 'OutFyld - Sports Turf Booking Platform',
   description: 'Book sports turfs instantly. Find cricket, football, and other sports facilities with real-time availability and secure payments.',
+  themeColor: '#ffffff',
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'OutFyld',
+  },
   icons: {
-    icon: '/images/logo.png',
-    shortcut: '/images/logo.png',
-    apple: '/images/logo.png',
+    icon: [
+      { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    shortcut: '/icons/icon-192.png',
+    apple: '/icons/apple-touch-icon.png',
   },
 };
 
