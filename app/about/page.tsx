@@ -329,7 +329,7 @@ export default function AboutPage() {
     {
       id: 2,
       title: 'Owner Dashboard',
-      desc: 'Owners can manage turfs, view bookings, verify payments and export reports.',
+      desc: 'Owners can manage arenas, view bookings, verify payments and export reports.',
       icon: <Activity className="h-5 w-5" />,
       gradient: 'from-green-500 to-teal-500',
     },
@@ -383,15 +383,15 @@ export default function AboutPage() {
     {
       quote: 'Managing multiple turfs used to be a nightmare. The owner dashboard saved us time and doubled our repeat bookings.',
       author: 'R. Desai',
-      role: 'Turf Owner',
+      role: 'Arena Owner',
       rating: 4.6,
     },
   ];
 
   const faqs = [
     {
-      q: 'How do I list my turf?',
-      a: 'Owners can sign up, go to the Owner Dashboard → Add Turf, fill details and set availability. Photos and bank details can be added in Settings.',
+      q: 'How do I list my arena?',
+      a: 'Owners can sign up, go to the Owner Dashboard → Add Arena, fill details and set availability. Photos and bank details can be added in Settings.',
     },
     {
       q: 'What payment methods are supported?',
@@ -399,7 +399,7 @@ export default function AboutPage() {
     },
     {
       q: 'How does cancellation work?',
-      a: 'Cancellation policy is set per turf. Refunds are processed via the payment gateway or manually by owner request.',
+      a: 'Cancellation policy is set per arena. Refunds are processed via the payment gateway or manually by owner request.',
     },
   ];
 
@@ -435,7 +435,7 @@ export default function AboutPage() {
             We make playing together easy
           </h1>
           <p className="text-emerald-200 text-base sm:text-lg mt-4 max-w-2xl mx-auto">
-            OutFyld helps players discover local turfs, book reliable slots, and lets turf owners manage availability and earnings with confidence.
+            OutFyld helps players discover local arenas, book reliable slots, and lets turf owners manage availability and earnings with confidence.
           </p>
 
           {/* ── Hero Buttons (auth-aware) ── */}

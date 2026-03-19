@@ -18,19 +18,19 @@ export function AboutSection({ value, onChange }: AboutSectionProps) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <FileText className="h-5 w-5" />
-          About Your Turf
+          About Your Arena
         </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
           <p className="text-sm text-gray-600">
-            Describe your turf facility, its features, location advantages, and what makes it special. 
+            Describe your arena facility, its features, location advantages, and what makes it special. 
             This helps customers understand what to expect.
           </p>
           
           <div className="space-y-2">
             <Textarea
-              placeholder="Tell customers about your turf... (e.g., Professional-grade football field with FIFA-standard grass, located in the heart of Sangli with easy access from main roads. Features modern changing rooms, ample parking, and a cafeteria on-site. Perfect for tournaments and casual games alike.)"
+              placeholder="Tell customers about your arena... (e.g., Professional-grade football field with FIFA-standard grass, located in the heart of Sangli with easy access from main roads. Features modern changing rooms, ample parking, and a cafeteria on-site. Perfect for tournaments and casual games alike.)"
               value={value}
               onChange={(e) => onChange(e.target.value)}
               className="min-h-[120px] resize-y"
@@ -51,7 +51,7 @@ export function AboutSection({ value, onChange }: AboutSectionProps) {
 
           {!value.trim() && (
             <p className="text-sm text-red-500">
-              Please provide a description of your turf
+              Please provide a description of your arena
             </p>
           )}
 

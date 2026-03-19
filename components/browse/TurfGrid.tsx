@@ -215,7 +215,7 @@ export default function TurfGrid({
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center space-y-3">
           <MapPin className="h-10 w-10 text-gray-400 mx-auto" />
-          <p className="text-gray-600">Waiting for location access to show nearest turfs...</p>
+          <p className="text-gray-600">Waiting for location access to show nearest arenas...</p>
           <p className="text-sm text-gray-400">Please allow location access in your browser</p>
         </div>
       </div>

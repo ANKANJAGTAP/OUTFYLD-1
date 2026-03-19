@@ -345,8 +345,8 @@ export default function BookingManager({ ownerId, turfId, turfName }: BookingMan
         </h2>
         <p className="text-gray-600">
           {turfName 
-            ? `Manage booking requests for this turf` 
-            : 'Manage your turf booking requests'}
+            ? `Manage booking requests for this arena` 
+            : 'Manage your arena booking requests'}
         </p>
       </div>
 

@@ -40,7 +40,7 @@ export function HeroSection() {
             </h2>
             
             <p className="text-base sm:text-lg md:text-xl text-gray-600 mb-6 md:mb-8 leading-relaxed">
-              The first centralized platform for booking sports turfs in India.
+              The first centralized platform for booking sports arenas in India.
               Real-time availability, instant confirmation, and secure payments.
             </p>
 
@@ -48,7 +48,7 @@ export function HeroSection() {
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:space-x-4">
                 <div className="flex-1">
                   <Input
-                    placeholder="Search by location, sport, or turf name..."
+                    placeholder="Search by location, sport, or arena name..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyPress={handleKeyPress}
@@ -72,7 +72,7 @@ export function HeroSection() {
                 <>
                   <Link href="/browse" className="flex-1">
                     <Button size="lg" className="w-full bg-green-500 hover:bg-green-600 text-sm sm:text-base md:text-lg py-4 md:py-6">
-                      Browse All Turfs
+                      Browse All Arenas
                     </Button>
                   </Link>
                   <Link href={user.role === 'owner' ? '/owner/dashboard' : user.role === 'admin' ? '/admin/dashboard' : '/dashboard/player'} className="flex-1">
@@ -86,7 +86,7 @@ export function HeroSection() {
                 <>
                   <Link href="/browse" className="flex-1">
                     <Button size="lg" className="w-full bg-green-500 hover:bg-green-600 text-sm sm:text-base md:text-lg py-4 md:py-6">
-                      Browse All Turfs
+                      Browse All Arenas
                     </Button>
                   </Link>
                   <Link href="/auth/register" className="flex-1">
@@ -122,7 +122,7 @@ export function HeroSection() {
               </Card>
               <Card className="p-6 bg-white/90 backdrop-blur-sm hover:shadow-lg transition-shadow">
                 <div className="text-3xl font-bold text-blue-500 mb-2">25+</div>
-                <div className="text-gray-600">Registered Turfs</div>
+                <div className="text-gray-600">Registered Arenas</div>
               </Card>
               <Card className="p-6 bg-white/90 backdrop-blur-sm hover:shadow-lg transition-shadow">
                 <div className="text-3xl font-bold text-purple-500 mb-2">1000+</div>

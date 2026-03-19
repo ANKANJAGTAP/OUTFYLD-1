@@ -106,7 +106,7 @@ export function BannerImageUploader({ value, onChange }: BannerImageUploaderProp
             <p className="font-semibold">Guidelines for the perfect banner photo:</p>
             <ul className="list-disc pl-5 space-y-1">
               <li><strong>Format & Size:</strong> JPEG, PNG, or WebP. Maximum size is 5MB.</li>
-              <li><strong>How to take it:</strong> Hold your phone or camera <span className="font-bold underline">horizontally (Landscape mode)</span>. Ensure the field is well-lit and the whole turf width is visible.</li>
+              <li><strong>How to take it:</strong> Hold your phone or camera <span className="font-bold underline">horizontally (Landscape mode)</span>. Ensure the field is well-lit and the whole arena width is visible.</li>
               <li><strong>Stock/Downloaded Images:</strong> High-resolution downloaded images (e.g., from browser search, 1920x1080) work perfectly as long as they don't have watermarks. However, clear photos of your <i>actual</i> turf build more trust!</li>
             </ul>
           </div>

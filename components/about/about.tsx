@@ -23,7 +23,7 @@ export default function AboutPage() {
 
   const features = [
     { id: 1, title: 'Easy Booking', desc: 'Find and reserve turf slots in seconds with smart availability and instant confirmation.' },
-    { id: 2, title: 'Owner Dashboard', desc: 'Owners can manage turfs, view bookings, verify payments and export reports.' },
+    { id: 2, title: 'Owner Dashboard', desc: 'Owners can manage arenas, view bookings, verify payments and export reports.' },
     { id: 3, title: 'Secure Payments', desc: 'Integrated payment gateways and optional manual proof upload for local transfers.' },
     { id: 4, title: 'Smart Pricing', desc: 'Set dynamic pricing, add buffers and manage peak-hour rates.' }
   ];
@@ -35,9 +35,9 @@ export default function AboutPage() {
   ];
 
   const faqs = [
-    { q: 'How do I list my turf?', a: 'Owners can sign up, go to the Owner Dashboard → Add Turf, fill details and set availability. Photos and bank details can be added in Settings.' },
+    { q: 'How do I list my arena?', a: 'Owners can sign up, go to the Owner Dashboard → Add Arena, fill details and set availability. Photos and bank details can be added in Settings.' },
     { q: 'What payment methods are supported?', a: 'We support Razorpay and Stripe. For local transfers, players can upload payment screenshots which owners verify manually.' },
-    { q: 'How does cancellation work?', a: 'Cancellation policy is set per turf. Refunds are processed via the payment gateway or manually by owner request.' }
+    { q: 'How does cancellation work?', a: 'Cancellation policy is set per arena. Refunds are processed via the payment gateway or manually by owner request.' }
   ];
 
   return (
@@ -46,7 +46,7 @@ export default function AboutPage() {
         <div className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">About OutFyld</h1>
-            <p className="text-sm text-gray-600 mt-1">Connecting players with the best local turfs — fast, fair, and friendly.</p>
+            <p className="text-sm text-gray-600 mt-1">Connecting players with the best local arenas — fast, fair, and friendly.</p>
           </div>
           <div className="flex items-center gap-3">
             <Link href="/" className="text-sm text-indigo-600">Home</Link>
@@ -61,7 +61,7 @@ export default function AboutPage() {
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center mb-10">
           <div className="lg:col-span-2">
             <h2 className="text-3xl font-bold mb-3">We make playing together easy.</h2>
-            <p className="text-gray-600 mb-6">OutFyld helps players discover local turfs, book reliable slots, and lets turf owners manage availability and earnings with confidence.</p>
+            <p className="text-gray-600 mb-6">OutFyld helps players discover local arenas, book reliable slots, and lets turf owners manage availability and earnings with confidence.</p>
 
             <div className="flex gap-3 mb-6">
               <Button className="inline-flex items-center" size="lg">Get Started</Button>
@@ -222,7 +222,7 @@ export default function AboutPage() {
             </div>
             <div className="flex gap-3">
               <Link href="/owner/register"><Button>Become an owner</Button></Link>
-              <Link href="/browse"><Button variant="outline">Browse turfs</Button></Link>
+              <Link href="/browse"><Button variant="outline">Browse arenas</Button></Link>
             </div>
           </div>
         </section>

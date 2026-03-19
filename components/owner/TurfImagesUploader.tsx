@@ -107,7 +107,7 @@ export function TurfImagesUploader({ value, onChange }: TurfImagesUploaderProps)
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Images className="h-5 w-5" />
-          Turf Images ({value.length}/10)
+          Arena Images ({value.length}/10)
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -153,8 +153,8 @@ export function TurfImagesUploader({ value, onChange }: TurfImagesUploaderProps)
               <Upload className="h-12 w-12 mx-auto text-gray-400 mb-4" />
               <p className="text-gray-600 mb-4">
                 {value.length === 0
-                  ? 'Drag and drop turf images here, or click to select'
-                  : 'Add more turf images'}
+                  ? 'Drag and drop arena images here, or click to select'
+                  : 'Add more arena images'}
               </p>
               <Input
                 type="file"
@@ -180,7 +180,7 @@ export function TurfImagesUploader({ value, onChange }: TurfImagesUploaderProps)
           )}
 
           <p className="text-sm text-gray-500">
-            Upload high-quality images of your turf. You can upload up to 10 images. Max size per image: 5MB
+            Upload high-quality images of your arena. You can upload up to 10 images. Max size per image: 5MB
           </p>
         </div>
       </CardContent>

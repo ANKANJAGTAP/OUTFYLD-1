@@ -284,7 +284,7 @@ function TurfOwnerDashboard() {
 
   const tabs = [
     { id: "business-info", label: "Business Info", icon: User, step: 1 },
-    { id: "turf-details", label: "Turf Details", icon: ImageIcon, step: 2 },
+    { id: "turf-details", label: "Arena Details", icon: ImageIcon, step: 2 },
     { id: "scheduling", label: "Scheduling", icon: Clock, step: 3 },
     { id: "location", label: "Location", icon: MapPin, step: 4 },
   ];
@@ -422,7 +422,7 @@ function TurfOwnerDashboard() {
       return false;
     }
     if (formData.turfImages.length === 0) {
-      setError("At least one turf image is required");
+      setError("At least one arena image is required");
       setActiveTab("turf-details");
       return false;
     }
@@ -518,12 +518,12 @@ function TurfOwnerDashboard() {
 
       if (!turfResponse.ok) {
         const turfError = await turfResponse.json();
-        setError(turfError.error || "Failed to save turf");
+        setError(turfError.error || "Failed to save arena");
         return;
       }
 
       setSuccess(
-        turfId ? "Turf updated successfully!" : "Turf created successfully!"
+        turfId ? "Arena updated successfully!" : "Arena created successfully!"
       );
       window.scrollTo({ top: 0, behavior: "smooth" });
       setTimeout(() => {
@@ -563,7 +563,7 @@ function TurfOwnerDashboard() {
         iconColor="text-amber-500"
         iconBg="bg-amber-50"
         title="Subscription Required"
-        description="You need a subscription plan before adding turfs."
+        description="You need a subscription plan before adding arenas."
         actions={
           <>
             <Link href="/owner/subscription">
@@ -686,7 +686,7 @@ function TurfOwnerDashboard() {
             <div className="flex items-center gap-3">
               <div className="text-right hidden sm:block">
                 <p className="text-sm font-medium text-white">{user?.name}</p>
-                <p className="text-[11px] text-emerald-200">Turf Owner</p>
+                <p className="text-[11px] text-emerald-200">Arena Owner</p>
               </div>
               <Button
                 onClick={handleLogout}
@@ -703,15 +703,15 @@ function TurfOwnerDashboard() {
           <div className="text-center">
             <Badge className="bg-white/15 text-white border-white/20 hover:bg-white/20 text-[10px] mb-4">
               <Building className="h-3 w-3 mr-1" />
-              {isEditMode ? "Edit Turf" : "Add New Turf"}
+              {isEditMode ? "Edit Arena" : "Add New Arena"}
             </Badge>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight">
-              {isEditMode ? "Update Your Turf" : "Create Your Turf"}
+              {isEditMode ? "Update Your Arena" : "Create Your Arena"}
             </h1>
             <p className="text-emerald-200 text-base sm:text-lg mt-4 max-w-2xl mx-auto">
               {isEditMode
-                ? "Update your turf details, images, scheduling, and location information."
-                : "Set up your turf facility with all the details players need to find and book your venue."}
+                ? "Update your arena details, images, scheduling, and location information."
+                : "Set up your arena facility with all the details players need to find and book your venue."}
             </p>
 
             {/* Progress Indicator */}
@@ -1010,22 +1010,22 @@ function TurfOwnerDashboard() {
                     onClick={() => setActiveTab("turf-details")}
                     className="rounded-xl h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-lg shadow-emerald-200 hover:shadow-xl hover:shadow-emerald-300 transition-all duration-200"
                   >
-                    Next: Turf Details
+                    Next: Arena Details
                     <ChevronRight className="w-4 h-4 ml-2" />
                   </Button>
                 </div>
               </>
             )}
 
-            {/* ═══ TAB: Turf Details ═══ */}
+            {/* ═══ TAB: Arena Details ═══ */}
             {activeTab === "turf-details" && (
               <>
                 <SectionCard
                   icon={ImageIcon}
                   iconBg="bg-emerald-50"
                   iconColor="text-emerald-600"
-                  title="Turf Images"
-                  subtitle="Upload photos of your turf facility"
+                  title="Arena Images"
+                  subtitle="Upload photos of your arena facility"
                 >
                   <TurfImagesUploader
                     value={formData.turfImages}
@@ -1090,7 +1090,7 @@ function TurfOwnerDashboard() {
                   icon={Settings}
                   iconBg="bg-teal-50"
                   iconColor="text-teal-600"
-                  title="About Your Turf"
+                  title="About Your Arena"
                   subtitle="Describe your turf to attract players"
                 >
                   <AboutSection
@@ -1376,8 +1376,8 @@ function TurfOwnerDashboard() {
                     <>
                       <Save className="w-4 h-4 mr-2" />
                       {isEditMode
-                        ? "Update Turf Details"
-                        : "Submit Turf Details"}
+                        ? "Update Arena Details"
+                        : "Submit Arena Details"}
                     </>
                   )}
                 </Button>

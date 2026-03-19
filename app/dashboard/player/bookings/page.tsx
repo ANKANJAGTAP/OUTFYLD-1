@@ -344,7 +344,7 @@ function PlayerBookings() {
           b.turfId?.name ||
           b.turfId?.businessName ||
           b.turfId?.contactInfo?.businessName ||
-          'Unknown Turf',
+          'Unknown Arena',
         location:
           b.turfId?.location?.city ||
           b.turfId?.location?.address ||
@@ -624,7 +624,7 @@ function PlayerBookings() {
                 </h3>
                 <p className="text-sm text-gray-400 mt-1.5 max-w-xs mx-auto">
                   {statusFilter === 'all'
-                    ? 'Start by browsing turfs near you and booking your first game!'
+                    ? 'Start by browsing arenas near you and booking your first game!'
                     : 'Try selecting a different filter to see more bookings.'}
                 </p>
                 {statusFilter === 'all' && (
@@ -633,7 +633,7 @@ function PlayerBookings() {
                       size="sm"
                       className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white h-9 px-5 text-xs font-semibold shadow-lg shadow-emerald-200"
                     >
-                      Browse Turfs
+                      Browse Arenas
                       <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
                     </Button>
                   </Link>

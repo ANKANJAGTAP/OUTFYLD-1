@@ -57,7 +57,7 @@ export function AmenitiesSelector({ value, onChange }: AmenitiesSelectorProps) {
       <CardContent>
         <div className="space-y-4">
           <p className="text-sm text-gray-600">
-            Select the amenities available at your turf to help customers make informed decisions.
+            Select the amenities available at your arena to help customers make informed decisions.
           </p>
           
           <div className="space-y-4">

@@ -258,7 +258,7 @@ export default function CustomerBookingHistory({ customerId }: CustomerBookingHi
             <div className="flex items-center gap-2 text-green-800">
               <CheckCircle className="w-4 h-4" />
               <span className="text-sm font-medium">
-                Your booking has been confirmed! Please arrive on time at the turf.
+                Your booking has been confirmed! Please arrive on time at the arena.
               </span>
             </div>
           </div>
@@ -282,7 +282,7 @@ export default function CustomerBookingHistory({ customerId }: CustomerBookingHi
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">My Bookings</h2>
-        <p className="text-gray-600">Track your turf booking requests and confirmations</p>
+        <p className="text-gray-600">Track your arena booking requests and confirmations</p>
       </div>
 
       {bookings.length === 0 ? (
@@ -297,7 +297,7 @@ export default function CustomerBookingHistory({ customerId }: CustomerBookingHi
               onClick={() => window.location.href = '/browse'}
               className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              Browse Turfs
+              Browse Arenas
             </button>
           </CardContent>
         </Card>

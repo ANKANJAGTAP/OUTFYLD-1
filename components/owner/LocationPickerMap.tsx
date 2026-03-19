@@ -252,7 +252,7 @@ export default function LocationPickerMap({
           <MapPin className="h-5 w-5" /> Mark Exact Location on Map
         </CardTitle>
         <CardDescription>
-          This helps customers find your turf. Locate your area, then drag the pin to the exact spot.
+          This helps customers find your arena. Locate your area, then drag the pin to the exact spot.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

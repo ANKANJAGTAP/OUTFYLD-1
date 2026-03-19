@@ -38,11 +38,11 @@ export default function BookingFlowDemo() {
     },
     {
       id: 2,
-      title: "View Turf Details & Select Slot",
+      title: "View Arena Details & Select Slot",
       description: "Customer views detailed turf information and selects available time slot",
       icon: <Calendar className="w-6 h-6" />,
       details: [
-        "Displays turf images, amenities, sports offered",
+        "Displays arena images, amenities, sports offered",
         "Shows available time slots by day",
         "Booked slots are disabled and marked",
         "Customer selects desired slot",
@@ -205,7 +205,7 @@ export default function BookingFlowDemo() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MapPin className="w-5 h-5" />
-                Sample Turf Details
+                Sample Arena Details
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -311,7 +311,7 @@ export default function BookingFlowDemo() {
                 <h4 className="font-medium mb-2">Turf Management:</h4>
                 <ul className="text-sm space-y-1 text-gray-700">
                   <li><code className="bg-gray-100 px-2 py-1 rounded">GET /api/turfs/[id]</code> - Get turf with availability</li>
-                  <li><code className="bg-gray-100 px-2 py-1 rounded">GET /browse</code> - Browse turfs</li>
+                  <li><code className="bg-gray-100 px-2 py-1 rounded">GET /browse</code> - Browse arenas</li>
                   <li><code className="bg-gray-100 px-2 py-1 rounded">GET /book/[id]</code> - Booking page</li>
                 </ul>
               </div>

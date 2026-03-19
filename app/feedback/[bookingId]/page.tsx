@@ -354,7 +354,7 @@ export default function FeedbackPage({ params }: FeedbackPageProps) {
                 {/* Quick suggestion chips */}
                 <div className="flex flex-wrap gap-2 mt-3">
                   {[
-                    'Great turf quality',
+                    'Great arena quality',
                     'Well maintained',
                     'Friendly staff',
                     'Good facilities',
@@ -442,7 +442,7 @@ export default function FeedbackPage({ params }: FeedbackPageProps) {
                   Ready for another game?
                 </h3>
                 <p className="text-emerald-100 text-sm mt-1">
-                  Browse turfs near you and book your next session.
+                  Browse arenas near you and book your next session.
                 </p>
               </div>
               <Link href="/browse">
@@ -451,7 +451,7 @@ export default function FeedbackPage({ params }: FeedbackPageProps) {
                   className="bg-white text-emerald-700 hover:bg-gray-100 rounded-xl h-10 px-5 font-semibold shadow-xl transition-all duration-200"
                 >
                   <Search className="h-4 w-4 mr-1.5" />
-                  Browse Turfs
+                  Browse Arenas
                 </Button>
               </Link>
             </div>

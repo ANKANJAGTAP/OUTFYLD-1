@@ -337,7 +337,7 @@ function PlayerProfile() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <QuickAction
               icon={<Search className="h-5 w-5" />}
-              label="Browse Turfs"
+              label="Browse Arenas"
               description="Find and book turfs near you"
               href="/browse"
               gradient="from-emerald-500 to-green-600"

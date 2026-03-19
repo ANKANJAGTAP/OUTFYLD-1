@@ -351,7 +351,7 @@ function PlayerDashboard() {
           b.turfId?.name ||
           b.turfId?.businessName ||
           b.turfId?.contactInfo?.businessName ||
-          'Unknown Turf',
+          'Unknown Arena',
         location:
           b.turfId?.location?.city ||
           b.turfId?.location?.address ||
@@ -424,14 +424,14 @@ function PlayerDashboard() {
                 )}
               </div>
               <p className="text-emerald-200 text-sm">
-                Ready to book your next game? Find and reserve the best turfs near you.
+                Ready to book your next game? Find and reserve the best arenas near you.
               </p>
             </div>
 
             <Link href="/browse">
               <Button className="bg-white text-emerald-700 hover:bg-gray-100 rounded-xl h-11 px-6 font-semibold shadow-xl transition-all duration-200">
                 <Search className="h-4 w-4 mr-2" />
-                Find Turfs
+                Find Arenas
               </Button>
             </Link>
           </div>
@@ -522,14 +522,14 @@ function PlayerDashboard() {
                   </div>
                   <h3 className="text-base font-semibold text-gray-900">No bookings yet</h3>
                   <p className="text-sm text-gray-400 mt-1.5 max-w-xs mx-auto">
-                    Start by browsing turfs near you and booking your first game!
+                    Start by browsing arenas near you and booking your first game!
                   </p>
                   <Link href="/browse" className="mt-5 inline-block">
                     <Button
                       size="sm"
                       className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white h-9 px-5 text-xs font-semibold shadow-lg shadow-emerald-200"
                     >
-                      Browse Turfs
+                      Browse Arenas
                       <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
                     </Button>
                   </Link>
@@ -585,7 +585,7 @@ function PlayerDashboard() {
                       <Search className="h-4 w-4" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-emerald-800">Browse All Turfs</p>
+                      <p className="text-sm font-semibold text-emerald-800">Browse All Arenas</p>
                       <p className="text-[11px] text-emerald-600">Find the perfect turf near you</p>
                     </div>
                     <ChevronRight className="h-4 w-4 text-emerald-400 group-hover:translate-x-1 transition-transform" />
@@ -661,7 +661,7 @@ function PlayerDashboard() {
                     <Heart className="h-4 w-4 text-red-500" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900 text-[15px]">Favorite Turfs</h3>
+                    <h3 className="font-semibold text-gray-900 text-[15px]">Favorite Arenas</h3>
                     <p className="text-xs text-gray-400 mt-0.5">Your saved spots</p>
                   </div>
                 </div>

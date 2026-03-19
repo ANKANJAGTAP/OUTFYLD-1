@@ -141,16 +141,16 @@ export default function BrowsePage() {
             <div>
               <Badge className="bg-white/15 text-white border-white/20 hover:bg-white/20 text-[10px] mb-3">
                 <Compass className="h-3 w-3 mr-1" />
-                Discover Turfs
+                Discover Arenas
               </Badge>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-                Browse Turfs
+                Browse Arenas
               </h1>
               <p className="text-emerald-200 text-sm mt-1">
                 <span className="text-white font-semibold">
                   {browseData?.pagination.totalItems || 0}
                 </span>{" "}
-                turfs available near you
+                arenas available near you
               </p>
             </div>
           </div>
@@ -166,7 +166,7 @@ export default function BrowsePage() {
             <div className="relative w-full md:w-80">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
-                placeholder="Search turfs, locations..."
+                placeholder="Search arenas, locations..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10 h-11 w-full rounded-xl border-gray-200 bg-gray-50/50 text-sm focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100 transition-all"
@@ -242,7 +242,7 @@ export default function BrowsePage() {
                       Location access denied
                     </p>
                     <p className="text-[11px] text-gray-400">
-                      Enable location to sort by nearest turfs
+                      Enable location to sort by nearest arenas
                     </p>
                   </div>
                 </div>
@@ -276,7 +276,7 @@ export default function BrowsePage() {
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-700">
-                      Showing turfs nearest to your location
+                      Showing arenas nearest to your location
                     </p>
                     <p className="text-[11px] text-gray-400">
                       Results are sorted by distance from you

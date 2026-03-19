@@ -238,7 +238,7 @@ export function HeroBanner() {
                 </h1>
                 
                 <p className="text-xl md:text-2xl text-gray-200 mb-8 max-w-2xl font-medium drop-shadow-xl leading-relaxed">
-                  Book premium sports turfs nearby. Use code <span className="font-mono bg-white/20 px-3 py-1 rounded text-white font-bold select-all border border-white/30 truncate hidden sm:inline-block ml-2">WELCOME100</span> at checkout.
+                  Book premium sports arenas nearby. Use code <span className="font-mono bg-white/20 px-3 py-1 rounded text-white font-bold select-all border border-white/30 truncate hidden sm:inline-block ml-2">WELCOME100</span> at checkout.
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
@@ -257,7 +257,7 @@ export function HeroBanner() {
                     onClick={() => router.push('/browse')}
                   >
                     <Search className="h-6 w-6 mr-3" />
-                    Browse Turfs
+                    Browse Arenas
                   </Button>
                 </div>
               </>

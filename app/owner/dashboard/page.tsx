@@ -442,7 +442,7 @@ function OwnerDashboard() {
   // ── Handlers ──
   const handleDeleteTurf = async (turfId: string) => {
     if (!firebaseUser) return;
-    if (!confirm('Are you sure you want to delete this turf? This action cannot be undone.')) return;
+    if (!confirm('Are you sure you want to delete this arena? This action cannot be undone.')) return;
 
     setDeleting(turfId);
     try {
@@ -460,11 +460,11 @@ function OwnerDashboard() {
         setTurfs(turfs.filter((t) => t._id !== turfId));
         toast.success('Turf deleted successfully');
       } else {
-        toast.error('Failed to delete turf');
+        toast.error('Failed to delete arena');
       }
     } catch (error) {
-      console.error('Error deleting turf:', error);
-      toast.error('Error deleting turf');
+      console.error('Error deleting arena:', error);
+      toast.error('Error deleting arena');
     } finally {
       setDeleting(null);
     }
@@ -492,11 +492,11 @@ function OwnerDashboard() {
         if (data.subscription.verificationStatus === 'approved') {
           const plan = data.subscription.subscriptionPlan;
           if ((plan === 'basic' || plan === 'starter') && turfs.length >= 1) {
-            toast.error('Basic plan: max 1 turf. Upgrade to add more.');
+            toast.error('Basic plan: max 1 arena. Upgrade to add more.');
             return;
           }
           if ((plan === 'premium' || plan === 'pro') && turfs.length >= 3) {
-            toast.error('Premium plan: max 3 turfs. Contact support for more.');
+            toast.error('Premium plan: max 3 arenas. Contact support for more.');
             return;
           }
           router.push('/dashboard/turf-owner');
@@ -579,7 +579,7 @@ function OwnerDashboard() {
                       {user.name}
                     </p>
                     <p className="text-[11px] text-gray-500 mt-1">
-                      {user.businessName || 'Turf Owner'}
+                      {user.businessName || 'Arena Owner'}
                     </p>
                   </div>
                   {user.subscriptionPlan && (
@@ -656,7 +656,7 @@ function OwnerDashboard() {
               className="bg-white text-emerald-700 hover:bg-gray-100 rounded-xl h-11 px-6 font-semibold shadow-xl transition-all duration-200"
             >
               <Plus className="h-4 w-4 mr-2" />
-              Add New Turf
+              Add New Arena
             </Button>
           </div>
         </div>
@@ -699,11 +699,11 @@ function OwnerDashboard() {
           <StatCard
             icon={<Building className="h-5 w-5" />}
             iconGradient="from-emerald-500 to-green-600"
-            label="Total Turfs"
+            label="Total Arenas"
             value={String(dashboardStats.totalTurfs)}
             subtext={
               dashboardStats.totalTurfs === 0
-                ? 'No turfs added yet'
+                ? 'No arenas added yet'
                 : `${turfs.filter((t) => t.isActive).length} active`
             }
           />
@@ -736,11 +736,11 @@ function OwnerDashboard() {
           />
         </div>
 
-        {/* My Turfs Section */}
+        {/* My Arenas Section */}
         <div className="mt-8">
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h2 className="text-xl font-bold text-gray-900">My Turfs</h2>
+              <h2 className="text-xl font-bold text-gray-900">My Arenas</h2>
               <p className="text-xs text-gray-400 mt-0.5">
                 {turfs.length} {turfs.length === 1 ? 'facility' : 'facilities'} listed
               </p>
@@ -753,7 +753,7 @@ function OwnerDashboard() {
                 className="rounded-xl border-emerald-200 text-emerald-700 hover:bg-emerald-50 h-9 px-4 text-xs font-medium"
               >
                 <Plus className="h-3.5 w-3.5 mr-1.5" />
-                Add Turf
+                Add Arena
               </Button>
             )}
           </div>
@@ -765,7 +765,7 @@ function OwnerDashboard() {
                   <Building className="h-9 w-9 text-emerald-400" />
                 </div>
               </div>
-              <h3 className="text-lg font-bold text-gray-900">No turfs added yet</h3>
+              <h3 className="text-lg font-bold text-gray-900">No arenas added yet</h3>
               <p className="text-sm text-gray-400 mt-2 max-w-md mx-auto leading-relaxed">
                 Get started by adding your first turf facility. Set pricing,
                 availability, and start receiving bookings from players.
@@ -775,7 +775,7 @@ function OwnerDashboard() {
                 className="mt-6 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl h-11 px-6 font-semibold shadow-lg shadow-emerald-200 hover:shadow-xl hover:shadow-emerald-300 transition-all duration-200"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Add Your First Turf
+                Add Your First Arena
               </Button>
             </div>
           ) : (

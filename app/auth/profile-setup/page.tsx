@@ -158,7 +158,7 @@ export default function ProfileSetupPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="customer">Customer</SelectItem>
-                  <SelectItem value="owner">Turf Owner</SelectItem>
+                  <SelectItem value="owner">Arena Owner</SelectItem>
                 </SelectContent>
               </Select>
             </div>

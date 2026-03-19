@@ -463,7 +463,7 @@ function PlayerLoyaltyContent() {
                   icon={<Calendar className="h-4 w-4" />}
                   iconBg="bg-emerald-50"
                   iconColor="text-emerald-600"
-                  title="Book a Turf"
+                  title="Book an Arena"
                   description="10 points per ₹100 spent"
                   points="+ Variable"
                   pointsColor="bg-emerald-50 text-emerald-700 border border-emerald-200"
@@ -524,14 +524,14 @@ function PlayerLoyaltyContent() {
                   </div>
                   <h3 className="text-base font-semibold text-gray-900">No transactions yet</h3>
                   <p className="text-sm text-gray-400 mt-1.5 max-w-xs mx-auto">
-                    Start earning points by booking turfs and leaving reviews!
+                    Start earning points by booking arenas and leaving reviews!
                   </p>
                   <Link href="/browse" className="mt-5 inline-block">
                     <Button
                       size="sm"
                       className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white h-9 px-5 text-xs font-semibold shadow-lg shadow-emerald-200"
                     >
-                      Browse Turfs
+                      Browse Arenas
                       <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
                     </Button>
                   </Link>

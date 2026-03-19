@@ -26,7 +26,7 @@ export default function CreateUser() {
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
-          name: firebaseUser.displayName || 'Turf Owner',
+          name: firebaseUser.displayName || 'Arena Owner',
           role: 'owner', // Specifically request owner role
           phone: '',
           businessName: ''

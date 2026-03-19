@@ -80,7 +80,7 @@ export function LandingHeader() {
             </Link>
             {user?.role !== 'owner' && (
               <Link href="/browse" className={`text-sm font-medium transition-colors ${textClasses}`}>
-                Browse Turfs
+                Browse Arenas
               </Link>
             )}
             <Link href="/about" className={`text-sm font-medium transition-colors ${textClasses}`}>
@@ -256,7 +256,7 @@ export function LandingHeader() {
                   className="text-gray-700 hover:text-green-600 hover:bg-green-50 transition-all px-4 py-2 rounded-md"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  Browse Turfs
+                  Browse Arenas
                 </Link>
               )}
               <Link 

@@ -177,7 +177,7 @@ export default function TestingPage() {
               onClick={() => window.open('/browse', '_blank')}
               className="h-12"
             >
-              Browse Turfs
+              Browse Arenas
             </Button>
             <Button 
               variant="outline" 

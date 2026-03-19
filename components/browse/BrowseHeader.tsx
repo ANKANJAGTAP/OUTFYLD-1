@@ -48,7 +48,7 @@ export function BrowseHeader() {
             </div>
             <div className="hidden sm:block">
               <h1 className="text-xl md:text-2xl font-bold text-green-600">OutFyld</h1>
-              <p className="text-xs text-gray-500">Browse Turfs</p>
+              <p className="text-xs text-gray-500">Browse Arenas</p>
             </div>
           </Link>
 
@@ -57,7 +57,7 @@ export function BrowseHeader() {
               Home
             </Link>
             <Link href="/browse" className="text-sm font-medium text-green-600 transition-colors">
-              Browse Turfs
+              Browse Arenas
             </Link>
             <Link href="/about" className="text-sm font-medium text-gray-700 hover:text-green-600 transition-colors">
               About
@@ -176,7 +176,7 @@ export function BrowseHeader() {
                 className="text-gray-700 hover:text-green-600 hover:bg-green-50 transition-all px-4 py-2 rounded-md font-medium"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Browse Turfs
+                Browse Arenas
               </Link>
               <Link 
                 href="/about" 

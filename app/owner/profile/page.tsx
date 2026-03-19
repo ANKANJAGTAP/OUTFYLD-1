@@ -246,7 +246,7 @@ function OwnerProfile() {
                   </div>
                   <div className="text-right hidden lg:block">
                     <p className="text-sm font-semibold text-gray-900 leading-none">{user.name}</p>
-                    <p className="text-[11px] text-gray-500 mt-1">{user.businessName || 'Turf Owner'}</p>
+                    <p className="text-[11px] text-gray-500 mt-1">{user.businessName || 'Arena Owner'}</p>
                   </div>
                   {user.subscriptionPlan && (
                     <Badge className="hidden md:flex bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-50 text-[10px] font-semibold tracking-wide">
@@ -454,7 +454,7 @@ function OwnerProfile() {
                 iconBg="bg-teal-50"
                 iconColor="text-teal-600"
                 label="Account Type"
-                value={user.role === 'owner' ? 'Turf Owner' : 'Player'}
+                value={user.role === 'owner' ? 'Arena Owner' : 'Player'}
               />
 
               {/* Verification status row */}
@@ -520,7 +520,7 @@ function OwnerProfile() {
             />
             <QuickAction
               icon={<Sparkles className="h-5 w-5" />}
-              label="My Turfs"
+              label="My Arenas"
               description="Edit turf details, pricing and slots"
               href="/owner/turfs"
               gradient="from-teal-500 to-cyan-500"

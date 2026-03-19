@@ -291,7 +291,7 @@ export default function BankDetailsPage() {
       <div className="absolute bottom-0 left-0 w-72 h-72 bg-emerald-400/10 rounded-full translate-y-1/2 -translate-x-1/4 blur-3xl" />
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-24 sm:pb-28">
-        {/* ── Top Nav Bar (same as Turf Owner Dashboard) ── */}
+        {/* ── Top Nav Bar (same as Arena Owner Dashboard) ── */}
         <div className="flex items-center justify-between mb-8">
           <Link href="/owner/dashboard">
             <Button
@@ -306,7 +306,7 @@ export default function BankDetailsPage() {
           <div className="flex items-center gap-3">
             <div className="text-right hidden sm:block">
               <p className="text-sm font-medium text-white">{user?.name}</p>
-              <p className="text-[11px] text-emerald-200">Turf Owner</p>
+              <p className="text-[11px] text-emerald-200">Arena Owner</p>
             </div>
             <Button
               onClick={handleLogout}

@@ -19,14 +19,14 @@ export function TestimonialsSection() {
       name: 'Priya Deshmukh',
       role: 'Football Player',
       content:
-        'As a working professional, I love the convenience of booking turfs online. The payment system is secure and the notifications keep me updated.',
+        'As a working professional, I love the convenience of booking arenas online. The payment system is secure and the notifications keep me updated.',
       rating: 5,
       location: 'Miraj',
       gradient: 'from-green-500 to-teal-500',
     },
     {
       name: 'Sunil Kadam',
-      role: 'Turf Owner',
+      role: 'Arena Owner',
       content:
         'Managing bookings was a nightmare before OutFyld. Now everything is automated and I can focus on maintaining the facility quality.',
       rating: 5,
@@ -40,7 +40,7 @@ export function TestimonialsSection() {
     { value: '500+', label: 'Happy Players' },
     { value: '4.8', label: 'Avg. Rating' },
     { value: '98%', label: 'Satisfaction' },
-    { value: '50+', label: 'Turfs Trust Us' },
+    { value: '50+', label: 'Arenas Trust Us' },
   ];
 
   return (

@@ -117,7 +117,7 @@ export default function RegisterPage() {
               <Tabs value={activeRole} onValueChange={(val) => setActiveRole(val as UserRole)} className="w-full">
                 <TabsList className="grid w-full grid-cols-2 mb-6 bg-gray-100/50 p-1 rounded-xl h-12">
                   <TabsTrigger value="customer" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-green-600 data-[state=active]:shadow-sm">Customer</TabsTrigger>
-                  <TabsTrigger value="owner" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-green-600 data-[state=active]:shadow-sm">Turf Owner</TabsTrigger>
+                  <TabsTrigger value="owner" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-green-600 data-[state=active]:shadow-sm">Arena Owner</TabsTrigger>
                 </TabsList>
 
                 <Button 

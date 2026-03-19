@@ -13,8 +13,8 @@ import { Analytics } from "@vercel/analytics/next"
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'OutFyld - Sports Turf Booking Platform',
-  description: 'Book sports turfs instantly. Find cricket, football, and other sports facilities with real-time availability and secure payments.',
+  title: 'OutFyld - Sports Arena Booking Platform',
+  description: 'Book sports arenas instantly. Find cricket, football, and other sports facilities with real-time availability and secure payments.',
   themeColor: '#ffffff',
   manifest: '/manifest.webmanifest',
   appleWebApp: {

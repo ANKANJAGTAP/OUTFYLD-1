@@ -131,10 +131,10 @@ export default function EmailTestPage() {
         <CardContent>
           <div className="space-y-4 text-sm">
             <div className="p-4 bg-blue-50 rounded-lg">
-              <h3 className="font-semibold mb-2">1. Customer Books Turf</h3>
+              <h3 className="font-semibold mb-2">1. Customer Books Arena</h3>
               <p className="mb-2">API: <code>POST /api/bookings/create</code></p>
               <ul className="list-disc list-inside ml-4">
-                <li>📧 Email sent to <strong>Turf Owner</strong></li>
+                <li>📧 Email sent to <strong>Arena Owner</strong></li>
                 <li>Subject: &quot;🔔 New Booking Request&quot;</li>
                 <li>Contains: Customer details, booking info</li>
                 <li>Function: <code>sendBookingNotificationEmail()</code></li>

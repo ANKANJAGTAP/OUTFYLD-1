@@ -24,7 +24,7 @@ export function Footer() {
               </div>
             </div>
             <p className="text-gray-400 mb-6 leading-relaxed">
-              The first centralized platform for booking sports turfs in India region.
+              The first centralized platform for booking sports arenas in India region.
               Making sports more accessible for everyone.
             </p>
             <div className="flex space-x-4">
@@ -43,17 +43,17 @@ export function Footer() {
           <div>
             <h4 className="font-semibold mb-6 text-green-400">Quick Links</h4>
             <ul className="space-y-3">
-              <li><Link href="/browse" className="text-gray-400 hover:text-white transition-colors">Browse Turfs</Link></li>
+              <li><Link href="/browse" className="text-gray-400 hover:text-white transition-colors">Browse Arenas</Link></li>
               <li><Link href="/about" className="text-gray-400 hover:text-white transition-colors">About Us</Link></li>
               <li><Link href="/contact" className="text-gray-400 hover:text-white transition-colors">Contact Us</Link></li>
-              <li><Link href="/browse" className="text-gray-400 hover:text-white transition-colors">Find Turfs</Link></li>
+              <li><Link href="/browse" className="text-gray-400 hover:text-white transition-colors">Find Arenas</Link></li>
             </ul>
           </div>
 
           <div>
             <h4 className="font-semibold mb-6 text-green-400">For Business</h4>
             <ul className="space-y-3">
-              <li><Link href="/auth/register" className="text-gray-400 hover:text-white transition-colors">List Your Turf</Link></li>
+              <li><Link href="/auth/register" className="text-gray-400 hover:text-white transition-colors">List Your Arena</Link></li>
               <li><Link href="/owner/dashboard" className="text-gray-400 hover:text-white transition-colors">Owner Dashboard</Link></li>
               <li><Link href="/auth/register" className="text-gray-400 hover:text-white transition-colors">Become a Partner</Link></li>
               <li><Link href="/contact" className="text-gray-400 hover:text-white transition-colors">Business Support</Link></li>

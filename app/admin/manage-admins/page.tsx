@@ -385,7 +385,7 @@ export default function ManageAdminsPage() {
                         <TableCell>{eligibleUser.email}</TableCell>
                         <TableCell>
                           <Badge variant="outline">
-                            {eligibleUser.role === 'owner' ? 'Turf Owner' : 'Customer'}
+                            {eligibleUser.role === 'owner' ? 'Arena Owner' : 'Customer'}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">

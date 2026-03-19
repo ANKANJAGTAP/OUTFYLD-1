@@ -685,7 +685,7 @@ function AnalyticsOverview() {
       });
     }
 
-    // Period fill rates (estimate ~6 slots per period per day per turf)
+    // Period fill rates (estimate ~6 slots per period per day per arena)
     const turfCount = Math.max(turfs.length, 1);
     const daysInMonth = 30;
     const slotsPerPeriodPerDay = 6 * turfCount;
@@ -860,7 +860,7 @@ function AnalyticsOverview() {
                       {user.name}
                     </p>
                     <p className="text-[11px] text-gray-500 mt-1">
-                      {user.businessName || "Turf Owner"}
+                      {user.businessName || "Arena Owner"}
                     </p>
                   </div>
                   {user.subscriptionPlan && (

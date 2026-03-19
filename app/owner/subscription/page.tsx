@@ -27,7 +27,7 @@ const DEFAULT_PLANS: Record<string, PlanConfig> = {
     durationMonths: 6,
     maxTurfs: 1,
     features: [
-      'List 1 sports facility / turf',
+      'List 1 sports facility / arena',
       'Manage booking calendar',
       'Accept online bookings from users',
       'Manual booking entry (walk-in customers)',
@@ -45,7 +45,7 @@ const DEFAULT_PLANS: Record<string, PlanConfig> = {
     maxTurfs: 3,
     features: [
       'Everything in Starter Plan',
-      'List up to 3 sports fields / turfs',
+      'List up to 3 sports fields / arenas',
       'Priority listing in search results',
       'Advanced analytics dashboard',
       'Peak hours analysis & Revenue trends',
@@ -343,12 +343,12 @@ export default function SubscriptionPage() {
                 <CardTitle className="text-xl md:text-2xl">Subscription Expired</CardTitle>
                 <Badge variant="destructive">Expired</Badge>
               </div>
-              <CardDescription>Your subscription has expired. Renew to keep your turfs visible.</CardDescription>
+              <CardDescription>Your subscription has expired. Renew to keep your arenas visible.</CardDescription>
             </CardHeader>
             <CardContent>
               <Alert variant="destructive" className="mb-4">
                 <AlertDescription>
-                  Your turfs have been hidden from search. Renew your subscription to make them visible again.
+                  Your arenas have been hidden from search. Renew your subscription to make them visible again.
                 </AlertDescription>
               </Alert>
             </CardContent>

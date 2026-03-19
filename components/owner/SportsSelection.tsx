@@ -58,7 +58,7 @@ export function SportsSelection({
       <CardContent>
         <div className="space-y-4">
           <p className="text-sm text-gray-600">
-            Select the sports available at your turf. You must select at least one sport.
+            Select the sports available at your arena. You must select at least one sport.
           </p>
           
           {/* Predefined Sports */}

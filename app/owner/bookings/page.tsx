@@ -290,7 +290,7 @@ function TurfOwnerBookings() {
                   </div>
                   <div className="text-right hidden lg:block">
                     <p className="text-sm font-semibold text-gray-900 leading-none">{user.name}</p>
-                    <p className="text-[11px] text-gray-500 mt-1">{user.businessName || 'Turf Owner'}</p>
+                    <p className="text-[11px] text-gray-500 mt-1">{user.businessName || 'Arena Owner'}</p>
                   </div>
                   {user.subscriptionPlan && (
                     <Badge className="hidden md:flex bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-50 text-[10px] font-semibold tracking-wide">
