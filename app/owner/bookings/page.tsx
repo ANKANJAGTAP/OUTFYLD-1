@@ -15,8 +15,21 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import BookingManager from '@/components/owner/BookingManager';
+import dynamic from 'next/dynamic';
 import { Input } from '@/components/ui/input';
+
+// Dynamic import — BookingManager is heavy (calendar, charts, complex UI)
+const BookingManager = dynamic(
+  () => import('@/components/owner/BookingManager'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-96 bg-gray-50 rounded-xl animate-pulse flex items-center justify-center">
+        <p className="text-sm text-gray-400">Loading bookings...</p>
+      </div>
+    ),
+  }
+);
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,

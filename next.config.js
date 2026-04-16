@@ -11,7 +11,13 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   images: {
-    domains: ['res.cloudinary.com'], // Add domains for external images if needed
+    remotePatterns: [
+      { protocol: 'https', hostname: 'res.cloudinary.com' },
+      { protocol: 'https', hostname: 'images.unsplash.com' },
+    ],
+    formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 2592000, // 30 days
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
   },
   // Ensure dynamic routes work properly
   trailingSlash: false,

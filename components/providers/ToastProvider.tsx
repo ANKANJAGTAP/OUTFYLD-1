@@ -1,21 +1,13 @@
 'use client';
 
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+// This file is kept for backward compatibility but
+// toast functionality is now handled by sonner via
+// the <Toaster /> component in app/layout.tsx.
+//
+// Import { toast } from 'sonner' in any component
+// to show toast notifications.
 
 export function ToastProvider() {
-  return (
-    <ToastContainer 
-      position="top-right" 
-      autoClose={5000} 
-      hideProgressBar={false}
-      newestOnTop={false}
-      closeOnClick
-      rtl={false}
-      pauseOnFocusLoss
-      draggable
-      pauseOnHover
-      theme="light"
-    />
-  );
+  // Sonner's Toaster is rendered in layout.tsx — nothing needed here
+  return null;
 }

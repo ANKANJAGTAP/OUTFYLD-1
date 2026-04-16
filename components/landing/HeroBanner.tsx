@@ -21,30 +21,59 @@ interface Turf {
   rating?: number;
 }
 
-export function HeroBanner() {
+interface HeroBannerProps {
+  initialTurfs?: Turf[];
+}
+
+export function HeroBanner({ initialTurfs = [] }: HeroBannerProps) {
   const { user, firebaseUser } = useAuth();
   const { location, requestLocation, loading: locationLoading } = useGeolocation();
   const router = useRouter();
 
-  const [turfs, setTurfs] = useState<Turf[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Use server-provided data immediately — no loading state needed on first render
+  const [turfs, setTurfs] = useState<Turf[]>(initialTurfs);
+  const [loading, setLoading] = useState(initialTurfs.length === 0);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [hasLocationFetched, setHasLocationFetched] = useState(false);
 
-  // Data Fetching for BOTH states
+  // Re-fetch with location when available (silent update, no spinner)
   useEffect(() => {
+    if (!location || hasLocationFetched) return;
+
+    const fetchWithLocation = async () => {
+      try {
+        const url = `/api/turfs/premium-nearest?limit=4&lat=${location.lat}&lng=${location.lng}`;
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (data.success && data.turfs && data.turfs.length > 0) {
+          setTurfs(data.turfs);
+        }
+      } catch (error) {
+        console.error('Failed to fetch location-based turfs:', error);
+      } finally {
+        setHasLocationFetched(true);
+      }
+    };
+
+    fetchWithLocation();
+  }, [location, hasLocationFetched]);
+
+  // Fallback: fetch if no initial data was provided (shouldn't happen normally)
+  useEffect(() => {
+    if (initialTurfs.length > 0) return;
+
     const fetchPremiumTurfs = async () => {
       try {
         setLoading(true);
         let url = '/api/turfs/premium-nearest?limit=4';
-        
-        // If we have location, pass it to api
         if (location) {
           url += `&lat=${location.lat}&lng=${location.lng}`;
         }
 
         const res = await fetch(url);
         const data = await res.json();
-        
+
         if (data.success && data.turfs && data.turfs.length > 0) {
           setTurfs(data.turfs);
         } else {
@@ -58,7 +87,7 @@ export function HeroBanner() {
     };
 
     fetchPremiumTurfs();
-  }, [location]);
+  }, [initialTurfs.length, location]);
 
   // Request location silently if logged in but location not granted yet
   useEffect(() => {
@@ -84,8 +113,8 @@ export function HeroBanner() {
 
   const currentTurf = turfs[currentIndex];
 
-  // Ensure loading UI takes full screen
-  if (loading) {
+  // Only show spinner if we have NO initial data AND are still loading
+  if (loading && turfs.length === 0) {
     return (
       <div className="w-full h-screen bg-gray-900 flex items-center justify-center">
         <Loader2 className="h-10 w-10 text-white animate-spin" />
@@ -123,11 +152,9 @@ export function HeroBanner() {
         // Fallback sequence: custom Banner Image -> First Image from array -> default
         let tImageUrl = turf.bannerImage || turf.featuredImage || (turf.images && turf.images.length > 0 ? turf.images[0].url : 'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=1920&q=80');
         
-        // Ensure high resolution for Cloudinary images (replace sizing params if any)
-        // Many uploads might have w_500, q_auto type constraints saved in DB url.
+        // Use Cloudinary auto-quality optimization at 1280px width
         if (tImageUrl.includes('cloudinary.com')) {
-          // Replace any width/height constraints with high res parameters and max quality
-          tImageUrl = tImageUrl.replace(/\/upload\/(?:[a-zA-Z0-9_]+,\w+_[0-9]+\/)?/, '/upload/q_100,w_1920,f_auto/');
+          tImageUrl = tImageUrl.replace(/\/upload\/(?:[a-zA-Z0-9_,]+\/)?/, '/upload/q_auto,w_1280,f_auto,c_fill/');
         }
 
         return (
@@ -142,10 +169,11 @@ export function HeroBanner() {
                 src={tImageUrl}
                 alt={turf.name}
                 fill
-                quality={100}
-                unoptimized={true} // Bypasses Next.js strict compression completely
+                quality={75}
+                sizes="100vw"
                 className={`object-cover object-center`}
                 priority={idx === 0}
+                loading={idx === 0 ? 'eager' : 'lazy'}
               />
             </div>
             {/* Added overlay to darken blur state slightly more so text pops */}

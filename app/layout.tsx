@@ -1,13 +1,11 @@
 import './globals.css';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import { Toaster } from '@/components/ui/toaster';
-import { ToastProvider } from '@/components/providers/ToastProvider';
+import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { LocationProvider } from '@/contexts/LocationContext';
 import RoleRedirect from '@/components/RoleRedirect';
 import { SpeedInsights } from "@vercel/speed-insights/next"
-import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next"
 
 const inter = Inter({ subsets: ['latin'] });
@@ -41,7 +39,6 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <script defer src="https://cloud.umami.is/script.js" data-website-id="23a9e6cb-5216-4b0c-8d63-a8afb68f1127"></script>
-        {/* <Analytics /> */}
       </head>
       <body className={inter.className}>
         <AuthProvider>
@@ -49,8 +46,7 @@ export default function RootLayout({
             <RoleRedirect>
               {children}
             </RoleRedirect>
-            <Toaster />
-            <ToastProvider />
+            <Toaster position="top-right" richColors closeButton />
           </LocationProvider>
         </AuthProvider>
         <SpeedInsights />

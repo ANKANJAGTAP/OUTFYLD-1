@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuth } from '@/contexts/AuthContext';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 
 export default function AuthTest() {
   const { firebaseUser, user, loading } = useAuth();

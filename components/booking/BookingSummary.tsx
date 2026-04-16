@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, CreditCard, Tag } from 'lucide-react';
 import { useState, useRef } from 'react';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 
 interface BookingSummaryProps {
   turf: {

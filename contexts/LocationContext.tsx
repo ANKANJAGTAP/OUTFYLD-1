@@ -115,7 +115,8 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
     };
 
     syncPermission();
-    const intervalId = window.setInterval(handleFocus, 5000);
+    // Only check on actual focus/visibility events, not every 5 seconds
+    // The native permissionStatus.onchange listener handles real-time updates
     window.addEventListener('focus', handleFocus);
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
@@ -123,7 +124,6 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
       if (permissionStatus) {
         permissionStatus.onchange = null;
       }
-      window.clearInterval(intervalId);
       window.removeEventListener('focus', handleFocus);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };

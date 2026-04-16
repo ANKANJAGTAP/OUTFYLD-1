@@ -1,8 +1,22 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import LocationPickerMap from "@/components/owner/LocationPickerMap";
+import dynamic from "next/dynamic";
 import { useAuth } from "@/contexts/AuthContext";
+
+// Dynamic import — LocationPickerMap bundles @react-google-maps/api (7.4MB)
+// Map is on step 4, not visible on initial load
+const LocationPickerMap = dynamic(
+  () => import("@/components/owner/LocationPickerMap"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-64 bg-gray-100 rounded-xl animate-pulse flex items-center justify-center">
+        <p className="text-sm text-gray-400">Loading map...</p>
+      </div>
+    ),
+  }
+);
 import ProtectedRoute from "@/components/ProtectedRoute";
 import {
   Card,

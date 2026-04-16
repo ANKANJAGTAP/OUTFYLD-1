@@ -22,7 +22,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import Image from 'next/image';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 
 interface BookingData {
   _id: string;

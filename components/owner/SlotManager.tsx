@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Clock, Plus, Trash2, Calendar, Zap } from 'lucide-react';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 
 interface TimeSlot {
   day: string;

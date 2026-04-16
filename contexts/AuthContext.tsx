@@ -15,7 +15,7 @@ import {
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 
 // User interface based on MongoDB schema
 interface User {
@@ -213,9 +213,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       // Show success message or redirect to email verification page
       if (userData.role === 'owner') {
-        toast.success('Registration successful! Please check your email to verify your account. Note: Your account will need to be verified by an administrator before you can list your turf.', { autoClose: 8000 });
+        toast.success('Registration successful! Please check your email to verify your account. Note: Your account will need to be verified by an administrator before you can list your turf.', { duration: 8000 });
       } else {
-        toast.success('Registration successful! Please check your email to verify your account before logging in.', { autoClose: 6000 });
+        toast.success('Registration successful! Please check your email to verify your account before logging in.', { duration: 6000 });
       }
       
     } catch (error: any) {

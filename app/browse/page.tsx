@@ -63,7 +63,7 @@ export default function BrowsePage() {
   });
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState("distance");
+  const [sortBy, setSortBy] = useState("newest");
   const [currentPage, setCurrentPage] = useState(1);
   const [browseData, setBrowseData] = useState<BrowseData | null>(null);
 
@@ -93,22 +93,19 @@ export default function BrowsePage() {
     }
   };
 
+  // Auto-switch to "distance" sort only if location is already granted
   useEffect(() => {
-    if (
-      sortBy === "distance" &&
-      !userLocation &&
-      !locationLoading &&
-      !locationError
-    ) {
-      requestLocation();
+    if (permissionState === "granted" && userLocation) {
+      setSortBy("distance");
     }
-  }, [sortBy, userLocation, locationLoading, locationError, requestLocation]);
+  }, [permissionState, userLocation]);
 
+  // If location is denied/errored while on "distance" sort, fallback to "newest"
   useEffect(() => {
-    if (locationError && sortBy === "distance") {
-      // Keep sort as distance but show error
+    if ((isLocationDenied || locationError) && sortBy === "distance") {
+      setSortBy("newest");
     }
-  }, [locationError, sortBy]);
+  }, [isLocationDenied, locationError, sortBy]);
 
   // Count active filters for the badge
   const activeFilterCount = [

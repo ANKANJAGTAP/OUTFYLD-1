@@ -351,6 +351,10 @@ export async function GET(request: NextRequest) {
           hasPrevPage: page > 1,
         },
         filters,
+      }, {
+        headers: {
+          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+        },
       });
     } catch (mongoError: any) {
       console.error("❌ Error in Turf query:", mongoError);
