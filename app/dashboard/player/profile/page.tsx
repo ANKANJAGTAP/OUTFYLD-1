@@ -4,14 +4,10 @@ import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { LandingHeader } from '@/components/landing/LandingHeader';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { NightShell } from '@/components/night/NightShell';
 import {
-  User, Phone, Mail, Shield, ShieldCheck, Clock,
-  Copy, Check, ChevronRight, Sparkles, CalendarCheck,
-  Trophy, Search, History, Heart, Settings, LogOut,
-  AlertCircle,
+  User, Phone, Mail, Shield, ShieldCheck, Copy, Check, ChevronRight,
+  CalendarCheck, Trophy, Search, History, LogOut,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -29,12 +25,10 @@ function useCopyToClipboard() {
   return { copiedField, copy };
 }
 
-// ─── Info Row ────────────────────────────────────────────────────────
+// ─── Ledger info row ─────────────────────────────────────────────────
 
 function InfoRow({
   icon,
-  iconBg,
-  iconColor,
   label,
   value,
   copyable = false,
@@ -43,8 +37,6 @@ function InfoRow({
   isCopied = false,
 }: {
   icon: React.ReactNode;
-  iconBg: string;
-  iconColor: string;
   label: string;
   value: string;
   copyable?: boolean;
@@ -55,87 +47,44 @@ function InfoRow({
   const isEmpty = !value || value === 'Not provided';
 
   return (
-    <div className="group flex items-center justify-between p-4 rounded-xl hover:bg-gray-50 transition-all duration-200">
-      <div className="flex items-center gap-4 min-w-0">
-        <div
-          className={`flex-shrink-0 w-11 h-11 rounded-xl ${iconBg} flex items-center justify-center group-hover:scale-105 transition-transform duration-200`}
-        >
-          <div className={iconColor}>{icon}</div>
-        </div>
+    <div className="group flex items-center justify-between gap-3 border-b border-pitchline/60 px-6 py-4 transition-colors duration-200 ease-night last:border-0 hover:bg-white/[0.03]">
+      <div className="flex min-w-0 items-center gap-3.5">
+        <span className="shrink-0 text-flood-500">{icon}</span>
         <div className="min-w-0">
-          <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">
-            {label}
-          </p>
+          <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-chalk-400">{label}</p>
           {isEmpty ? (
-            <p className="text-sm text-gray-300 italic mt-0.5">Not provided</p>
+            <p className="mt-0.5 font-mono text-sm text-chalk-400/50">Not provided</p>
           ) : href ? (
             <a
               href={href}
-              className="text-[15px] text-gray-900 font-medium hover:text-emerald-600 transition-colors truncate block mt-0.5"
+              className="mt-0.5 block truncate font-mono text-sm text-chalk-100 transition-colors hover:text-flood-500"
             >
               {value}
             </a>
           ) : (
-            <p className="text-[15px] text-gray-900 font-medium truncate mt-0.5">
-              {value}
-            </p>
+            <p className="mt-0.5 truncate font-mono text-sm text-chalk-100">{value}</p>
           )}
         </div>
       </div>
 
       {!isEmpty && copyable && onCopy && (
-        <div className="flex-shrink-0 ml-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-          <button
-            onClick={onCopy}
-            className={`p-2 rounded-lg transition-all duration-200 ${
-              isCopied
-                ? 'bg-emerald-50 text-emerald-600'
-                : 'bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600'
-            }`}
-            title={isCopied ? 'Copied!' : `Copy ${label.toLowerCase()}`}
-          >
-            {isCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-          </button>
-        </div>
+        <button
+          onClick={onCopy}
+          className={`shrink-0 rounded-[3px] border p-2 opacity-0 transition-all duration-200 ease-night group-hover:opacity-100 ${
+            isCopied
+              ? 'border-flood-500/50 text-flood-500'
+              : 'border-pitchline text-chalk-400 hover:border-chalk-400/50 hover:text-chalk-100'
+          }`}
+          title={isCopied ? 'Copied!' : `Copy ${label.toLowerCase()}`}
+        >
+          {isCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+        </button>
       )}
     </div>
   );
 }
 
-// ─── Quick Action ────────────────────────────────────────────────────
-
-function QuickAction({
-  icon,
-  label,
-  description,
-  href,
-  gradient,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  description: string;
-  href: string;
-  gradient: string;
-}) {
-  return (
-    <Link href={href}>
-      <div className="group relative bg-white rounded-2xl border border-gray-100 p-5 hover:border-emerald-200 hover:shadow-lg hover:shadow-emerald-50 transition-all duration-300 cursor-pointer h-full">
-        <div className="flex items-start justify-between">
-          <div
-            className={`w-11 h-11 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform duration-300`}
-          >
-            {icon}
-          </div>
-          <ChevronRight className="h-4 w-4 text-gray-300 group-hover:text-emerald-400 group-hover:translate-x-1 transition-all duration-200" />
-        </div>
-        <h4 className="font-semibold text-gray-900 mt-4 text-sm">{label}</h4>
-        <p className="text-xs text-gray-400 mt-1 leading-relaxed">{description}</p>
-      </div>
-    </Link>
-  );
-}
-
-// ─── Main Profile Component ──────────────────────────────────────────
+// ─── Main — THE PLAYER CARD ──────────────────────────────────────────
 
 function PlayerProfile() {
   const { user, logout } = useAuth();
@@ -155,70 +104,49 @@ function PlayerProfile() {
     : null;
 
   return (
-    <div className="min-h-screen bg-[#fafbfc]">
+    <NightShell ambient={0.6}>
       <LandingHeader />
 
-      {/* ─────────── HERO BANNER ─────────── */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-600 via-green-600 to-teal-700" />
-        <div
-          className="absolute inset-0 opacity-10"
-          style={{
-            backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
-            backgroundSize: '24px 24px',
-          }}
-        />
-        <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3 blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-72 h-72 bg-emerald-400/10 rounded-full translate-y-1/2 -translate-x-1/4 blur-3xl" />
+      <div className="mx-auto max-w-4xl px-4 pb-16 pt-12 sm:px-6 sm:pt-16 lg:px-8">
+        <Link
+          href="/dashboard/player"
+          className="font-mono text-[10px] uppercase tracking-[0.16em] text-chalk-400 transition-colors hover:text-flood-500"
+        >
+          ← The tunnel
+        </Link>
 
-        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-28 sm:pb-32">
-          <Link
-            href="/dashboard/player"
-            className="text-sm text-white/70 hover:text-white flex items-center gap-1.5 transition-colors duration-200"
+        {/* ── THE PLAYER CARD ── */}
+        <div className="relative mt-6 overflow-hidden rounded-[4px] border border-flood-500/30 bg-pitch-700/90 shadow-flood">
+          {/* ghost jersey number */}
+          <span
+            aria-hidden
+            className="pointer-events-none absolute -right-4 -top-10 font-display text-[11rem] leading-none text-chalk-100/[0.04]"
           >
-            ← Dashboard
-          </Link>
-          <div className="mt-6">
-            <h1 className="text-2xl sm:text-3xl font-bold text-white">My Profile</h1>
-            <p className="text-emerald-200 mt-1 text-sm">
-              Manage your personal information
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* ─────────── PROFILE CARD ─────────── */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 -mt-20 relative z-10">
-
-        {/* Avatar + Name */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-xl shadow-gray-200/50 p-6 sm:p-8">
-          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-            <div className="relative flex-shrink-0">
-              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center text-white text-3xl sm:text-4xl font-bold shadow-xl shadow-emerald-200">
+            {initials}
+          </span>
+          <div className="flex flex-col items-start gap-6 p-7 sm:flex-row sm:items-center sm:p-9">
+            <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-[4px] border border-pitchline bg-pitch-800 sm:h-28 sm:w-28">
+              <span className="font-display text-5xl uppercase leading-none text-flood-500 sm:text-6xl">
                 {initials}
-              </div>
+              </span>
             </div>
-
-            <div className="flex-1 text-center sm:text-left min-w-0">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-                <h2 className="text-2xl font-bold text-gray-900 truncate">
-                  {user.name || 'Player'}
-                </h2>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                  <Shield className="h-3.5 w-3.5" />
-                  Player Account
-                </span>
-              </div>
-
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 mt-3 text-xs text-gray-400">
+            <div className="min-w-0">
+              <p className="nm-overline flex items-center gap-2 text-flood-500">
+                <Shield className="h-3.5 w-3.5" />
+                Player account
+              </p>
+              <h1 className="mt-2 truncate font-display text-4xl uppercase leading-none tracking-tight text-chalk-100 sm:text-5xl">
+                {user.name || 'Player'}
+              </h1>
+              <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 font-mono text-[11px] text-chalk-400">
                 {memberSince && (
-                  <span className="flex items-center gap-1">
+                  <span className="flex items-center gap-1.5">
                     <CalendarCheck className="h-3 w-3" />
-                    Member since {memberSince}
+                    Since {memberSince}
                   </span>
                 )}
                 {user.email && (
-                  <span className="flex items-center gap-1">
+                  <span className="flex items-center gap-1.5">
                     <Mail className="h-3 w-3" />
                     {user.email}
                   </span>
@@ -228,180 +156,103 @@ function PlayerProfile() {
           </div>
         </div>
 
-        {/* ─────────── INFO SECTIONS ─────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mt-5">
-
-          {/* Personal Information */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="px-6 py-5 border-b border-gray-50">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center">
-                  <User className="h-4 w-4 text-emerald-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 text-[15px]">Personal Information</h3>
-                  <p className="text-xs text-gray-400 mt-0.5">Your contact details</p>
-                </div>
-              </div>
+        {/* ── info ledgers ── */}
+        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div className="overflow-hidden rounded-[4px] border border-pitchline bg-pitch-700/80">
+            <div className="border-b border-pitchline/60 px-6 py-4">
+              <p className="nm-overline text-chalk-400">Personal information</p>
             </div>
-            <div className="p-2">
-              <InfoRow
-                icon={<User className="h-4 w-4" />}
-                iconBg="bg-emerald-50"
-                iconColor="text-emerald-600"
-                label="Full Name"
-                value={user.name || 'Not provided'}
-              />
-              <InfoRow
-                icon={<Mail className="h-4 w-4" />}
-                iconBg="bg-green-50"
-                iconColor="text-green-600"
-                label="Email Address"
-                value={user.email || 'Not provided'}
-                copyable
-                onCopy={() => user.email && copy(user.email, 'email')}
-                isCopied={copiedField === 'email'}
-                href={user.email ? `mailto:${user.email}` : undefined}
-              />
-              <InfoRow
-                icon={<Phone className="h-4 w-4" />}
-                iconBg="bg-teal-50"
-                iconColor="text-teal-600"
-                label="Phone Number"
-                value={user.phone || 'Not provided'}
-                copyable
-                onCopy={() => user.phone && copy(user.phone, 'phone')}
-                isCopied={copiedField === 'phone'}
-                href={user.phone ? `tel:${user.phone}` : undefined}
-              />
-            </div>
-          </div>
-
-          {/* Account Information */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="px-6 py-5 border-b border-gray-50">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center">
-                  <Shield className="h-4 w-4 text-green-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 text-[15px]">Account Information</h3>
-                  <p className="text-xs text-gray-400 mt-0.5">Your account details</p>
-                </div>
-              </div>
-            </div>
-            <div className="p-2">
-              <InfoRow
-                icon={<Shield className="h-4 w-4" />}
-                iconBg="bg-green-50"
-                iconColor="text-green-600"
-                label="Account Type"
-                value="Player"
-              />
-              <InfoRow
-                icon={<CalendarCheck className="h-4 w-4" />}
-                iconBg="bg-teal-50"
-                iconColor="text-teal-600"
-                label="Member Since"
-                value={memberSince || 'Not available'}
-              />
-
-              {/* Status row */}
-              <div className="group flex items-center justify-between p-4 rounded-xl hover:bg-gray-50 transition-all duration-200">
-                <div className="flex items-center gap-4">
-                  <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
-                    <ShieldCheck className="h-5 w-5 text-emerald-600" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">
-                      Account Status
-                    </p>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[15px] font-semibold text-emerald-600">
-                        Active
-                      </span>
-                      <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ─────────── QUICK ACTIONS ─────────── */}
-        <div className="mt-5">
-          <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3 px-1">
-            Quick Actions
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <QuickAction
-              icon={<Search className="h-5 w-5" />}
-              label="Browse Arenas"
-              description="Find and book turfs near you"
-              href="/browse"
-              gradient="from-emerald-500 to-green-600"
+            <InfoRow icon={<User className="h-4 w-4" />} label="Full name" value={user.name || 'Not provided'} />
+            <InfoRow
+              icon={<Mail className="h-4 w-4" />}
+              label="Email address"
+              value={user.email || 'Not provided'}
+              copyable
+              onCopy={() => user.email && copy(user.email, 'email')}
+              isCopied={copiedField === 'email'}
+              href={user.email ? `mailto:${user.email}` : undefined}
             />
-            <QuickAction
-              icon={<History className="h-5 w-5" />}
-              label="My Bookings"
-              description="View all your bookings"
-              href="/dashboard/player/bookings"
-              gradient="from-green-500 to-teal-500"
-            />
-            <QuickAction
-              icon={<Trophy className="h-5 w-5" />}
-              label="Rewards"
-              description="View loyalty points and rewards"
-              href="/dashboard/player/loyalty"
-              gradient="from-amber-500 to-orange-500"
-            />
-            <QuickAction
-              icon={<Sparkles className="h-5 w-5" />}
-              label="Dashboard"
-              description="Back to your dashboard"
-              href="/dashboard/player"
-              gradient="from-teal-500 to-cyan-500"
+            <InfoRow
+              icon={<Phone className="h-4 w-4" />}
+              label="Phone number"
+              value={user.phone || 'Not provided'}
+              copyable
+              onCopy={() => user.phone && copy(user.phone, 'phone')}
+              isCopied={copiedField === 'phone'}
+              href={user.phone ? `tel:${user.phone}` : undefined}
             />
           </div>
-        </div>
 
-        {/* ─────────── ACCOUNT SECTION ─────────── */}
-        <div className="mt-5 mb-12">
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="overflow-hidden rounded-[4px] border border-pitchline bg-pitch-700/80">
+            <div className="border-b border-pitchline/60 px-6 py-4">
+              <p className="nm-overline text-chalk-400">Account information</p>
+            </div>
+            <InfoRow icon={<Shield className="h-4 w-4" />} label="Account type" value="Player" />
+            <InfoRow
+              icon={<CalendarCheck className="h-4 w-4" />}
+              label="Member since"
+              value={memberSince || 'Not available'}
+            />
+            <div className="flex items-center gap-3.5 px-6 py-4">
+              <ShieldCheck className="h-4 w-4 shrink-0 text-flood-500" />
               <div>
-                <h3 className="font-semibold text-gray-900 text-[15px]">Account</h3>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  Manage your account preferences
+                <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-chalk-400">
+                  Account status
+                </p>
+                <p className="mt-0.5 flex items-center gap-2 font-mono text-sm text-chalk-100">
+                  Active
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-flood-500 shadow-flood" />
                 </p>
               </div>
-              <div className="flex items-center gap-3">
-                <Link href="/dashboard/player">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="rounded-xl border-gray-200 text-gray-600 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 h-9 px-4 text-xs font-medium transition-all duration-200"
-                  >
-                    <Sparkles className="h-3.5 w-3.5 mr-1.5" />
-                    Dashboard
-                  </Button>
-                </Link>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={logout}
-                  className="rounded-xl text-red-500 hover:text-red-600 hover:bg-red-50 h-9 px-4 text-xs font-medium"
-                >
-                  <LogOut className="h-3.5 w-3.5 mr-1.5" />
-                  Sign Out
-                </Button>
-              </div>
             </div>
           </div>
         </div>
+
+        {/* ── quick actions — dark rows, lime chevrons ── */}
+        <div className="mt-6 overflow-hidden rounded-[4px] border border-pitchline bg-pitch-700/80">
+          <div className="border-b border-pitchline/60 px-6 py-4">
+            <p className="nm-overline text-chalk-400">Quick actions</p>
+          </div>
+          {[
+            { icon: <Search className="h-4 w-4" />, label: 'Browse arenas', desc: 'Find and book turfs near you', href: '/browse' },
+            { icon: <History className="h-4 w-4" />, label: 'My bookings', desc: 'The season record', href: '/dashboard/player/bookings' },
+            { icon: <Trophy className="h-4 w-4" />, label: 'Rewards', desc: 'The trophy room', href: '/dashboard/player/loyalty' },
+          ].map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="group flex items-center gap-3.5 border-b border-pitchline/60 px-6 py-4 transition-colors duration-200 ease-night last:border-0 hover:bg-white/[0.03]"
+            >
+              <span className="text-flood-500">{item.icon}</span>
+              <span className="min-w-0 flex-1">
+                <span className="block font-mono text-[11px] uppercase tracking-[0.14em] text-chalk-100">
+                  {item.label}
+                </span>
+                <span className="mt-0.5 block font-mono text-[10px] text-chalk-400">{item.desc}</span>
+              </span>
+              <ChevronRight className="h-4 w-4 text-flood-500 transition-transform duration-200 ease-night group-hover:translate-x-1" />
+            </Link>
+          ))}
+        </div>
+
+        {/* ── danger zone — desaturated night red, hairline ── */}
+        <div className="mt-6 flex flex-col items-start justify-between gap-4 rounded-[4px] border border-red-900/50 bg-pitch-700/60 px-6 py-5 sm:flex-row sm:items-center">
+          <div>
+            <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-red-300/90">
+              Leave the ground
+            </p>
+            <p className="mt-1 text-xs text-chalk-400">Sign out of your OutFyld account.</p>
+          </div>
+          <button
+            onClick={logout}
+            className="inline-flex items-center gap-2 rounded-[4px] border border-red-900/60 px-5 py-2.5 font-mono text-[10px] uppercase tracking-[0.14em] text-red-300 transition-colors duration-200 ease-night hover:bg-red-950/40 hover:text-red-200"
+          >
+            <LogOut className="h-3.5 w-3.5" />
+            Sign out
+          </button>
+        </div>
       </div>
-    </div>
+    </NightShell>
   );
 }
 

@@ -4,14 +4,10 @@ import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { LandingHeader } from '@/components/landing/LandingHeader';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { NightShell } from '@/components/night/NightShell';
+import { CountUp } from '@/components/landing/night-match/CountUp';
 import {
-  Award, Gift, Trophy, Star, History, Calendar,
-  Info, ChevronRight, Loader2, Search, ArrowUpRight,
-  ArrowDownRight, Sparkles, Zap, Target, CheckCircle2,
-  IndianRupee, ArrowRight, MessageSquare, Clock,
+  Gift, Calendar, Info, Loader2, ArrowRight, MessageSquare, Star,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -41,143 +37,21 @@ interface Transaction {
   date: string;
 }
 
-// ─── Stat Card ───────────────────────────────────────────────────────
+const TIERS = ['Bronze', 'Silver', 'Gold', 'Platinum'];
 
-function StatCard({
-  icon,
-  iconGradient,
-  label,
-  value,
-  subtext,
-}: {
-  icon: React.ReactNode;
-  iconGradient: string;
-  label: string;
-  value: string;
-  subtext: string;
-}) {
-  return (
-    <div className="group bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:shadow-lg hover:shadow-emerald-50 hover:border-emerald-100 transition-all duration-300">
-      <div className="flex items-center justify-between mb-3">
-        <div
-          className={`w-10 h-10 rounded-xl bg-gradient-to-br ${iconGradient} flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform duration-300`}
-        >
-          {icon}
-        </div>
-      </div>
-      <p className="text-2xl font-bold text-gray-900 tracking-tight">{value}</p>
-      <p className="text-xs font-medium text-gray-700 mt-1">{label}</p>
-      <p className="text-[11px] text-gray-400 mt-0.5">{subtext}</p>
-    </div>
-  );
-}
-
-// ─── Tier Badge ──────────────────────────────────────────────────────
-
-function TierBadge({ tier }: { tier: string }) {
-  const tierConfig: Record<string, { color: string; bg: string; border: string; icon: string }> = {
-    Bronze: { color: 'text-amber-800', bg: 'bg-amber-50', border: 'border-amber-200', icon: '🥉' },
-    Silver: { color: 'text-gray-700', bg: 'bg-gray-100', border: 'border-gray-300', icon: '🥈' },
-    Gold: { color: 'text-yellow-800', bg: 'bg-yellow-50', border: 'border-yellow-300', icon: '🥇' },
-    Platinum: { color: 'text-violet-800', bg: 'bg-violet-50', border: 'border-violet-200', icon: '💎' },
-  };
-
-  const config = tierConfig[tier] || tierConfig.Bronze;
-
-  return (
-    <span
-      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ${config.bg} ${config.color} ${config.border} border`}
-    >
-      <span>{config.icon}</span>
-      {tier}
-    </span>
-  );
-}
-
-// ─── Transaction Row ─────────────────────────────────────────────────
-
-function TransactionRow({ tx }: { tx: Transaction }) {
-  const isEarned = tx.type === 'earned';
-
-  return (
-    <div className="group flex items-center justify-between p-3.5 rounded-xl hover:bg-gray-50 transition-all duration-200">
-      <div className="flex items-center gap-3.5 min-w-0">
-        <div
-          className={`flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center ${
-            isEarned ? 'bg-emerald-50' : 'bg-amber-50'
-          }`}
-        >
-          {isEarned ? (
-            <ArrowUpRight className="h-4 w-4 text-emerald-600" />
-          ) : (
-            <ArrowDownRight className="h-4 w-4 text-amber-600" />
-          )}
-        </div>
-        <div className="min-w-0">
-          <p className="text-sm font-medium text-gray-900 truncate">
-            {tx.description}
-          </p>
-          <p className="text-[11px] text-gray-400 mt-0.5">{tx.date}</p>
-        </div>
-      </div>
-      <span
-        className={`flex-shrink-0 text-sm font-bold ml-3 ${
-          isEarned ? 'text-emerald-600' : 'text-amber-600'
-        }`}
-      >
-        {tx.amount}
-      </span>
-    </div>
-  );
-}
-
-// ─── Earn Method Card ────────────────────────────────────────────────
-
-function EarnMethodCard({
-  icon,
-  iconBg,
-  iconColor,
-  title,
-  description,
-  points,
-  pointsColor,
-}: {
-  icon: React.ReactNode;
-  iconBg: string;
-  iconColor: string;
-  title: string;
-  description: string;
-  points: string;
-  pointsColor: string;
-}) {
-  return (
-    <div className="group flex items-center justify-between p-4 rounded-xl hover:bg-gray-50 transition-all duration-200">
-      <div className="flex items-center gap-3.5">
-        <div
-          className={`flex-shrink-0 w-10 h-10 rounded-xl ${iconBg} flex items-center justify-center group-hover:scale-105 transition-transform duration-200`}
-        >
-          <div className={iconColor}>{icon}</div>
-        </div>
-        <div>
-          <p className="text-sm font-semibold text-gray-900">{title}</p>
-          <p className="text-[11px] text-gray-400 mt-0.5">{description}</p>
-        </div>
-      </div>
-      <span
-        className={`flex-shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold ${pointsColor}`}
-      >
-        {points}
-      </span>
-    </div>
-  );
-}
-
-// ─── Main Component ──────────────────────────────────────────────────
+// ─── Main — THE TROPHY ROOM ──────────────────────────────────────────
 
 function PlayerLoyaltyContent() {
   const { user } = useAuth();
   const [loyaltyData, setLoyaltyData] = useState<LoyaltyData | null>(null);
   const [loading, setLoading] = useState(true);
+  // points roll-up + light sweep run once per session
+  const [rolled, setRolled] = useState(true);
+
+  useEffect(() => {
+    setRolled(sessionStorage.getItem('nm-trophy-roll') === '1');
+    sessionStorage.setItem('nm-trophy-roll', '1');
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -237,7 +111,7 @@ function PlayerLoyaltyContent() {
     return (loyaltyData?.recentTransactions || []).map((tx, i) => ({
       id: tx._id || String(i),
       type: tx.type,
-      amount: tx.type === 'earned' ? `+${tx.amount.toFixed(2)}` : `-${tx.amount.toFixed(2)}`,
+      amount: tx.type === 'earned' ? `+${tx.amount.toFixed(2)}` : `−${tx.amount.toFixed(2)}`,
       rawAmount: tx.amount,
       description: tx.description,
       date: new Date(tx.date).toLocaleDateString('en-GB', {
@@ -252,378 +126,212 @@ function PlayerLoyaltyContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#fafbfc]">
+      <NightShell ambient={0.6}>
         <LandingHeader />
         <div className="flex items-center justify-center py-32">
           <div className="text-center">
-            <div className="w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center mx-auto mb-4">
-              <Loader2 className="h-7 w-7 text-emerald-600 animate-spin" />
-            </div>
-            <p className="text-gray-500 font-medium">Loading rewards...</p>
-            <p className="text-xs text-gray-400 mt-1">Fetching your loyalty data</p>
+            <Loader2 className="mx-auto mb-4 h-7 w-7 animate-spin text-flood-500" />
+            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-chalk-400">
+              Opening the trophy room…
+            </p>
           </div>
         </div>
-      </div>
+      </NightShell>
     );
   }
 
+  const tierIndex = Math.max(0, TIERS.indexOf(stats.tier));
+  // overall position along the tier track: completed tiers + progress within current
+  const trackPct = Math.min(
+    100,
+    (tierIndex / (TIERS.length - 1)) * 100 +
+      (stats.progressValue / 100) * (100 / (TIERS.length - 1))
+  );
+
   return (
-    <div className="min-h-screen bg-[#fafbfc]">
+    <NightShell ambient={0.6}>
       <LandingHeader />
 
-      {/* ─────────── HERO BANNER ─────────── */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-600 via-green-600 to-teal-700" />
-        <div
-          className="absolute inset-0 opacity-10"
-          style={{
-            backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
-            backgroundSize: '24px 24px',
-          }}
-        />
-        <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3 blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-72 h-72 bg-emerald-400/10 rounded-full translate-y-1/2 -translate-x-1/4 blur-3xl" />
+      {/* ── POINTS HERO — huge Anton digits, one-shot roll + light sweep ── */}
+      <section className="mx-auto max-w-5xl px-4 pb-4 pt-12 sm:px-6 sm:pt-16 lg:px-8">
+        <Link
+          href="/dashboard/player"
+          className="font-mono text-[10px] uppercase tracking-[0.16em] text-chalk-400 transition-colors hover:text-flood-500"
+        >
+          ← The tunnel
+        </Link>
+        <div className="mt-6 flex flex-wrap items-end justify-between gap-6">
+          <div className="relative overflow-hidden pr-6">
+            <p className="nm-overline mb-2 text-chalk-400">The trophy room</p>
+            <div
+              className="relative font-display text-[clamp(4.5rem,14vw,9rem)] leading-none tracking-tight text-chalk-100"
+              style={{ textShadow: '0 0 60px rgba(200,241,53,0.25)' }}
+            >
+              {rolled ? (
+                stats.currentPoints.toLocaleString('en-IN')
+              ) : (
+                <CountUp value={stats.currentPoints} duration={1.4} />
+              )}
+              {/* one-shot light sweep */}
+              {!rolled && (
+                <span
+                  aria-hidden
+                  className="nm-sweep pointer-events-none absolute inset-y-0 w-1/4 bg-gradient-to-r from-transparent via-chalk-100/10 to-transparent"
+                />
+              )}
+            </div>
+            <p className="nm-overline mt-1 text-flood-500">
+              {stats.tier} tier · points balance
+            </p>
+          </div>
 
-        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-20 sm:pb-24">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-5">
-            <div>
-              <Link
-                href="/dashboard/player"
-                className="text-sm text-white/70 hover:text-white flex items-center gap-1.5 transition-colors duration-200 mb-4"
-              >
-                ← Dashboard
-              </Link>
-              <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-2xl sm:text-3xl font-bold text-white">
-                  Loyalty Rewards
-                </h1>
-                <TierBadge tier={stats.tier} />
-              </div>
-              <p className="text-emerald-200 text-sm">
-                Track your points, check your tier, and redeem rewards.
+          <div className="pb-3 text-right font-mono text-xs uppercase tracking-[0.14em] text-chalk-400">
+            <p>
+              <span className="text-flood-500">+{stats.totalEarned.toFixed(0)}</span> earned
+            </p>
+            <p className="mt-1">
+              <span className="text-chalk-100">−{stats.totalRedeemed.toFixed(0)}</span> redeemed
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ── TIER PROGRESS — the 4° pitch-line filling in lime ── */}
+      <section className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className="relative -rotate-[1.2deg]">
+          <div className="mb-3 flex justify-between font-mono text-[9px] uppercase tracking-[0.16em]">
+            {TIERS.map((t, i) => (
+              <span key={t} className={i <= tierIndex ? 'text-flood-500' : 'text-chalk-400/60'}>
+                {t}
+              </span>
+            ))}
+          </div>
+          <div className="relative h-[3px] w-full bg-pitchline">
+            <div
+              className="absolute inset-y-0 left-0 bg-flood-500 shadow-flood transition-[width] duration-700 ease-night"
+              style={{ width: `${trackPct}%` }}
+            />
+            {/* corner-flag tick at the current position */}
+            <div
+              className="absolute top-1/2 h-2.5 w-2.5 -translate-y-1/2 bg-flood-500 shadow-flood transition-[left] duration-700 ease-night"
+              style={{ left: `calc(${trackPct}% - 5px)`, clipPath: 'polygon(0 0, 100% 50%, 0 100%)' }}
+            />
+          </div>
+          {stats.pointsToNextTier > 0 && (
+            <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-400">
+              <span className="text-chalk-100">{stats.pointsToNextTier.toLocaleString('en-IN')}</span>{' '}
+              points to {stats.nextTier}
+            </p>
+          )}
+        </div>
+      </section>
+
+      <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 px-4 pb-20 pt-4 sm:px-6 lg:grid-cols-3 lg:px-8">
+        {/* left rail: redeem + ways to earn */}
+        <div className="space-y-6">
+          {/* REDEEM — the one living element (slow lime rim loop) */}
+          <div className="nm-rim-pulse rounded-[4px] border bg-pitch-700/90 p-6">
+            <p className="nm-overline flex items-center gap-2 text-flood-500">
+              <Gift className="h-4 w-4" />
+              Use your points
+            </p>
+            <p className="mt-4 font-mono text-4xl tabular-nums tracking-tight text-chalk-100">
+              ₹{stats.discountValue.toLocaleString('en-IN')}
+            </p>
+            <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-400">
+              Available discount value
+            </p>
+            <div className="mt-4 flex items-start gap-2 border-t border-pitchline/60 pt-4">
+              <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-flood-500" />
+              <p className="text-xs leading-relaxed text-chalk-400">
+                Apply your loyalty points for a discount during checkout on your next booking.
               </p>
             </div>
-
-            <Link href="/browse">
-              <Button className="bg-white text-emerald-700 hover:bg-gray-100 rounded-xl h-11 px-6 font-semibold shadow-xl transition-all duration-200">
-                <Search className="h-4 w-4 mr-2" />
-                Earn More
-              </Button>
+            <Link
+              href="/browse"
+              className="nm-overline mt-5 inline-flex w-full items-center justify-center gap-2 rounded-[4px] bg-flood-500 px-5 py-3.5 text-pitch-900 transition-[transform,background-color] duration-200 ease-night hover:bg-flood-600 active:translate-y-[2px]"
+            >
+              Book &amp; redeem
+              <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
-        </div>
-      </div>
 
-      {/* ─────────── CONTENT ─────────── */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 -mt-12 relative z-10 pb-12">
-
-        {/* ── Stat Cards ── */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-          <StatCard
-            icon={<Trophy className="h-5 w-5" />}
-            iconGradient="from-amber-500 to-orange-500"
-            label="Current Points"
-            value={String(stats.currentPoints)}
-            subtext={`${stats.tier} tier`}
-          />
-          <StatCard
-            icon={<IndianRupee className="h-5 w-5" />}
-            iconGradient="from-emerald-500 to-green-600"
-            label="Available Discount"
-            value={`₹${stats.discountValue}`}
-            subtext="Redeem on bookings"
-          />
-          <StatCard
-            icon={<ArrowUpRight className="h-5 w-5" />}
-            iconGradient="from-green-500 to-teal-500"
-            label="Total Earned"
-            value={String(Number(stats.totalEarned).toFixed(2))}
-            subtext="All-time earned"
-          />
-          <StatCard
-            icon={<Gift className="h-5 w-5" />}
-            iconGradient="from-teal-500 to-cyan-500"
-            label="Total Redeemed"
-            value={String(Number(stats.totalRedeemed).toFixed(2))}
-            subtext="Points used"
-          />
-        </div>
-
-        {/* ── Tier Progress Card ── */}
-        <div className="mt-5 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="px-6 py-5 border-b border-gray-50 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center">
-                <Award className="h-4 w-4 text-amber-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 text-[15px]">Tier Progress</h3>
-                <p className="text-xs text-gray-400 mt-0.5">Your journey to the next level</p>
-              </div>
+          {/* ways to earn — dark cards, lime scoreboard values */}
+          <div className="overflow-hidden rounded-[4px] border border-pitchline bg-pitch-700/80">
+            <div className="border-b border-pitchline/60 px-6 py-4">
+              <p className="nm-overline text-chalk-400">Ways to earn</p>
             </div>
-            <TierBadge tier={stats.tier} />
+            {[
+              { icon: <Calendar className="h-4 w-4" />, title: 'Book an arena', desc: '10 points per ₹100 spent', pts: '+10/₹100' },
+              { icon: <MessageSquare className="h-4 w-4" />, title: 'Leave a review', desc: 'Share your experience', pts: '+50' },
+              { icon: <Star className="h-4 w-4" />, title: 'Refer a friend', desc: 'When they complete first booking', pts: '+100' },
+            ].map((m) => (
+              <div
+                key={m.title}
+                className="group flex items-center justify-between gap-3 border-b border-pitchline/60 px-6 py-4 transition-colors duration-200 ease-night last:border-0 hover:bg-white/[0.03]"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-flood-500">{m.icon}</span>
+                  <div>
+                    <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-chalk-100">
+                      {m.title}
+                    </p>
+                    <p className="mt-0.5 text-[11px] text-chalk-400">{m.desc}</p>
+                  </div>
+                </div>
+                <span className="font-mono text-sm tabular-nums text-flood-500">{m.pts}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* THE LEDGER — tabular alignment is sacred */}
+        <div className="overflow-hidden rounded-[4px] border border-pitchline bg-pitch-700/80 lg:col-span-2">
+          <div className="flex items-center justify-between border-b border-pitchline/60 px-6 py-4">
+            <p className="nm-overline text-chalk-400">Points ledger</p>
+            {transactions.length > 0 && (
+              <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-400">
+                {transactions.length} entries
+              </span>
+            )}
           </div>
 
-          <div className="p-6">
-            {/* Points display */}
-            <div className="flex items-end gap-2 mb-6">
-              <span className="text-5xl font-extrabold text-emerald-700 tracking-tight">
-                {stats.currentPoints}
-              </span>
-              <span className="text-lg text-emerald-500 font-medium mb-1.5">pts</span>
-            </div>
-
-            {/* Progress bar */}
-            <div className="space-y-2.5">
-              <div className="flex justify-between text-xs font-medium">
-                <span className="text-gray-600 flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                  {stats.tier}
-                </span>
-                <span className="text-gray-400 flex items-center gap-1">
-                  {stats.nextTier}
-                  <span className="w-2 h-2 rounded-full bg-gray-300" />
-                </span>
-              </div>
-              <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-emerald-500 to-green-400 rounded-full transition-all duration-1000"
-                  style={{ width: `${Math.min(stats.progressValue, 100)}%` }}
-                />
-              </div>
-              <p className="text-xs text-gray-500">
-                Earn{' '}
-                <strong className="text-emerald-700">
-                  {stats.pointsToNextTier} more points
-                </strong>{' '}
-                to unlock {stats.nextTier} tier benefits.
+          {transactions.length === 0 ? (
+            <div className="px-6 py-16 text-center">
+              <h3 className="font-display text-2xl uppercase tracking-tight text-chalk-100">
+                Empty cabinet
+              </h3>
+              <p className="mx-auto mt-2 max-w-xs text-sm text-chalk-400">
+                Book a game to put your first points on the board.
               </p>
             </div>
-          </div>
-        </div>
-
-        {/* ── Main Grid ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mt-5">
-
-          {/* Left: Redeem + Ways to Earn */}
-          <div className="space-y-5">
-
-            {/* Redeem Card */}
-            <div className="bg-gradient-to-br from-emerald-600 to-teal-700 rounded-2xl p-6 text-white relative overflow-hidden">
-              <div
-                className="absolute inset-0 opacity-10"
-                style={{
-                  backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
-                  backgroundSize: '16px 16px',
-                }}
-              />
-              <div className="relative">
-                <div className="flex items-center gap-2 mb-3">
-                  <Gift className="h-5 w-5 text-emerald-200" />
-                  <span className="text-sm font-semibold">Use Your Points</span>
-                </div>
-                <p className="text-3xl font-bold">
-                  ₹{stats.discountValue}
-                </p>
-                <p className="text-emerald-200 text-xs mt-1">Available discount value</p>
-                <Separator className="my-4 bg-white/20" />
-                <div className="flex items-start gap-2">
-                  <Info className="h-3.5 w-3.5 text-emerald-200 mt-0.5 flex-shrink-0" />
-                  <p className="text-emerald-100 text-xs leading-relaxed">
-                    Apply your loyalty points for a discount during checkout on your next booking.
-                  </p>
-                </div>
-                <Link href="/browse" className="block mt-4">
-                  <Button
-                    size="sm"
-                    className="w-full bg-white/20 hover:bg-white/30 text-white rounded-xl h-9 text-xs font-semibold backdrop-blur-sm border border-white/10"
-                  >
-                    Book & Redeem
-                    <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
-                  </Button>
-                </Link>
-              </div>
-            </div>
-
-            {/* Ways to Earn */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-              <div className="px-6 py-5 border-b border-gray-50">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center">
-                    <Zap className="h-4 w-4 text-green-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900 text-[15px]">Ways to Earn</h3>
-                    <p className="text-xs text-gray-400 mt-0.5">Earn points with every action</p>
-                  </div>
-                </div>
-              </div>
-              <div className="p-2">
-                <EarnMethodCard
-                  icon={<Calendar className="h-4 w-4" />}
-                  iconBg="bg-emerald-50"
-                  iconColor="text-emerald-600"
-                  title="Book an Arena"
-                  description="10 points per ₹100 spent"
-                  points="+ Variable"
-                  pointsColor="bg-emerald-50 text-emerald-700 border border-emerald-200"
-                />
-                <EarnMethodCard
-                  icon={<MessageSquare className="h-4 w-4" />}
-                  iconBg="bg-amber-50"
-                  iconColor="text-amber-600"
-                  title="Leave a Review"
-                  description="Share your experience"
-                  points="+50 pts"
-                  pointsColor="bg-amber-50 text-amber-700 border border-amber-200"
-                />
-                <EarnMethodCard
-                  icon={<Star className="h-4 w-4" />}
-                  iconBg="bg-teal-50"
-                  iconColor="text-teal-600"
-                  title="Refer a Friend"
-                  description="When they complete first booking"
-                  points="+100 pts"
-                  pointsColor="bg-teal-50 text-teal-700 border border-teal-200"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Right: Transaction History */}
-          <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="px-6 py-5 border-b border-gray-50 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center">
-                  <History className="h-4 w-4 text-emerald-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 text-[15px]">Points History</h3>
-                  <p className="text-xs text-gray-400 mt-0.5">Recent transactions</p>
-                </div>
-              </div>
-              {transactions.length > 0 && (
-                <span className="text-xs text-gray-400">
-                  {transactions.length} transactions
-                </span>
-              )}
-            </div>
-
-            <div className="p-2">
-              {transactions.length > 0 ? (
-                transactions.map((tx, i) => (
-                  <div key={tx.id}>
-                    <TransactionRow tx={tx} />
-                    {i < transactions.length - 1 && <Separator className="mx-4" />}
-                  </div>
-                ))
-              ) : (
-                <div className="text-center py-14 px-6">
-                  <div className="w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center mx-auto mb-4">
-                    <Trophy className="h-7 w-7 text-emerald-400" />
-                  </div>
-                  <h3 className="text-base font-semibold text-gray-900">No transactions yet</h3>
-                  <p className="text-sm text-gray-400 mt-1.5 max-w-xs mx-auto">
-                    Start earning points by booking arenas and leaving reviews!
-                  </p>
-                  <Link href="/browse" className="mt-5 inline-block">
-                    <Button
-                      size="sm"
-                      className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white h-9 px-5 text-xs font-semibold shadow-lg shadow-emerald-200"
-                    >
-                      Browse Arenas
-                      <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-                    </Button>
-                  </Link>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* ── Tier Benefits ── */}
-        <div className="mt-5 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="px-6 py-5 border-b border-gray-50">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-violet-50 flex items-center justify-center">
-                <Sparkles className="h-4 w-4 text-violet-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 text-[15px]">Tier Benefits</h3>
-                <p className="text-xs text-gray-400 mt-0.5">Unlock perks as you level up</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-4 sm:p-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              {[
-                {
-                  tier: 'Bronze',
-                  emoji: '🥉',
-                  points: '0+',
-                  perks: ['Earn 10 pts/₹100', 'Basic rewards'],
-                  gradient: 'from-amber-100 to-orange-50',
-                  border: 'border-amber-200',
-                  active: stats.tier === 'Bronze',
-                },
-                {
-                  tier: 'Silver',
-                  emoji: '🥈',
-                  points: '1000+',
-                  perks: ['Earn 12 pts/₹100', 'Priority booking'],
-                  gradient: 'from-gray-100 to-gray-50',
-                  border: 'border-gray-300',
-                  active: stats.tier === 'Silver',
-                },
-                {
-                  tier: 'Gold',
-                  emoji: '🥇',
-                  points: '2000+',
-                  perks: ['Earn 15 pts/₹100', 'Exclusive offers'],
-                  gradient: 'from-yellow-100 to-amber-50',
-                  border: 'border-yellow-300',
-                  active: stats.tier === 'Gold',
-                },
-                {
-                  tier: 'Platinum',
-                  emoji: '💎',
-                  points: '5000+',
-                  perks: ['Earn 20 pts/₹100', 'VIP support'],
-                  gradient: 'from-violet-100 to-purple-50',
-                  border: 'border-violet-200',
-                  active: stats.tier === 'Platinum',
-                },
-              ].map((t, i) => (
+          ) : (
+            <div>
+              {transactions.map((tx) => (
                 <div
-                  key={i}
-                  className={`relative rounded-xl bg-gradient-to-br ${t.gradient} border ${t.border} p-4 ${
-                    t.active ? 'ring-2 ring-emerald-400 ring-offset-2' : ''
-                  }`}
+                  key={tx.id}
+                  className="flex items-center gap-4 border-b border-pitchline/60 px-6 py-4 transition-colors duration-200 ease-night last:border-0 hover:bg-white/[0.03]"
                 >
-                  {t.active && (
-                    <span className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
-                      <CheckCircle2 className="h-3 w-3 text-white" />
-                    </span>
-                  )}
-                  <div className="text-xl mb-2">{t.emoji}</div>
-                  <h4 className="font-bold text-gray-900 text-sm">{t.tier}</h4>
-                  <p className="text-[11px] text-gray-500 mt-0.5">{t.points} points</p>
-                  <ul className="mt-3 space-y-1.5">
-                    {t.perks.map((perk, j) => (
-                      <li key={j} className="flex items-center gap-1.5 text-[11px] text-gray-600">
-                        <span className="w-1 h-1 rounded-full bg-gray-400" />
-                        {perk}
-                      </li>
-                    ))}
-                  </ul>
+                  <span className="w-24 shrink-0 font-mono text-[10px] uppercase tracking-[0.1em] text-chalk-400">
+                    {tx.date}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-sm text-chalk-100/90">
+                    {tx.description}
+                  </span>
+                  <span
+                    className={`shrink-0 font-mono text-sm tabular-nums ${
+                      tx.type === 'earned' ? 'text-flood-500' : 'text-chalk-400'
+                    }`}
+                  >
+                    {tx.amount}
+                  </span>
                 </div>
               ))}
             </div>
-          </div>
+          )}
         </div>
       </div>
-    </div>
+    </NightShell>
   );
 }
 
