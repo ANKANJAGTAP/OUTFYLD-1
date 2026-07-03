@@ -5,10 +5,8 @@ import Turf from '@/app/models/Turf';
 // Tell Next.js this route should be dynamic (not statically generated)
 export const dynamic = 'force-dynamic';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { turfId: string } }
-) {
+export async function GET(request: NextRequest, props: { params: Promise<{ turfId: string }> }) {
+  const params = await props.params;
   try {
     // Get the authorization header
     const authHeader = request.headers.get('Authorization');

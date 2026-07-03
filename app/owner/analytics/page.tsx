@@ -474,39 +474,6 @@ function AnalyticsOverview() {
     }
   }, [user, router]);
 
-  if (!user) return null;
-  if (user.subscriptionPlan !== "premium" && user.subscriptionPlan !== "pro") {
-    return (
-      <div className="min-h-screen bg-[#fafbfc] flex items-center justify-center">
-        <div className="text-center max-w-md px-6">
-          <div className="w-16 h-16 rounded-2xl bg-amber-50 flex items-center justify-center mx-auto mb-4">
-            <BarChart3 className="h-7 w-7 text-amber-500" />
-          </div>
-          <h2 className="text-lg font-bold text-gray-900">Premium Feature</h2>
-          <p className="text-sm text-gray-500 mt-2">
-            Analytics is available for Premium and Pro plan members only.
-            Upgrade your plan to access detailed insights.
-          </p>
-          <div className="flex items-center justify-center gap-3 mt-6">
-            <Button
-              onClick={() => router.push("/owner/subscription")}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl h-10 px-5 font-semibold shadow-lg shadow-emerald-200"
-            >
-              Upgrade Plan
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => router.push("/owner/dashboard")}
-              className="rounded-xl h-10 px-5 font-medium border-gray-200"
-            >
-              Back to Dashboard
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   // ── Compute all analytics from real data ──
   const analytics = useMemo(() => {
     const now = new Date();
@@ -783,6 +750,40 @@ function AnalyticsOverview() {
       netEarnings,
     };
   }, [allBookings, turfs, chartView]);
+
+  // Guards after all hooks have run, to satisfy the Rules of Hooks
+  if (!user) return null;
+  if (user.subscriptionPlan !== "premium" && user.subscriptionPlan !== "pro") {
+    return (
+      <div className="min-h-screen bg-[#fafbfc] flex items-center justify-center">
+        <div className="text-center max-w-md px-6">
+          <div className="w-16 h-16 rounded-2xl bg-amber-50 flex items-center justify-center mx-auto mb-4">
+            <BarChart3 className="h-7 w-7 text-amber-500" />
+          </div>
+          <h2 className="text-lg font-bold text-gray-900">Premium Feature</h2>
+          <p className="text-sm text-gray-500 mt-2">
+            Analytics is available for Premium and Pro plan members only.
+            Upgrade your plan to access detailed insights.
+          </p>
+          <div className="flex items-center justify-center gap-3 mt-6">
+            <Button
+              onClick={() => router.push("/owner/subscription")}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl h-10 px-5 font-semibold shadow-lg shadow-emerald-200"
+            >
+              Upgrade Plan
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => router.push("/owner/dashboard")}
+              className="rounded-xl h-10 px-5 font-medium border-gray-200"
+            >
+              Back to Dashboard
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // ── Greeting ──
   const greeting = (() => {

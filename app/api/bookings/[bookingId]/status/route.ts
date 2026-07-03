@@ -7,10 +7,8 @@ import { sendBookingStatusSMS } from '@/lib/sms';
 // Tell Next.js this route should be dynamic (not statically generated)
 export const dynamic = 'force-dynamic';
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { bookingId: string } }
-) {
+export async function PATCH(request: NextRequest, props: { params: Promise<{ bookingId: string }> }) {
+  const params = await props.params;
   try {
     await connectMongoDB();
 

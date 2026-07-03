@@ -8,10 +8,8 @@ export const dynamic = 'force-dynamic';
  * GET /api/careers/applications/[id]/accept-offer
  * Accept job offer from email link
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     await connectMongoDB();
 

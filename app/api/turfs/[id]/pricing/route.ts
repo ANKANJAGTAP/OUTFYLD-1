@@ -10,10 +10,8 @@ export const dynamic = 'force-dynamic';
  * Returns per-period discount data for a specific date.
  * Used by the booking page to show per-slot prices when user selects a date.
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     await connectMongoDB();
 

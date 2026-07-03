@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { use } from 'react';
 import dynamic from 'next/dynamic';
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import { Footer } from '@/components/landing/Footer';
@@ -21,12 +21,13 @@ const TurfDetailsPage = dynamic(
 );
 
 interface BookPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
-export default function BookPage({ params }: BookPageProps) {
+export default function BookPage(props: BookPageProps) {
+  const params = use(props.params);
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-green-50">
       <LandingHeader />

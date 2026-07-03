@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { BrowseHeader } from "@/components/browse/BrowseHeader";
 import { FilterSidebar } from "@/components/browse/FilterSidebar";
 import TurfGrid from "@/components/browse/TurfGrid";
@@ -53,13 +54,29 @@ interface Filters {
   amenities: string[];
 }
 
+// useSearchParams requires a Suspense boundary in the App Router
 export default function BrowsePage() {
-  const [filters, setFilters] = useState<Filters>({
-    location: "",
-    sport: "",
-    priceRange: [0, 10000],
-    rating: 0,
-    amenities: [],
+  return (
+    <Suspense fallback={null}>
+      <BrowsePageInner />
+    </Suspense>
+  );
+}
+
+function BrowsePageInner() {
+  const searchParams = useSearchParams();
+  const [filters, setFilters] = useState<Filters>(() => {
+    // Deep-links from the homepage kit rack: /browse?sport=Cricket
+    const requested = (searchParams.get("sport") || "").toLowerCase();
+    const chips = ["Football", "Cricket", "Tennis", "Basketball", "Badminton", "Volleyball"];
+    const sport = chips.find((c) => c.toLowerCase() === requested) || "";
+    return {
+      location: "",
+      sport,
+      priceRange: [0, 10000],
+      rating: 0,
+      amenities: [],
+    };
   });
 
   const [searchQuery, setSearchQuery] = useState("");

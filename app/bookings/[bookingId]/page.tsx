@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, use } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { LandingHeader } from '@/components/landing/LandingHeader';
@@ -100,11 +100,12 @@ function PaymentLine({
 }
 
 /* ─── Main Page ─────────────────────────────────────────────────────── */
-export default function BookingDetailsPage({
-  params,
-}: {
-  params: { bookingId: string };
-}) {
+export default function BookingDetailsPage(
+  props: {
+    params: Promise<{ bookingId: string }>;
+  }
+) {
+  const params = use(props.params);
   const router = useRouter();
   const searchParams = useSearchParams();
   const isSuccess = searchParams.get('success') === 'true';

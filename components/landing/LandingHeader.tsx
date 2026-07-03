@@ -43,17 +43,21 @@ export function LandingHeader() {
     }
   };
 
+  // Night Match: the homepage header is a dark floodlit bar in BOTH states
+  // (transparent at top, solid pitch once scrolled) so it sits on the dark page.
   const headerClasses = isHome
     ? `fixed top-0 w-full z-50 transition-all duration-300 ${
-        scrolled ? 'bg-white/95 backdrop-blur-sm border-b border-green-100 shadow-sm' : 'bg-gradient-to-b from-black/80 to-transparent border-transparent'
+        scrolled
+          ? 'bg-pitch-900/90 backdrop-blur-md border-b border-pitchline'
+          : 'bg-gradient-to-b from-black/70 to-transparent border-transparent'
       }`
     : 'sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-green-100 shadow-sm';
 
-  const textClasses = isHome && !scrolled ? 'text-white hover:text-gray-300' : 'text-gray-700 hover:text-green-600';
-  const logoTextClasses = isHome && !scrolled ? 'text-white' : 'text-green-600';
-  const userTextClasses = isHome && !scrolled ? 'text-white' : 'text-gray-900';
-  const iconClasses = isHome && !scrolled ? 'text-white' : 'text-gray-500';
-  const buttonVariant = isHome && !scrolled ? 'secondary' : 'outline';
+  const textClasses = isHome ? 'text-chalk-100 hover:text-flood-500' : 'text-gray-700 hover:text-green-600';
+  const logoTextClasses = isHome ? 'text-chalk-100' : 'text-green-600';
+  const userTextClasses = isHome ? 'text-chalk-100' : 'text-gray-900';
+  const iconClasses = isHome ? 'text-chalk-400' : 'text-gray-500';
+  const buttonVariant = isHome ? 'secondary' : 'outline';
 
   return (
     <header className={headerClasses}>
@@ -61,12 +65,13 @@ export function LandingHeader() {
         <div className="flex justify-between items-center py-3 md:py-4">
           <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
             <div className="mr-2 md:mr-3">
-              <Image 
-                src="/images/logo.png" 
-                alt="OutFyld Logo" 
-                width={48} 
-                height={48} 
-                className={`h-10 w-10 md:h-12 md:w-12 object-contain ${isHome && !scrolled ? 'brightness-0 invert' : ''}`}
+              <Image
+                src="/images/logo.png"
+                alt="OutFyld Logo"
+                width={48}
+                height={48}
+                priority
+                className={`h-10 w-10 md:h-12 md:w-12 object-contain ${isHome ? 'brightness-0 invert' : ''}`}
               />
             </div>
             <div>
@@ -218,12 +223,12 @@ export function LandingHeader() {
               // User is not logged in
               <>
                 <Link href="/auth/login">
-                  <Button variant={buttonVariant as any} size="sm" className={`text-xs ${isHome && !scrolled ? 'bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm' : ''}`}>
+                  <Button variant={buttonVariant as any} size="sm" className={`text-xs ${isHome ? 'bg-transparent border border-chalk-400/30 text-chalk-100 hover:border-flood-500 hover:text-flood-500 hover:bg-transparent' : ''}`}>
                     Login
                   </Button>
                 </Link>
                 <Link href="/auth/register">
-                  <Button size="sm" className={`text-xs ${isHome && !scrolled ? 'bg-white text-green-700 hover:bg-gray-100' : 'bg-green-500 hover:bg-green-600'}`}>
+                  <Button size="sm" className={`text-xs ${isHome ? 'bg-flood-500 text-pitch-900 hover:bg-flood-600 font-semibold' : 'bg-green-500 hover:bg-green-600'}`}>
                     Sign Up
                   </Button>
                 </Link>
@@ -232,7 +237,7 @@ export function LandingHeader() {
           </div>
 
           <button
-            className={`lg:hidden p-2 rounded-md transition-colors ${isHome && !scrolled ? 'hover:bg-white/20 text-white' : 'hover:bg-gray-100 text-gray-700'}`}
+            className={`lg:hidden p-2 rounded-md transition-colors ${isHome ? 'hover:bg-white/10 text-chalk-100' : 'hover:bg-gray-100 text-gray-700'}`}
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-label="Toggle menu"
           >

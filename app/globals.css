@@ -84,3 +84,189 @@ body::-webkit-scrollbar {
     @apply bg-background text-foreground;
   }
 }
+
+/* ============================================================
+   NIGHT MATCH — Night Match design system (homepage-scoped)
+   Fluid type scale, grain, floodlight motion, 4° pitch lines.
+   All classes are opt-in — they do not affect shadcn surfaces.
+   ============================================================ */
+@layer components {
+  /* Display (Anton, condensed, uppercase, tightened) */
+  .nm-display-hero {
+    font-family: var(--font-anton), sans-serif;
+    font-weight: 400;
+    text-transform: uppercase;
+    font-size: clamp(4.5rem, 12vw, 11rem);
+    line-height: 0.88;
+    letter-spacing: -0.02em;
+  }
+  .nm-display-xl {
+    font-family: var(--font-anton), sans-serif;
+    font-weight: 400;
+    text-transform: uppercase;
+    font-size: clamp(3rem, 7vw, 6.5rem);
+    line-height: 0.9;
+    letter-spacing: -0.015em;
+  }
+  .nm-display-l {
+    font-family: var(--font-anton), sans-serif;
+    font-weight: 400;
+    text-transform: uppercase;
+    font-size: clamp(2.25rem, 4.5vw, 4rem);
+    line-height: 0.94;
+    letter-spacing: -0.01em;
+  }
+  .nm-heading-m {
+    font-family: var(--font-geist), sans-serif;
+    font-weight: 600;
+    font-size: clamp(1.5rem, 2.2vw, 2rem);
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+  }
+  /* Overline / eyebrow — replaces banned pill badges */
+  .nm-overline {
+    font-family: var(--font-geist), sans-serif;
+    font-weight: 500;
+    font-size: 0.8125rem;
+    line-height: 1.2;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+  }
+  .nm-body-l {
+    font-family: var(--font-geist), sans-serif;
+    font-weight: 400;
+    font-size: clamp(1.0625rem, 1.4vw, 1.25rem);
+    line-height: 1.55;
+  }
+  .nm-caption {
+    font-family: var(--font-geist), sans-serif;
+    font-weight: 400;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    letter-spacing: 0.01em;
+  }
+  /* Scoreboard numerics — tabular so digits don't jitter mid-animation */
+  .nm-scoreboard {
+    font-family: var(--font-geist-mono), monospace;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    font-size: clamp(2.5rem, 6vw, 5rem);
+    line-height: 1;
+    letter-spacing: 0.02em;
+  }
+}
+
+@layer utilities {
+  /* Grain overlay — 4–6% soft-light noise, hero/section-openers only */
+  .nm-grain::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0.05;
+    mix-blend-mode: soft-light;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  /* Floodlight cursor glow helper */
+  .nm-flood-glow {
+    box-shadow: 0 0 60px -10px rgba(200, 241, 53, 0.35);
+  }
+}
+
+/* Floodlight power-on sequence (hero signature).
+   Driven by CSS (not JS) so it plays at first paint, never delaying LCP,
+   and only when motion is allowed. Base states below are the final,
+   reduced-motion-safe values (visible) — the animation fills backwards. */
+@keyframes nm-flood-buzz {
+  0% { opacity: 0; }
+  40% { opacity: 0.35; }
+  55% { opacity: 0.12; }
+  100% { opacity: 1; }
+}
+@keyframes nm-mask-up {
+  0% { transform: translateY(115%); }
+  100% { transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* floodlight layers buzz on in staggered banks */
+  .nm-anim-light {
+    animation: nm-flood-buzz 0.8s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  }
+  /* headline masks up on the final light step */
+  .nm-anim-headline > span > span {
+    animation: nm-mask-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  }
+}
+
+/* ── Ambient layer: slow haze blobs + volumetric shaft (60–90s loops) ── */
+.nm-blob {
+  position: absolute;
+  border-radius: 9999px;
+  will-change: transform;
+}
+.nm-blob-a {
+  width: 55vw;
+  height: 55vw;
+  left: -12%;
+  top: 6%;
+  background: radial-gradient(
+    circle at center,
+    rgba(200, 241, 53, 0.05) 0%,
+    rgba(226, 240, 214, 0.028) 42%,
+    transparent 70%
+  );
+}
+.nm-blob-b {
+  width: 44vw;
+  height: 44vw;
+  right: -10%;
+  top: 48%;
+  background: radial-gradient(
+    circle at center,
+    rgba(226, 240, 214, 0.045) 0%,
+    rgba(200, 241, 53, 0.022) 45%,
+    transparent 72%
+  );
+}
+.nm-shaft {
+  position: absolute;
+  width: 130vw;
+  height: 42vh;
+  left: -15%;
+  top: 26%;
+  transform: rotate(-18deg);
+  background: linear-gradient(
+    200deg,
+    rgba(226, 240, 214, 0.04) 0%,
+    rgba(226, 240, 214, 0.015) 45%,
+    transparent 70%
+  );
+  will-change: transform;
+}
+@keyframes nm-drift-a {
+  from { transform: translate3d(-6%, -4%, 0) scale(1); }
+  to { transform: translate3d(10%, 9%, 0) scale(1.15); }
+}
+@keyframes nm-drift-b {
+  from { transform: translate3d(5%, 8%, 0) scale(1.1); }
+  to { transform: translate3d(-8%, -6%, 0) scale(0.95); }
+}
+@keyframes nm-drift-shaft {
+  from { transform: rotate(-18deg) translate3d(-4%, 0, 0); opacity: 0.7; }
+  50% { opacity: 1; }
+  to { transform: rotate(-16deg) translate3d(6%, 3%, 0); opacity: 0.7; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .nm-blob-a { animation: nm-drift-a 75s ease-in-out infinite alternate; }
+  .nm-blob-b { animation: nm-drift-b 90s ease-in-out infinite alternate; }
+  .nm-shaft { animation: nm-drift-shaft 62s ease-in-out infinite alternate; }
+}
+
+/* ── Broadcast ticker ── */
+.nm-ticker-track {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+}

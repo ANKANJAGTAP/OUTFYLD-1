@@ -1,6 +1,6 @@
 import './globals.css';
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Anton, Geist, Geist_Mono } from 'next/font/google';
 import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { LocationProvider } from '@/contexts/LocationContext';
@@ -8,7 +8,12 @@ import RoleRedirect from '@/components/RoleRedirect';
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Analytics } from "@vercel/analytics/next"
 
-const inter = Inter({ subsets: ['latin'] });
+// Night Match type system — condensed sports display (Anton) + engineered grotesk UI (Geist) + tabular numerics (Geist Mono).
+// Only the primary UI font (Geist) is preloaded; the display/mono faces render via `swap`
+// (fallback first) so they don't compete for critical-path bandwidth and delay FCP/LCP.
+const geist = Geist({ subsets: ['latin'], variable: '--font-geist', display: 'swap' });
+const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono', display: 'swap', preload: false });
+const anton = Anton({ subsets: ['latin'], weight: '400', variable: '--font-anton', display: 'swap', preload: false });
 
 export const metadata: Metadata = {
   title: 'OutFyld - Sports Arena Booking Platform',
@@ -40,7 +45,7 @@ export default function RootLayout({
       <head>
         <script defer src="https://cloud.umami.is/script.js" data-website-id="23a9e6cb-5216-4b0c-8d63-a8afb68f1127"></script>
       </head>
-      <body className={inter.className}>
+      <body className={`${geist.variable} ${geistMono.variable} ${anton.variable} font-sans`}>
         <AuthProvider>
           <LocationProvider>
             <RoleRedirect>

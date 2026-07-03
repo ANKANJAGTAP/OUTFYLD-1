@@ -12,10 +12,8 @@ export const dynamic = 'force-dynamic';
  * Get count of turfs, bookings, and reservations for a specific owner
  * Used for testing cascade deletion
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { ownerId: string } }
-) {
+export async function GET(request: NextRequest, props: { params: Promise<{ ownerId: string }> }) {
+  const params = await props.params;
   try {
     const { ownerId } = params;
 

@@ -9,6 +9,18 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        // Night Match — display/ui/mono. `sans` is the app default (Geist).
+        sans: ['var(--font-geist)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        display: ['var(--font-anton)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        mono: ['var(--font-geist-mono)', 'ui-monospace', 'monospace'],
+      },
+      transitionTimingFunction: {
+        night: 'cubic-bezier(0.16, 1, 0.3, 1)',
+      },
+      boxShadow: {
+        flood: '0 0 40px -8px rgba(200,241,53,0.35)',
+      },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'gradient-conic':
@@ -20,6 +32,21 @@ const config: Config = {
         sm: 'calc(var(--radius) - 4px)',
       },
       colors: {
+        // Night Match palette — scoped tokens, distinct names so they don't collide with shadcn semantic vars
+        pitch: {
+          900: '#080B0A', // page base — near-black w/ green undertone
+          800: '#0E1512', // elevated sections
+          700: '#141E19', // cards / raised surfaces
+        },
+        pitchline: '#1F2D26', // 4° dividers, hairlines, borders
+        chalk: {
+          100: '#F3F7F1', // primary text (floodlight white)
+          400: '#9AA79F', // secondary text
+        },
+        flood: {
+          500: '#C8F135', // signature lime accent
+          600: '#A9D71F', // pressed / hover-dark
+        },
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         card: {

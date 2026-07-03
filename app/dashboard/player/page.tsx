@@ -258,16 +258,16 @@ function PlayerDashboard() {
   const [totalBookingsCount, setTotalBookingsCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  if (!user) return null;
-
   // ── Fetch data ──
   useEffect(() => {
+    if (!user) return;
+    const uid = user.uid;
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
         const [bookingsRes, loyaltyRes] = await Promise.all([
-          fetch(`/api/bookings/customer/${user.uid}?limit=5`),
-          fetch(`/api/loyalty/customer/${user.uid}`),
+          fetch(`/api/bookings/customer/${uid}?limit=5`),
+          fetch(`/api/loyalty/customer/${uid}`),
         ]);
 
         if (bookingsRes.ok) {
@@ -290,7 +290,7 @@ function PlayerDashboard() {
     };
 
     fetchDashboardData();
-  }, [user.uid]);
+  }, [user?.uid]);
 
   // ── Compute stats ──
   const stats = useMemo((): PlayerStats => {
@@ -365,6 +365,9 @@ function PlayerDashboard() {
       };
     });
   }, [bookings]);
+
+  // Guard after all hooks have run, to satisfy the Rules of Hooks
+  if (!user) return null;
 
   // ── Greeting ──
   const greeting = (() => {

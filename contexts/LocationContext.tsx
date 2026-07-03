@@ -27,6 +27,9 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
   const [permissionState, setPermissionState] = useState<PermissionState | null | string>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [storedDenied, setStoredDenied] = useState(false);
+  // Keep the denied banner off the initial-load / LCP critical path — it's an
+  // advisory, not urgent, so it fades in only after the page has settled.
+  const [bannerReady, setBannerReady] = useState(false);
 
   const checkPermission = useCallback(async () => {
     if (!navigator.permissions?.query) return null;
@@ -131,6 +134,8 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     setIsMounted(true);
+    // Defer the banner past the LCP window (and requestIdleCallback where available)
+    const t = setTimeout(() => setBannerReady(true), 5000);
     const deniedFlag = localStorage.getItem('locationPermissionDenied');
     if (deniedFlag === 'true') {
       setStoredDenied(true);
@@ -163,6 +168,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
         });
       }
     }
+    return () => clearTimeout(t);
   }, [requestLocation]);
 
   const isDenied = permissionState === 'denied' || error === 'Location permission denied.' || storedDenied;
@@ -171,8 +177,8 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
     <LocationContext.Provider value={{ location, error, loading, permissionState, isDenied, requestLocation }}>
       {children}
       
-      {/* Global floating banner */}
-      {isMounted && isDenied && (
+      {/* Global floating banner — deferred past initial load so it never gates LCP */}
+      {isMounted && bannerReady && isDenied && (
         <div
           className="fixed bottom-6 right-6 z-[2147483647] pointer-events-auto"
           aria-live="polite"

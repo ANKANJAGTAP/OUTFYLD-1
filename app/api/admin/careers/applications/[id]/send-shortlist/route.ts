@@ -52,10 +52,8 @@ async function verifyAdmin(request: NextRequest) {
  * POST /api/admin/careers/applications/[id]/send-shortlist
  * Send shortlist notification email (Stage 1 - without accept button)
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     // Ensure MongoDB connection
     await connectMongoDB();

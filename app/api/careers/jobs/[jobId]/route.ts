@@ -11,10 +11,8 @@ export const dynamic = 'force-dynamic';
  * GET /api/careers/jobs/[jobId]
  * Get a single job by ID
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { jobId: string } }
-) {
+export async function GET(request: NextRequest, props: { params: Promise<{ jobId: string }> }) {
+  const params = await props.params;
   try {
     // Connect to MongoDB first
     await connectMongoDB();
@@ -54,10 +52,8 @@ export async function GET(
  * PUT /api/careers/jobs/[jobId]
  * Update a job (admin only)
  */
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { jobId: string } }
-) {
+export async function PUT(request: NextRequest, props: { params: Promise<{ jobId: string }> }) {
+  const params = await props.params;
   try {
     // Connect to MongoDB first
     await connectMongoDB();
@@ -102,10 +98,8 @@ export async function PUT(
  * DELETE /api/careers/jobs/[jobId]
  * Delete a job (admin only)
  */
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { jobId: string } }
-) {
+export async function DELETE(request: NextRequest, props: { params: Promise<{ jobId: string }> }) {
+  const params = await props.params;
   try {
     // Connect to MongoDB first
     await connectMongoDB();

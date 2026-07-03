@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,9 +16,9 @@ import { Footer } from '@/components/landing/Footer';
 import Link from 'next/link';
 
 interface FeedbackPageProps {
-  params: {
+  params: Promise<{
     bookingId: string;
-  };
+  }>;
 }
 
 // ─── Rating Labels ───────────────────────────────────────────────────
@@ -31,7 +31,8 @@ const RATING_CONFIG: Record<number, { label: string; emoji: string; color: strin
   5: { label: 'Excellent', emoji: '🤩', color: 'text-emerald-600' },
 };
 
-export default function FeedbackPage({ params }: FeedbackPageProps) {
+export default function FeedbackPage(props: FeedbackPageProps) {
+  const params = use(props.params);
   const router = useRouter();
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);

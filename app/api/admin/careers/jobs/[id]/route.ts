@@ -57,10 +57,8 @@ async function verifyAdmin(request: NextRequest) {
  * GET /api/admin/careers/jobs/[id]
  * Get single job details (admin only)
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const authResult = await verifyAdmin(request);
     if (authResult.error) {
@@ -105,10 +103,8 @@ export async function GET(
  * PUT /api/admin/careers/jobs/[id]
  * Update a job posting (admin only)
  */
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PUT(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const authResult = await verifyAdmin(request);
     if (authResult.error) {
@@ -196,10 +192,8 @@ export async function PUT(
  * Delete a job posting (admin only)
  * NOTE: Does NOT delete resumes from Cloudinary (as per requirements)
  */
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const authResult = await verifyAdmin(request);
     if (authResult.error) {

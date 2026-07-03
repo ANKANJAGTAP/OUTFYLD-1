@@ -6,10 +6,8 @@ import User from '@/app/models/User'; // Needed for population
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { bookingId: string } }
-) {
+export async function GET(request: NextRequest, props: { params: Promise<{ bookingId: string }> }) {
+  const params = await props.params;
   try {
     await connectMongoDB();
 

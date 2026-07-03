@@ -59,10 +59,8 @@ async function verifyAdmin(request: NextRequest) {
  * GET /api/admin/careers/applications/[id]
  * Get single application details (admin only)
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const authResult = await verifyAdmin(request);
     if (authResult.error) {
@@ -103,10 +101,8 @@ export async function GET(
  * Update application status and notes (admin only)
  * If status changes to 'rejected', delete resume from Cloudinary
  */
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PUT(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const authResult = await verifyAdmin(request);
     if (authResult.error) {
@@ -193,10 +189,8 @@ export async function PUT(
  * DELETE /api/admin/careers/applications/[id]
  * Delete an application (admin only)
  */
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const authResult = await verifyAdmin(request);
     if (authResult.error) {
