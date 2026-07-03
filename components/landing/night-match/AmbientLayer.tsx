@@ -18,7 +18,7 @@ import { useEffect, useRef } from 'react';
  * the set pieces. prefers-reduced-motion: blobs hold still (see CSS);
  * the cursor glow is input-driven, not autonomous, so it stays.
  */
-export function AmbientLayer() {
+export function AmbientLayer({ intensity = 1 }: { intensity?: number }) {
   const glow = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -74,7 +74,11 @@ export function AmbientLayer() {
   }, []);
 
   return (
-    <div aria-hidden className="pointer-events-none fixed inset-0 z-[1] overflow-hidden">
+    <div
+      aria-hidden
+      className="pointer-events-none fixed inset-0 z-[1] overflow-hidden"
+      style={intensity !== 1 ? { opacity: intensity } : undefined}
+    >
       {/* slow ambient haze — blobs + one volumetric shaft */}
       <div className="nm-blob nm-blob-a" />
       <div className="nm-blob nm-blob-b" />

@@ -86,6 +86,84 @@ body::-webkit-scrollbar {
 }
 
 /* ============================================================
+   NIGHT MATCH — product-wide dark theme scope.
+   `html.night` (set by NightShell on player-side pages) remaps
+   every shadcn semantic var onto the Night Match tokens, so all
+   existing shadcn components — INCLUDING portaled dialogs,
+   dropdowns, popovers, calendars and toasts — inherit the dark
+   theme automatically. Owner/admin pages never get the class
+   and keep their current light theme.
+   ============================================================ */
+.night {
+  --background: 160 16% 4%; /* pitch-900 */
+  --foreground: 100 27% 96%; /* chalk-100 */
+  --card: 150 20% 10%; /* pitch-700 */
+  --card-foreground: 100 27% 96%;
+  --popover: 152 20% 8%;
+  --popover-foreground: 100 27% 96%;
+  --primary: 73 87% 58%; /* flood/lime-500 */
+  --primary-foreground: 160 16% 4%;
+  --secondary: 150 20% 10%;
+  --secondary-foreground: 100 27% 96%;
+  --muted: 150 18% 13%;
+  --muted-foreground: 143 8% 66%; /* chalk-400 (AA on pitch-700/800) */
+  --accent: 150 18% 13%;
+  --accent-foreground: 100 27% 96%;
+  --destructive: 0 45% 42%; /* desaturated night red */
+  --destructive-foreground: 100 27% 96%;
+  --border: 150 18% 15%; /* pitchline */
+  --input: 150 18% 15%;
+  --ring: 73 87% 58%; /* lime focus */
+  color-scheme: dark;
+}
+.night body {
+  background: #080b0a;
+  color: #f3f7f1;
+}
+/* floodlight focus — lime ring with a soft glow on every focusable field */
+.night :is(input, textarea, select, [role='combobox'], button):focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 1.5px rgba(200, 241, 53, 0.7), 0 0 24px -6px rgba(200, 241, 53, 0.35);
+}
+.night ::selection {
+  background: rgba(200, 241, 53, 0.28);
+  color: #f3f7f1;
+}
+/* skeletons read as dim lime scanline shimmer, not gray pulse */
+@keyframes nm-scanline {
+  from { background-position: -200% 0; }
+  to { background-position: 200% 0; }
+}
+.night .nm-skeleton,
+.night [data-slot='skeleton'] {
+  background: linear-gradient(
+      100deg,
+      rgba(200, 241, 53, 0) 30%,
+      rgba(200, 241, 53, 0.07) 50%,
+      rgba(200, 241, 53, 0) 70%
+    )
+    #101914;
+  background-size: 200% 100%;
+  animation: nm-scanline 1.6s linear infinite;
+  border-radius: 4px;
+}
+/* route enter — 150ms fade through dark, never a white flash */
+@keyframes nm-route-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.night .nm-route-in {
+  animation: nm-route-in 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .night .nm-route-in,
+  .night .nm-skeleton,
+  .night [data-slot='skeleton'] {
+    animation: none;
+  }
+}
+
+/* ============================================================
    NIGHT MATCH — Night Match design system (homepage-scoped)
    Fluid type scale, grain, floodlight motion, 4° pitch lines.
    All classes are opt-in — they do not affect shadcn surfaces.
