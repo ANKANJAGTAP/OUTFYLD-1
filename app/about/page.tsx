@@ -2,226 +2,71 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import {
-  Mail, Phone, MapPin, Users, Star, Clock, Activity,
-  Loader2, ChevronRight, ArrowRight, Sparkles, Target,
-  Zap, Shield, TrendingUp, MessageSquare, Building,
-  Quote, HelpCircle, CheckCircle2, Globe,
+  Mail, Phone, MapPin, Star, Activity, ArrowRight, Zap, Shield,
+  TrendingUp, Building, Globe, Plus,
 } from 'lucide-react';
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import { Footer } from '@/components/landing/Footer';
+import { NightShell } from '@/components/night/NightShell';
+import { Reveal } from '@/components/landing/night-match/Reveal';
+import { PitchDivider } from '@/components/landing/night-match/PitchDivider';
+import { CountUp } from '@/components/landing/night-match/CountUp';
 
-// ─── Stat Card ───────────────────────────────────────────────────────
+// ─── FAQ row — hairline-divided, mono numbering, lime + rotating to × ──
 
-function StatCard({
-  icon,
-  iconBg,
-  iconColor,
-  label,
-  value,
-  loading,
-}: {
-  icon: React.ReactNode;
-  iconBg: string;
-  iconColor: string;
-  label: string;
-  value: string | number | React.ReactNode;
-  loading?: boolean;
-}) {
-  return (
-    <div className="group bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:border-emerald-200 hover:shadow-lg hover:shadow-emerald-50 transition-all duration-300">
-      <div className="flex items-center gap-3 mb-3">
-        <div
-          className={`w-10 h-10 rounded-xl ${iconBg} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}
-        >
-          <div className={iconColor}>{icon}</div>
-        </div>
-      </div>
-      <div className="text-2xl font-bold text-gray-900">
-        {loading ? <Loader2 className="w-5 h-5 animate-spin text-emerald-500" /> : value}
-      </div>
-      <p className="text-xs text-gray-400 mt-1">{label}</p>
-    </div>
-  );
-}
-
-// ─── Feature Card ────────────────────────────────────────────────────
-
-function FeatureCard({
-  icon,
-  title,
-  description,
-  gradient,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  gradient: string;
-}) {
-  return (
-    <div className="group bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:border-emerald-200 hover:shadow-lg hover:shadow-emerald-50 transition-all duration-300">
-      <div className="flex items-start gap-4">
-        <div
-          className={`flex-shrink-0 w-11 h-11 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform duration-300`}
-        >
-          {icon}
-        </div>
-        <div>
-          <h4 className="font-semibold text-gray-900 text-[15px]">{title}</h4>
-          <p className="text-sm text-gray-500 mt-1 leading-relaxed">{description}</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Team Card ───────────────────────────────────────────────────────
-
-function TeamCard({
-  name,
-  role,
-  bio,
-  gradient,
-}: {
-  name: string;
-  role: string;
-  bio: string;
-  gradient: string;
-}) {
-  const initials = name.split(' ').map(n => n[0]).slice(0, 2).join('');
-
-  return (
-    <div className="group bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:border-emerald-200 hover:shadow-lg hover:shadow-emerald-50 transition-all duration-300 text-center">
-      <div
-        className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white text-lg font-bold shadow-lg mx-auto group-hover:scale-110 transition-transform duration-300`}
-      >
-        {initials}
-      </div>
-      <h4 className="font-semibold text-gray-900 text-[15px] mt-4">{name}</h4>
-      <p className="text-[11px] text-emerald-600 font-medium uppercase tracking-wider mt-1">
-        {role}
-      </p>
-      <p className="text-sm text-gray-500 mt-3 leading-relaxed">{bio}</p>
-    </div>
-  );
-}
-
-// ─── Testimonial Card ────────────────────────────────────────────────
-
-function TestimonialCard({
-  quote,
-  author,
-  role,
-  rating,
-}: {
-  quote: string;
-  author: string;
-  role?: string;
-  rating: number;
-}) {
-  return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:border-emerald-200 hover:shadow-lg hover:shadow-emerald-50 transition-all duration-300">
-      <div className="flex items-start gap-3 mb-4">
-        <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0">
-          <Quote className="h-4 w-4 text-emerald-600" />
-        </div>
-        <div className="flex items-center gap-1">
-          {[...Array(5)].map((_, i) => (
-            <Star
-              key={i}
-              className={`h-3.5 w-3.5 ${i < Math.floor(rating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-200'}`}
-            />
-          ))}
-          <span className="text-xs text-gray-400 ml-1">{rating}</span>
-        </div>
-      </div>
-      <p className="text-sm text-gray-600 leading-relaxed italic">&ldquo;{quote}&rdquo;</p>
-      <div className="mt-4 pt-4 border-t border-gray-50">
-        <p className="text-sm font-semibold text-gray-900">{author}</p>
-        {role && <p className="text-[11px] text-gray-400 mt-0.5">{role}</p>}
-      </div>
-    </div>
-  );
-}
-
-// ─── FAQ Card ────────────────────────────────────────────────────────
-
-function FAQCard({
-  question,
-  answer,
+function FaqRow({
   index,
+  q,
+  a,
+  open,
+  onToggle,
 }: {
-  question: string;
-  answer: string;
   index: number;
+  q: string;
+  a: string;
+  open: boolean;
+  onToggle: () => void;
 }) {
   return (
-    <div className="group bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:border-emerald-200 hover:shadow-lg hover:shadow-emerald-50 transition-all duration-300">
-      <div className="flex items-start gap-4">
-        <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 font-semibold text-sm group-hover:bg-emerald-100 transition-colors">
-          {index + 1}
-        </div>
-        <div>
-          <h4 className="font-semibold text-gray-900 text-[15px]">{question}</h4>
-          <p className="text-sm text-gray-500 mt-2 leading-relaxed">{answer}</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Contact Info Card ───────────────────────────────────────────────
-
-function ContactInfoCard({
-  icon,
-  iconBg,
-  iconColor,
-  label,
-  value,
-  href,
-}: {
-  icon: React.ReactNode;
-  iconBg: string;
-  iconColor: string;
-  label: string;
-  value: string;
-  href?: string;
-}) {
-  return (
-    <div className="flex items-center gap-4 p-4 rounded-xl hover:bg-gray-50 transition-all duration-200">
-      <div
-        className={`flex-shrink-0 w-11 h-11 rounded-xl ${iconBg} flex items-center justify-center`}
+    <div className="border-b border-pitchline/70">
+      <button
+        onClick={onToggle}
+        className="group flex w-full items-center gap-5 py-6 text-left"
+        aria-expanded={open}
       >
-        <div className={iconColor}>{icon}</div>
-      </div>
-      <div>
-        <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">
-          {label}
-        </p>
-        {href ? (
-          <a
-            href={href}
-            className="text-[15px] text-gray-900 font-medium hover:text-emerald-600 transition-colors mt-0.5 block"
-          >
-            {value}
-          </a>
-        ) : (
-          <p className="text-[15px] text-gray-900 font-medium mt-0.5">{value}</p>
-        )}
+        <span className="font-mono text-sm tabular-nums text-flood-500">
+          {String(index + 1).padStart(2, '0')}
+        </span>
+        <span className="flex-1 text-base text-chalk-100 transition-colors duration-200 ease-night group-hover:text-flood-500 sm:text-lg">
+          {q}
+        </span>
+        <Plus
+          className={`h-5 w-5 shrink-0 text-flood-500 transition-transform duration-300 ease-night ${
+            open ? 'rotate-45' : ''
+          }`}
+        />
+      </button>
+      {/* height ease via the grid-rows trick */}
+      <div
+        className={`grid transition-[grid-template-rows] duration-300 ease-night ${
+          open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+        }`}
+      >
+        <div className="overflow-hidden">
+          <p className="max-w-2xl pb-6 pl-10 text-sm leading-relaxed text-chalk-400">{a}</p>
+        </div>
       </div>
     </div>
   );
 }
 
-// ─── Main About Page ─────────────────────────────────────────────────
+// ─── Main About Page — THE CLUB MANIFESTO ────────────────────────────
 
 export default function AboutPage() {
-  // ── Auth state (no next-auth dependency) ──
   const [user, setUser] = useState<{ role?: string; name?: string } | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
 
   const [statsData, setStatsData] = useState({
     turfsListed: 0,
@@ -229,19 +74,14 @@ export default function AboutPage() {
     avgRating: '0',
     cities: 0,
   });
-  const [loading, setLoading] = useState(true);
 
-  // ── Check auth via API ──
   useEffect(() => {
     const checkAuth = async () => {
       try {
         const res = await fetch('/api/auth/me', { credentials: 'include' });
         const data = await res.json();
-        if (res.ok && data?.user) {
-          setUser(data.user);
-        } else {
-          setUser(null);
-        }
+        if (res.ok && data?.user) setUser(data.user);
+        else setUser(null);
       } catch {
         setUser(null);
       } finally {
@@ -251,7 +91,6 @@ export default function AboutPage() {
     checkAuth();
   }, []);
 
-  // ── Fetch stats ──
   useEffect(() => {
     const fetchStats = async () => {
       try {
@@ -267,8 +106,6 @@ export default function AboutPage() {
         }
       } catch (err) {
         console.error('Failed to fetch stats:', err);
-      } finally {
-        setLoading(false);
       }
     };
     fetchStats();
@@ -283,108 +120,47 @@ export default function AboutPage() {
     return '/dashboard';
   };
 
-  const stats = [
+  const ownerFeatures = [
     {
-      id: 1,
-      label: 'Turfs Listed',
-      value: statsData.turfsListed,
-      icon: <Building className="h-4 w-4" />,
-      iconBg: 'bg-emerald-50',
-      iconColor: 'text-emerald-600',
-    },
-    {
-      id: 2,
-      label: 'Bookings / Month',
-      value: statsData.bookingsThisMonth,
-      icon: <Activity className="h-4 w-4" />,
-      iconBg: 'bg-green-50',
-      iconColor: 'text-green-600',
-    },
-    {
-      id: 3,
-      label: 'Average Rating',
-      value: `${statsData.avgRating} ⭐`,
-      icon: <Star className="h-4 w-4" />,
-      iconBg: 'bg-yellow-50',
-      iconColor: 'text-yellow-600',
-    },
-    {
-      id: 4,
-      label: 'Cities Covered',
-      value: statsData.cities,
-      icon: <Globe className="h-4 w-4" />,
-      iconBg: 'bg-teal-50',
-      iconColor: 'text-teal-600',
-    },
-  ];
-
-  const features = [
-    {
-      id: 1,
-      title: 'Easy Booking',
+      title: 'Easy booking',
       desc: 'Find and reserve turf slots in seconds with smart availability and instant confirmation.',
-      icon: <Zap className="h-5 w-5" />,
-      gradient: 'from-emerald-500 to-green-600',
+      icon: <Zap className="h-4 w-4" />,
     },
     {
-      id: 2,
-      title: 'Owner Dashboard',
-      desc: 'Owners can manage arenas, view bookings, verify payments and export reports.',
-      icon: <Activity className="h-5 w-5" />,
-      gradient: 'from-green-500 to-teal-500',
+      title: 'Owner dashboard',
+      desc: 'Owners manage arenas, view bookings, verify payments and export reports.',
+      icon: <Activity className="h-4 w-4" />,
     },
     {
-      id: 3,
-      title: 'Secure Payments',
+      title: 'Secure payments',
       desc: 'Integrated payment gateways and optional manual proof upload for local transfers.',
-      icon: <Shield className="h-5 w-5" />,
-      gradient: 'from-teal-500 to-cyan-500',
+      icon: <Shield className="h-4 w-4" />,
     },
     {
-      id: 4,
-      title: 'Smart Pricing',
+      title: 'Smart pricing',
       desc: 'Set dynamic pricing, add buffers and manage peak-hour rates.',
-      icon: <TrendingUp className="h-5 w-5" />,
-      gradient: 'from-cyan-500 to-blue-500',
+      icon: <TrendingUp className="h-4 w-4" />,
     },
   ];
 
   const team = [
     {
-      id: 1,
       name: 'Ankan Jagtap',
       role: 'Founder & CTO',
-      bio: 'Full‑stack developer focused on reliable backend systems and simple UX.',
-      gradient: 'from-emerald-500 to-green-600',
+      bio: 'Full-stack developer focused on reliable backend systems and simple UX.',
+      no: '01',
     },
     {
-      id: 2,
       name: 'Naresh Adhe',
       role: 'Head of Operations',
       bio: 'Operations & partnerships — keeps turfs happy and schedules sane.',
-      gradient: 'from-green-500 to-teal-500',
+      no: '02',
     },
     {
-      id: 3,
       name: 'Hanamant Halsangi',
       role: 'Product Designer',
       bio: 'Designs pixel-perfect admin and player experiences.',
-      gradient: 'from-teal-500 to-cyan-500',
-    },
-  ];
-
-  const testimonials = [
-    {
-      quote: 'Found my regular spot in 2 minutes — booking is so simple and the owners respond fast. Highly recommend!',
-      author: 'S. Kulkarni',
-      role: 'Regular Player',
-      rating: 4.8,
-    },
-    {
-      quote: 'Managing multiple turfs used to be a nightmare. The owner dashboard saved us time and doubled our repeat bookings.',
-      author: 'R. Desai',
-      role: 'Arena Owner',
-      rating: 4.6,
+      no: '03',
     },
   ];
 
@@ -410,245 +186,202 @@ export default function AboutPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#fafbfc]">
+    <NightShell>
       <LandingHeader />
 
-      {/* ─────────── HERO BANNER ─────────── */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-600 via-green-600 to-teal-700" />
-        <div
-          className="absolute inset-0 opacity-10"
-          style={{
-            backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
-            backgroundSize: '24px 24px',
-          }}
-        />
-        <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3 blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-72 h-72 bg-emerald-400/10 rounded-full translate-y-1/2 -translate-x-1/4 blur-3xl" />
-
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-24 sm:pb-28 text-center">
-          <Badge className="bg-white/15 text-white border-white/20 hover:bg-white/20 text-[10px] mb-4">
-            <Sparkles className="h-3 w-3 mr-1" />
-            About OutFyld
-          </Badge>
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight">
-            We make playing together easy
+      {/* ── MANIFESTO OPENER — full-width Anton statement, asymmetric ── */}
+      <section className="nm-grain relative mx-auto max-w-7xl px-4 pb-14 pt-14 sm:px-6 sm:pt-20 lg:px-8">
+        <Reveal>
+          <p className="nm-overline mb-6 text-flood-500">The club manifesto</p>
+          <h1 className="nm-display-xl max-w-5xl text-chalk-100">
+            We make playing
+            <br />
+            together easy
           </h1>
-          <p className="text-emerald-200 text-base sm:text-lg mt-4 max-w-2xl mx-auto">
-            OutFyld helps players discover local arenas, book reliable slots, and lets turf owners manage availability and earnings with confidence.
+        </Reveal>
+        <Reveal delay={0.1} className="mt-8 lg:ml-[38%]">
+          <p className="nm-body-l max-w-xl text-chalk-400">
+            OutFyld helps players discover local arenas, book reliable slots, and lets turf
+            owners manage availability and earnings with confidence.
           </p>
+        </Reveal>
+      </section>
 
-          {/* ── Hero Buttons (auth-aware) ── */}
-          <div className="flex flex-col sm:flex-row gap-3 justify-center mt-8">
-            {authLoading ? (
-              <Button
-                size="lg"
-                disabled
-                className="bg-white/50 text-emerald-700 rounded-xl h-12 px-6 font-semibold"
-              >
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Loading...
-              </Button>
-            ) : isLoggedIn ? (
-              <Link href={getDashboardUrl()}>
-                <Button
-                  size="lg"
-                  className="bg-white text-emerald-700 hover:bg-emerald-50 rounded-xl h-12 px-6 font-semibold shadow-lg shadow-emerald-900/20 transition-all"
-                >
-                  Go to Dashboard
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
-              </Link>
-            ) : (
-              <Link href="/auth/register">
-                <Button
-                  size="lg"
-                  className="bg-white text-emerald-700 hover:bg-emerald-50 rounded-xl h-12 px-6 font-semibold shadow-lg shadow-emerald-900/20 transition-all"
-                >
-                  Get Started
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
-              </Link>
-            )}
+      <PitchDivider flag="right" />
 
-            <Link href="/contact">
-              <Button
-                size="lg"
-                variant="outline"
-                className="bg-white/10 border-white/20 text-white hover:bg-white/20 rounded-xl h-12 px-6 font-semibold backdrop-blur-sm transition-all"
-              >
-                Contact Sales
-              </Button>
-            </Link>
+      {/* ── SEASON SO FAR — scoreboard strip ── */}
+      <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+        <Reveal>
+          <p className="nm-overline mb-10 text-chalk-400">The season so far</p>
+        </Reveal>
+        <Reveal delay={0.08}>
+          <div className="grid grid-cols-2 gap-y-10 lg:grid-cols-4 lg:divide-x lg:divide-pitchline/70">
+            {[
+              { label: 'Turfs listed', value: statsData.turfsListed, icon: <Building className="h-3.5 w-3.5" /> },
+              { label: 'Bookings / month', value: statsData.bookingsThisMonth, icon: <Activity className="h-3.5 w-3.5" /> },
+              { label: 'Average rating', value: Number(statsData.avgRating), decimals: 1, icon: <Star className="h-3.5 w-3.5" /> },
+              { label: 'Cities covered', value: statsData.cities, icon: <Globe className="h-3.5 w-3.5" /> },
+            ].map((s, i) => (
+              <div key={s.label} className={i > 0 ? 'lg:pl-10' : ''}>
+                <div className="nm-scoreboard text-chalk-100">
+                  <CountUp value={s.value || 0} decimals={s.decimals || 0} />
+                </div>
+                <p className="mt-2 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-chalk-400">
+                  <span className="text-flood-500">{s.icon}</span>
+                  {s.label}
+                </p>
+              </div>
+            ))}
           </div>
-        </div>
-      </div>
+        </Reveal>
+      </section>
 
-      {/* ─────────── CONTENT ─────────── */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-12 relative z-10 pb-12">
-        {/* ── Stats Grid ── */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-          {stats.map((s) => (
-            <StatCard
-              key={s.id}
-              icon={s.icon}
-              iconBg={s.iconBg}
-              iconColor={s.iconColor}
-              label={s.label}
-              value={s.value}
-              loading={loading}
+      <PitchDivider flag="left" />
+
+      {/* ── MANIFESTO STATEMENTS — editorial, reversing reveals ── */}
+      <section className="mx-auto max-w-7xl space-y-20 px-4 py-20 sm:px-6 lg:px-8">
+        <Reveal>
+          <h2 className="nm-display-l max-w-4xl text-chalk-100">
+            Local pitches deserve <span className="text-flood-500">full fixtures</span>
+          </h2>
+          <p className="mt-6 max-w-xl text-sm leading-relaxed text-chalk-400">
+            Every empty slot on a good turf is a game that never happened. We connect the
+            players looking for a ground with the grounds looking for players.
+          </p>
+        </Reveal>
+        <Reveal className="lg:ml-[30%]">
+          <h2 className="nm-display-l max-w-4xl text-chalk-100">
+            Owners run grounds, <span className="text-flood-500">not spreadsheets</span>
+          </h2>
+          <div className="mt-8 max-w-2xl">
+            {ownerFeatures.map((f) => (
+              <div
+                key={f.title}
+                className="group flex items-start gap-4 border-b border-pitchline/70 py-5 transition-colors duration-200 ease-night last:border-0 hover:border-flood-500/40"
+              >
+                <span className="mt-0.5 text-flood-500">{f.icon}</span>
+                <div>
+                  <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-chalk-100">
+                    {f.title}
+                  </p>
+                  <p className="mt-1 text-sm text-chalk-400">{f.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Reveal>
+      </section>
+
+      <PitchDivider flag="right" />
+
+      {/* ── THE SQUAD — player cards ── */}
+      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+        <Reveal>
+          <p className="nm-overline mb-3 text-flood-500">The squad</p>
+          <h2 className="nm-display-l text-chalk-100">Small team, full press</h2>
+        </Reveal>
+        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {team.map((m, i) => {
+            const initials = m.name.split(' ').map((n) => n[0]).slice(0, 2).join('');
+            return (
+              <Reveal key={m.name} delay={i * 0.06}>
+                <div className="group relative overflow-hidden rounded-[4px] border border-pitchline bg-pitch-700/90 p-6 transition-[border-color,box-shadow] duration-300 ease-night hover:border-flood-500/50 hover:shadow-flood">
+                  {/* jersey number */}
+                  <span className="pointer-events-none absolute -right-2 -top-6 font-display text-[7rem] leading-none text-chalk-100/[0.05] transition-colors duration-300 ease-night group-hover:text-flood-500/10">
+                    {m.no}
+                  </span>
+                  <span className="font-display text-6xl uppercase leading-none text-chalk-100">
+                    {initials}
+                  </span>
+                  <p className="mt-5 font-display text-2xl uppercase tracking-tight text-chalk-100">
+                    {m.name}
+                  </p>
+                  <p className="nm-overline mt-1.5 text-flood-500">{m.role}</p>
+                  <p className="mt-4 text-sm leading-relaxed text-chalk-400">{m.bio}</p>
+                </div>
+              </Reveal>
+            );
+          })}
+        </div>
+      </section>
+
+      <PitchDivider flag="left" />
+
+      {/* ── FAQ — hairline ledger with mono numbering ── */}
+      <section className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
+        <Reveal>
+          <p className="nm-overline mb-3 text-flood-500">From the stands</p>
+          <h2 className="nm-display-l text-chalk-100">Questions, answered</h2>
+        </Reveal>
+        <div className="mt-10">
+          {faqs.map((f, i) => (
+            <FaqRow
+              key={i}
+              index={i}
+              q={f.q}
+              a={f.a}
+              open={openFaq === i}
+              onToggle={() => setOpenFaq(openFaq === i ? null : i)}
             />
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* ── LEFT: Main Content ── */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Features Section */}
-            <div>
-              <div className="flex items-center gap-3 mb-4 px-1">
-                <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center">
-                  <Zap className="h-4 w-4 text-emerald-600" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900">What we offer</h3>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {features.map((f) => (
-                  <FeatureCard
-                    key={f.id}
-                    icon={f.icon}
-                    title={f.title}
-                    description={f.desc}
-                    gradient={f.gradient}
-                  />
-                ))}
-              </div>
+        {/* contact rows */}
+        <div className="mt-14 grid gap-x-8 gap-y-4 sm:grid-cols-3">
+          {[
+            { icon: <Mail className="h-3.5 w-3.5" />, label: 'Email', value: company.email, href: `mailto:${company.email}` },
+            { icon: <Phone className="h-3.5 w-3.5" />, label: 'Phone', value: company.phone, href: `tel:${company.phone.replace(/\s/g, '')}` },
+            { icon: <MapPin className="h-3.5 w-3.5" />, label: 'HQ', value: company.address },
+          ].map((c) => (
+            <div key={c.label} className="border-t border-pitchline pt-4">
+              <p className="nm-overline flex items-center gap-2 text-chalk-400">
+                <span className="text-flood-500">{c.icon}</span>
+                {c.label}
+              </p>
+              {c.href ? (
+                <a
+                  href={c.href}
+                  className="mt-1.5 block font-mono text-sm text-chalk-100 transition-colors hover:text-flood-500"
+                >
+                  {c.value}
+                </a>
+              ) : (
+                <p className="mt-1.5 font-mono text-sm text-chalk-100">{c.value}</p>
+              )}
             </div>
-
-            {/* Team Section */}
-            <div>
-              <div className="flex items-center gap-3 mb-4 px-1">
-                <div className="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center">
-                  <Users className="h-4 w-4 text-green-600" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900">Meet the team</h3>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {team.map((member) => (
-                  <TeamCard key={member.id} {...member} />
-                ))}
-              </div>
-            </div>
-
-            {/* Testimonials Section */}
-            <div>
-              <div className="flex items-center gap-3 mb-4 px-1">
-                <div className="w-9 h-9 rounded-xl bg-yellow-50 flex items-center justify-center">
-                  <Star className="h-4 w-4 text-yellow-600" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900">What users say</h3>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {testimonials.map((t, i) => (
-                  <TestimonialCard key={i} {...t} />
-                ))}
-              </div>
-            </div>
-
-            {/* FAQ Section */}
-            <div>
-              <div className="flex items-center gap-3 mb-4 px-1">
-                <div className="w-9 h-9 rounded-xl bg-teal-50 flex items-center justify-center">
-                  <HelpCircle className="h-4 w-4 text-teal-600" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900">Frequently asked</h3>
-              </div>
-              <div className="space-y-4">
-                {faqs.map((f, i) => (
-                  <FAQCard key={i} question={f.q} answer={f.a} index={i} />
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* ── RIGHT: Sidebar ── */}
-          <div className="space-y-5">
-            {/* Mission Card */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-xl shadow-gray-200/50 overflow-hidden">
-              <div className="px-6 py-5 border-b border-gray-50 flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center">
-                  <Target className="h-4 w-4 text-emerald-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 text-[15px]">Our Mission</h3>
-                  <p className="text-xs text-gray-400 mt-0.5">Make local sports accessible</p>
-                </div>
-              </div>
-              <div className="p-5">
-                <p className="text-sm text-gray-600 leading-relaxed mb-5">
-                  We believe in creating a simple platform where players find great places to play, and owners can grow their business without the headache of manual bookings and calls.
-                </p>
-                <div className="space-y-3">
-                  {[
-                    { icon: <Users className="h-4 w-4" />, text: 'Community-first approach' },
-                    { icon: <Activity className="h-4 w-4" />, text: 'Fast & dependable booking' },
-                    { icon: <Clock className="h-4 w-4" />, text: '24/7 support for owners' },
-                  ].map((item, i) => (
-                    <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-emerald-50/50">
-                      <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600">
-                        {item.icon}
-                      </div>
-                      <span className="text-sm font-medium text-gray-700">{item.text}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Contact Card */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-              <div className="px-6 py-5 border-b border-gray-50 flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-teal-50 flex items-center justify-center">
-                  <MessageSquare className="h-4 w-4 text-teal-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 text-[15px]">Contact us</h3>
-                  <p className="text-xs text-gray-400 mt-0.5">We&apos;re here to help</p>
-                </div>
-              </div>
-              <div className="p-3">
-                <ContactInfoCard
-                  icon={<Mail className="h-4 w-4" />}
-                  iconBg="bg-emerald-50"
-                  iconColor="text-emerald-600"
-                  label="Email"
-                  value={company.email}
-                  href={`mailto:${company.email}`}
-                />
-                <Separator className="my-1" />
-                <ContactInfoCard
-                  icon={<Phone className="h-4 w-4" />}
-                  iconBg="bg-green-50"
-                  iconColor="text-green-600"
-                  label="Phone"
-                  value={company.phone}
-                  href={`tel:${company.phone}`}
-                />
-                <Separator className="my-1" />
-                <ContactInfoCard
-                  icon={<MapPin className="h-4 w-4" />}
-                  iconBg="bg-teal-50"
-                  iconColor="text-teal-600"
-                  label="Office"
-                  value={company.address}
-                />
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
-      </div>
+      </section>
+
+      <PitchDivider flag="right" />
+
+      {/* ── CTA — one lime action ── */}
+      <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+        <Reveal>
+          <h2 className="nm-display-xl max-w-3xl text-chalk-100">Join the club</h2>
+          <p className="mt-5 max-w-lg text-sm text-chalk-400">
+            Whether you&apos;re chasing a Tuesday-night five-a-side or filling your ground&apos;s
+            empty hours — kick off here.
+          </p>
+          <div className="mt-9 flex flex-wrap gap-4">
+            <Link
+              href={isLoggedIn ? getDashboardUrl() : '/auth/register'}
+              className="nm-overline nm-flood-glow inline-flex items-center gap-2 rounded-[4px] bg-flood-500 px-8 py-4 text-pitch-900 transition-transform duration-300 ease-night hover:scale-[1.02]"
+            >
+              {isLoggedIn ? 'Open dashboard' : 'Sign up free'}
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link
+              href="/browse"
+              className="nm-overline inline-flex items-center rounded-[4px] border border-chalk-400/30 px-8 py-4 text-chalk-100 transition-colors duration-300 ease-night hover:border-flood-500 hover:text-flood-500"
+            >
+              Browse arenas
+            </Link>
+          </div>
+        </Reveal>
+      </section>
 
       <Footer />
-    </div>
+    </NightShell>
   );
 }
