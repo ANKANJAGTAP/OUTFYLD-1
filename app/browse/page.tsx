@@ -2,13 +2,14 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { BrowseHeader } from "@/components/browse/BrowseHeader";
+import { LandingHeader } from "@/components/landing/LandingHeader";
 import { FilterSidebar } from "@/components/browse/FilterSidebar";
 import TurfGrid from "@/components/browse/TurfGrid";
 import { Footer } from "@/components/landing/Footer";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { NightShell } from "@/components/night/NightShell";
+import { SquadSelector } from "@/components/night/SquadSelector";
+import { OdometerText } from "@/components/night/OdometerText";
+import { PitchDivider } from "@/components/landing/night-match/PitchDivider";
 import {
   Select,
   SelectContent,
@@ -18,12 +19,10 @@ import {
 } from "@/components/ui/select";
 import {
   Search,
-  MapPin,
   Loader2,
   X,
   SlidersHorizontal,
   ArrowUpDown,
-  Compass,
   AlertTriangle,
   CheckCircle2,
 } from "lucide-react";
@@ -133,62 +132,48 @@ function BrowsePageInner() {
     filters.priceRange[0] !== 0 || filters.priceRange[1] !== 10000,
   ].filter(Boolean).length;
 
+  const resetAll = () => {
+    setFilters({ location: "", sport: "", priceRange: [0, 10000], rating: 0, amenities: [] });
+    setSearchQuery("");
+  };
+
+  const liveCount = browseData?.pagination.totalItems || 0;
+
   return (
-    <div className="min-h-screen bg-[#fafbfc]">
-      <BrowseHeader />
+    <NightShell>
+      <LandingHeader />
 
-      {/* ─────────── HERO STRIP ─────────── */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-600 via-green-600 to-teal-700" />
-        <div
-          className="absolute inset-0 opacity-10"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle at 2px 2px, white 1px, transparent 0)",
-            backgroundSize: "24px 24px",
-          }}
-        />
-        <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3 blur-3xl" />
-
-        <div className="relative max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <Badge className="bg-white/15 text-white border-white/20 hover:bg-white/20 text-[10px] mb-3">
-                <Compass className="h-3 w-3 mr-1" />
-                Discover Arenas
-              </Badge>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-                Browse Arenas
-              </h1>
-              <p className="text-emerald-200 text-sm mt-1">
-                <span className="text-white font-semibold">
-                  {browseData?.pagination.totalItems || 0}
-                </span>{" "}
-                arenas available near you
-              </p>
-            </div>
-          </div>
-        </div>
+      {/* ─────────── FIXTURE LIST HEADER ─────────── */}
+      <div className="mx-auto max-w-[1600px] px-4 pb-2 pt-10 sm:px-6 sm:pt-14 lg:px-8">
+        <p className="nm-overline mb-4 flex items-center gap-2.5 text-chalk-400">
+          <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-flood-500 shadow-flood" />
+          <span className="text-flood-500">
+            <OdometerText value={liveCount} /> turfs live
+          </span>
+          · Tonight&apos;s listings
+        </p>
+        <h1 className="nm-display-xl text-chalk-100">Find your pitch</h1>
       </div>
 
-      {/* ─────────── MAIN CONTENT ─────────── */}
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 -mt-6 relative z-10 pb-12">
+      <PitchDivider flag="right" />
+
+      <div className="relative mx-auto max-w-[1600px] px-4 pb-16 sm:px-6 lg:px-8">
         {/* ── Sticky Search + Sort Bar ── */}
-        <div className="sticky top-[72px] lg:top-[80px] z-30 bg-white rounded-2xl border border-gray-100 shadow-xl shadow-gray-200/50 px-4 sm:px-6 py-4 mb-6 transition-all">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="sticky top-[64px] z-30 mb-6 rounded-[4px] border border-pitchline bg-pitch-800/90 px-4 py-4 backdrop-blur-md sm:px-6 lg:top-[72px]">
+          <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
             {/* Search */}
             <div className="relative w-full md:w-80">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Search arenas, locations..."
+              <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-chalk-400/60" />
+              <input
+                placeholder="Search arenas, locations…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-11 w-full rounded-xl border-gray-200 bg-gray-50/50 text-sm focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100 transition-all"
+                className="h-11 w-full rounded-[4px] border border-pitchline bg-pitch-900/60 pl-10 pr-9 text-sm text-chalk-100 outline-none transition-[border-color] duration-200 ease-night placeholder:text-chalk-400/50 focus:border-flood-500/60"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500 transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-chalk-400/60 transition-colors hover:text-chalk-100"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -196,82 +181,64 @@ function BrowsePageInner() {
             </div>
 
             {/* Sort */}
-            <div className="flex items-center gap-3 w-full md:w-auto">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
-                  <ArrowUpDown className="h-3.5 w-3.5 text-emerald-600" />
-                </div>
-                <span className="text-xs font-medium text-gray-400 uppercase tracking-wider hidden sm:block">
-                  Sort
-                </span>
-              </div>
+            <div className="flex w-full items-center gap-3 md:w-auto">
+              <span className="hidden items-center gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-chalk-400 sm:flex">
+                <ArrowUpDown className="h-3.5 w-3.5 text-flood-500" />
+                Sort
+              </span>
               <Select value={sortBy} onValueChange={handleSortChange}>
-                <SelectTrigger className="w-full sm:w-52 h-11 rounded-xl bg-gray-50/50 border-gray-200 font-medium text-gray-700 text-sm focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100">
+                <SelectTrigger className="h-11 w-full rounded-[4px] border-pitchline bg-pitch-900/60 font-mono text-xs uppercase tracking-[0.12em] text-chalk-100 sm:w-52">
                   <SelectValue placeholder="Sort" />
                 </SelectTrigger>
-                <SelectContent className="rounded-xl border-gray-200">
-                  <SelectItem value="distance">📍 Nearest</SelectItem>
-                  <SelectItem value="newest">🆕 Newest</SelectItem>
-                  <SelectItem value="popularity">🔥 Popular</SelectItem>
-                  <SelectItem value="rating">⭐ Highest Rated</SelectItem>
-                  <SelectItem value="price-low">
-                    💰 Price: Low → High
-                  </SelectItem>
-                  <SelectItem value="price-high">
-                    💎 Price: High → Low
-                  </SelectItem>
+                <SelectContent className="rounded-[4px] border-pitchline font-mono text-xs uppercase tracking-[0.1em]">
+                  <SelectItem value="distance">Nearest</SelectItem>
+                  <SelectItem value="newest">Newest</SelectItem>
+                  <SelectItem value="popularity">Popular</SelectItem>
+                  <SelectItem value="rating">Highest rated</SelectItem>
+                  <SelectItem value="price-low">Price: low → high</SelectItem>
+                  <SelectItem value="price-high">Price: high → low</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
         </div>
 
-        {/* ── Location Status Banner ── */}
+        {/* ── Location Status ── */}
         {sortBy === "distance" && (
           <div className="mb-5">
             {locationLoading && (
-              <div className="flex items-center gap-3 bg-white rounded-xl border border-emerald-100 shadow-sm px-4 py-3">
-                <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
-                  <Loader2 className="h-4 w-4 text-emerald-600 animate-spin" />
-                </div>
+              <div className="flex items-center gap-3 rounded-[4px] border border-pitchline bg-pitch-700/80 px-4 py-3">
+                <Loader2 className="h-4 w-4 animate-spin text-flood-500" />
                 <div>
-                  <p className="text-sm font-medium text-gray-700">
-                    Getting your location...
-                  </p>
-                  <p className="text-[11px] text-gray-400">
-                    This helps show turfs nearest to you
+                  <p className="text-sm text-chalk-100">Getting your location…</p>
+                  <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-chalk-400">
+                    Shows turfs nearest to you
                   </p>
                 </div>
               </div>
             )}
 
             {isLocationDenied && (
-              <div className="flex items-center justify-between bg-white rounded-xl border border-red-100 shadow-sm px-4 py-3">
+              <div className="flex items-center justify-between rounded-[4px] border border-red-900/60 bg-pitch-700/80 px-4 py-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center">
-                    <AlertTriangle className="h-4 w-4 text-red-500" />
-                  </div>
+                  <AlertTriangle className="h-4 w-4 text-red-400" />
                   <div>
-                    <p className="text-sm font-medium text-gray-700">
-                      Location access denied
-                    </p>
-                    <p className="text-[11px] text-gray-400">
-                      Enable location to sort by nearest arenas
+                    <p className="text-sm text-chalk-100">Location access denied</p>
+                    <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-chalk-400">
+                      Enable location to sort by nearest
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button
+                  <button
                     onClick={requestLocation}
-                    size="sm"
-                    variant="outline"
-                    className="rounded-lg h-8 text-xs border-red-200 text-red-600 hover:bg-red-50"
+                    className="rounded-[4px] border border-chalk-400/30 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-chalk-100 transition-colors duration-200 ease-night hover:border-flood-500 hover:text-flood-500"
                   >
                     Retry
-                  </Button>
+                  </button>
                   <button
                     onClick={() => setSortBy("newest")}
-                    className="text-gray-300 hover:text-gray-500 transition-colors p-1"
+                    className="p-1 text-chalk-400/60 transition-colors hover:text-chalk-100"
                     title="Dismiss"
                   >
                     <X className="h-4 w-4" />
@@ -280,75 +247,44 @@ function BrowsePageInner() {
               </div>
             )}
 
-            {userLocation &&
-              !locationLoading &&
-              !isLocationDenied &&
-              !locationError && (
-                <div className="flex items-center gap-3 bg-white rounded-xl border border-emerald-100 shadow-sm px-4 py-3">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-700">
-                      Showing arenas nearest to your location
-                    </p>
-                    <p className="text-[11px] text-gray-400">
-                      Results are sorted by distance from you
-                    </p>
-                  </div>
+            {userLocation && !locationLoading && !isLocationDenied && !locationError && (
+              <div className="flex items-center gap-3 rounded-[4px] border border-pitchline bg-pitch-700/80 px-4 py-3">
+                <CheckCircle2 className="h-4 w-4 text-flood-500" />
+                <div>
+                  <p className="text-sm text-chalk-100">Showing arenas nearest to you</p>
+                  <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-chalk-400">
+                    Sorted by distance
+                  </p>
                 </div>
-              )}
+              </div>
+            )}
           </div>
         )}
 
-        {/* ── Sport Filter Chips ── */}
-        <div className="flex overflow-x-auto gap-2 mb-6 pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-          {SPORT_CHIPS.map((sport) => {
-            const isSelected = filters.sport === (sport === "All" ? "" : sport);
-            return (
-              <button
-                key={sport}
-                onClick={() =>
-                  setFilters({
-                    ...filters,
-                    sport: sport === "All" ? "" : sport,
-                  })
-                }
-                className={`px-4 py-2.5 rounded-xl whitespace-nowrap text-sm font-medium transition-all duration-200 ${
-                  isSelected
-                    ? "bg-emerald-600 text-white shadow-lg shadow-emerald-200"
-                    : "bg-white text-gray-600 hover:bg-emerald-50 hover:text-emerald-700 border border-gray-100 hover:border-emerald-200"
-                }`}
-              >
-                {sport}
-              </button>
-            );
-          })}
-        </div>
+        {/* ── SQUAD SELECTOR — sport tabs with sliding lime underline ── */}
+        <SquadSelector
+          className="mb-8"
+          options={SPORT_CHIPS.map((s) => ({ label: s, value: s === "All" ? "" : s }))}
+          value={filters.sport}
+          onChange={(v) => setFilters({ ...filters, sport: v })}
+        />
 
         {/* ── Grid Layout: Sidebar + Turfs ── */}
-        <div className="grid lg:grid-cols-4 gap-6 lg:gap-8 relative min-h-[calc(100vh-200px)]">
+        <div className="relative grid min-h-[calc(100vh-200px)] gap-6 lg:grid-cols-4 lg:gap-8">
           {/* Sidebar */}
-          <div className="lg:col-span-1 self-start sticky top-[160px] max-h-[calc(100vh-180px)] overflow-y-auto [&::-webkit-scrollbar]:hidden pb-4">
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-              <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
-                    <SlidersHorizontal className="h-4 w-4 text-emerald-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900 text-sm">
-                      Filters
-                    </h3>
-                    <p className="text-[11px] text-gray-400">
-                      Refine your search
-                    </p>
-                  </div>
+          <div className="sticky top-[150px] max-h-[calc(100vh-170px)] self-start overflow-y-auto pb-4 lg:col-span-1 [&::-webkit-scrollbar]:hidden">
+            <div className="overflow-hidden rounded-[4px] border border-pitchline bg-pitch-700/80">
+              <div className="flex items-center justify-between border-b border-pitchline/60 px-5 py-4">
+                <div className="flex items-center gap-2.5">
+                  <SlidersHorizontal className="h-4 w-4 text-flood-500" />
+                  <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-chalk-100">
+                    Filters
+                  </span>
                 </div>
                 {activeFilterCount > 0 && (
-                  <Badge className="bg-emerald-100 text-emerald-700 border-0 text-[10px] h-5">
+                  <span className="rounded-[3px] border border-flood-500/40 px-1.5 font-mono text-[10px] leading-5 text-flood-500">
                     {activeFilterCount}
-                  </Badge>
+                  </span>
                 )}
               </div>
               <div className="p-4">
@@ -357,16 +293,14 @@ function BrowsePageInner() {
                   onFiltersChange={setFilters}
                   availableCities={browseData?.filters.cities || []}
                   availableSports={browseData?.filters.sports || []}
-                  priceRange={
-                    browseData?.filters.priceRange || { min: 0, max: 10000 }
-                  }
+                  priceRange={browseData?.filters.priceRange || { min: 0, max: 10000 }}
                 />
               </div>
             </div>
           </div>
 
           {/* Turf Grid */}
-          <div className="lg:col-span-3 min-w-0 pb-10">
+          <div className="min-w-0 pb-10 lg:col-span-3">
             <TurfGrid
               searchQuery={searchQuery}
               selectedSports={filters.sport ? [filters.sport] : []}
@@ -380,12 +314,13 @@ function BrowsePageInner() {
               availableCities={browseData?.filters.cities || []}
               availableSports={browseData?.filters.sports || []}
               onDataLoad={setBrowseData}
+              onReset={resetAll}
             />
           </div>
         </div>
       </div>
 
       <Footer />
-    </div>
+    </NightShell>
   );
 }

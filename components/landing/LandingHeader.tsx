@@ -26,6 +26,9 @@ export function LandingHeader() {
   const router = useRouter();
   const pathname = usePathname();
   const isHome = pathname === '/';
+  // Night Match routes share the dark floodlit header treatment
+  const NIGHT_ROUTES = ['/', '/browse', '/about', '/contact'];
+  const isNight = NIGHT_ROUTES.includes(pathname);
 
   // Handle scroll to change header background on home page
   useEffect(() => {
@@ -51,13 +54,24 @@ export function LandingHeader() {
           ? 'bg-pitch-900/90 backdrop-blur-md border-b border-pitchline'
           : 'bg-gradient-to-b from-black/70 to-transparent border-transparent'
       }`
-    : 'sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-green-100 shadow-sm';
+    : isNight
+      ? 'sticky top-0 z-50 bg-pitch-900/90 backdrop-blur-md border-b border-pitchline'
+      : 'sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-green-100 shadow-sm';
 
-  const textClasses = isHome ? 'text-chalk-100 hover:text-flood-500' : 'text-gray-700 hover:text-green-600';
-  const logoTextClasses = isHome ? 'text-chalk-100' : 'text-green-600';
-  const userTextClasses = isHome ? 'text-chalk-100' : 'text-gray-900';
-  const iconClasses = isHome ? 'text-chalk-400' : 'text-gray-500';
-  const buttonVariant = isHome ? 'secondary' : 'outline';
+  const textClasses = isNight ? 'text-chalk-100 hover:text-flood-500' : 'text-gray-700 hover:text-green-600';
+  const logoTextClasses = isNight ? 'text-chalk-100' : 'text-green-600';
+  const userTextClasses = isNight ? 'text-chalk-100' : 'text-gray-900';
+  const iconClasses = isNight ? 'text-chalk-400' : 'text-gray-500';
+  const buttonVariant = isNight ? 'secondary' : 'outline';
+  const mobileLinkCls = isNight
+    ? 'text-chalk-100 hover:text-flood-500 hover:bg-white/5 transition-all px-4 py-2 rounded-md'
+    : 'text-gray-700 hover:text-green-600 hover:bg-green-50 transition-all px-4 py-2 rounded-md';
+  const mobileItemCls = isNight
+    ? 'w-full justify-start h-12 text-base font-medium transition-colors text-chalk-100 hover:bg-white/5 hover:text-flood-500'
+    : 'w-full justify-start h-12 text-base font-medium transition-colors hover:bg-green-50 hover:text-green-700';
+  const ddItemCls = isNight
+    ? 'cursor-pointer rounded-lg px-3 py-2.5 transition-colors focus:bg-white/5 focus:text-flood-500'
+    : 'cursor-pointer rounded-lg px-3 py-2.5 transition-colors focus:bg-green-50 focus:text-green-700';
 
   return (
     <header className={headerClasses}>
@@ -71,7 +85,7 @@ export function LandingHeader() {
                 width={48}
                 height={48}
                 priority
-                className={`h-10 w-10 md:h-12 md:w-12 object-contain ${isHome ? 'brightness-0 invert' : ''}`}
+                className={`h-10 w-10 md:h-12 md:w-12 object-contain ${isNight ? 'brightness-0 invert' : ''}`}
               />
             </div>
             <div>
@@ -124,17 +138,17 @@ export function LandingHeader() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent 
                     align="end" 
-                    className="w-64 p-2 rounded-xl shadow-lg border-gray-100"
+                    className={`w-64 p-2 rounded-xl shadow-lg ${isNight ? 'border-pitchline' : 'border-gray-100'}`}
                     onMouseEnter={handleMouseEnter}
                     onMouseLeave={handleMouseLeave}
                   >
-                    <DropdownMenuLabel className="font-semibold text-gray-900 px-3 py-2">My Account</DropdownMenuLabel>
+                    <DropdownMenuLabel className={`font-semibold px-3 py-2 ${isNight ? 'text-chalk-100' : 'text-gray-900'}`}>My Account</DropdownMenuLabel>
                     <DropdownMenuSeparator className="my-1" />
                     
                     {user.role === 'admin' && (
                       <DropdownMenuItem 
                         onClick={() => router.push('/admin/dashboard')}
-                        className="cursor-pointer rounded-lg px-3 py-2.5 transition-colors focus:bg-green-50 focus:text-green-700"
+                        className={ddItemCls}
                       >
                         <Shield className="mr-3 h-5 w-5" />
                         <span className="text-base">Admin Dashboard</span>
@@ -145,28 +159,28 @@ export function LandingHeader() {
                       <>
                         <DropdownMenuItem 
                           onClick={() => router.push('/owner/dashboard')}
-                          className="cursor-pointer rounded-lg px-3 py-2.5 transition-colors focus:bg-green-50 focus:text-green-700"
+                          className={ddItemCls}
                         >
                           <MapPin className="mr-3 h-5 w-5" />
                           <span className="text-base">Owner Dashboard</span>
                         </DropdownMenuItem>
                         <DropdownMenuItem 
                           onClick={() => router.push('/owner/profile')}
-                          className="cursor-pointer rounded-lg px-3 py-2.5 transition-colors focus:bg-green-50 focus:text-green-700"
+                          className={ddItemCls}
                         >
                           <User className="mr-3 h-5 w-5" />
                           <span className="text-base">My Profile</span>
                         </DropdownMenuItem>
                         <DropdownMenuItem 
                           onClick={() => router.push('/owner/bank-details')}
-                          className="cursor-pointer rounded-lg px-3 py-2.5 transition-colors focus:bg-green-50 focus:text-green-700"
+                          className={ddItemCls}
                         >
                           <FileText className="mr-3 h-5 w-5" />
                           <span className="text-base">Payment Details</span>
                         </DropdownMenuItem>
                         <DropdownMenuItem 
                           onClick={() => router.push('/owner/analytics')}
-                          className="cursor-pointer rounded-lg px-3 py-2.5 transition-colors focus:bg-green-50 focus:text-green-700"
+                          className={ddItemCls}
                         >
                           <ListOrdered className="mr-3 h-5 w-5" />
                           <span className="text-base">Analytics</span>
@@ -178,28 +192,28 @@ export function LandingHeader() {
                       <>
                         <DropdownMenuItem 
                           onClick={() => router.push('/dashboard/player')}
-                          className="cursor-pointer rounded-lg px-3 py-2.5 transition-colors focus:bg-green-50 focus:text-green-700"
+                          className={ddItemCls}
                         >
                           <ListOrdered className="mr-3 h-5 w-5" />
                           <span className="text-base">Player Dashboard</span>
                         </DropdownMenuItem>
                         <DropdownMenuItem 
                           onClick={() => router.push('/dashboard/player/profile')}
-                          className="cursor-pointer rounded-lg px-3 py-2.5 transition-colors focus:bg-green-50 focus:text-green-700"
+                          className={ddItemCls}
                         >
                           <User className="mr-3 h-5 w-5" />
                           <span className="text-base">My Profile</span>
                         </DropdownMenuItem>
                         <DropdownMenuItem 
                           onClick={() => router.push('/dashboard/player/bookings')}
-                          className="cursor-pointer rounded-lg px-3 py-2.5 transition-colors focus:bg-green-50 focus:text-green-700"
+                          className={ddItemCls}
                         >
                           <FileText className="mr-3 h-5 w-5" />
                           <span className="text-base">Booking History</span>
                         </DropdownMenuItem>
                         <DropdownMenuItem 
                           onClick={() => router.push('/dashboard/player/loyalty')}
-                          className="cursor-pointer rounded-lg px-3 py-2.5 transition-colors focus:bg-green-50 focus:text-green-700"
+                          className={ddItemCls}
                         >
                           <Award className="mr-3 h-5 w-5" />
                           <span className="text-base">Loyalty Points</span>
@@ -223,12 +237,12 @@ export function LandingHeader() {
               // User is not logged in
               <>
                 <Link href="/auth/login">
-                  <Button variant={buttonVariant as any} size="sm" className={`text-xs ${isHome ? 'bg-transparent border border-chalk-400/30 text-chalk-100 hover:border-flood-500 hover:text-flood-500 hover:bg-transparent' : ''}`}>
+                  <Button variant={buttonVariant as any} size="sm" className={`text-xs ${isNight ? 'bg-transparent border border-chalk-400/30 text-chalk-100 hover:border-flood-500 hover:text-flood-500 hover:bg-transparent' : ''}`}>
                     Login
                   </Button>
                 </Link>
                 <Link href="/auth/register">
-                  <Button size="sm" className={`text-xs ${isHome ? 'bg-flood-500 text-pitch-900 hover:bg-flood-600 font-semibold' : 'bg-green-500 hover:bg-green-600'}`}>
+                  <Button size="sm" className={`text-xs ${isNight ? 'bg-flood-500 text-pitch-900 hover:bg-flood-600 font-semibold' : 'bg-green-500 hover:bg-green-600'}`}>
                     Sign Up
                   </Button>
                 </Link>
@@ -237,7 +251,7 @@ export function LandingHeader() {
           </div>
 
           <button
-            className={`lg:hidden p-2 rounded-md transition-colors ${isHome ? 'hover:bg-white/10 text-chalk-100' : 'hover:bg-gray-100 text-gray-700'}`}
+            className={`lg:hidden p-2 rounded-md transition-colors ${isNight ? 'hover:bg-white/10 text-chalk-100' : 'hover:bg-gray-100 text-gray-700'}`}
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-label="Toggle menu"
           >
@@ -246,11 +260,11 @@ export function LandingHeader() {
         </div>
 
         {isMenuOpen && (
-          <div className="lg:hidden py-4 border-t border-gray-200 bg-white">
+          <div className={`lg:hidden py-4 border-t ${isNight ? 'border-pitchline bg-pitch-900' : 'border-gray-200 bg-white'}`}>
             <nav className="flex flex-col space-y-3">
               <Link 
                 href="/" 
-                className="text-gray-700 hover:text-green-600 hover:bg-green-50 transition-all px-4 py-2 rounded-md"
+                className={mobileLinkCls}
                 onClick={() => setIsMenuOpen(false)}
               >
                 Home
@@ -258,7 +272,7 @@ export function LandingHeader() {
               {user?.role !== 'owner' && (
                 <Link 
                   href="/browse" 
-                  className="text-gray-700 hover:text-green-600 hover:bg-green-50 transition-all px-4 py-2 rounded-md"
+                  className={mobileLinkCls}
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Browse Arenas
@@ -266,20 +280,20 @@ export function LandingHeader() {
               )}
               <Link 
                 href="/about" 
-                className="text-gray-700 hover:text-green-600 hover:bg-green-50 transition-all px-4 py-2 rounded-md"
+                className={mobileLinkCls}
                 onClick={() => setIsMenuOpen(false)}
               >
                 About
               </Link>
               <Link 
                 href="/contact" 
-                className="text-gray-700 hover:text-green-600 hover:bg-green-50 transition-all px-4 py-2 rounded-md"
+                className={mobileLinkCls}
                 onClick={() => setIsMenuOpen(false)}
               >
                 Contact
               </Link>
               
-              <div className="flex flex-col space-y-2 pt-4 border-t border-gray-200">
+              <div className={`flex flex-col space-y-2 pt-4 border-t ${isNight ? 'border-pitchline' : 'border-gray-200'}`}>
                 {initialLoading ? (
                   // Mobile skeleton loader
                   <>
@@ -289,8 +303,8 @@ export function LandingHeader() {
                 ) : firebaseUser && user ? (
                   // Mobile: User is logged in
                   <>
-                    <div className="text-center py-4 bg-gray-50 rounded-xl mb-2">
-                      <p className="text-lg font-semibold text-gray-900">
+                    <div className={`text-center py-4 rounded-xl mb-2 ${isNight ? 'bg-white/5' : 'bg-gray-50'}`}>
+                      <p className={`text-lg font-semibold ${isNight ? 'text-chalk-100' : 'text-gray-900'}`}>
                         {user.name}
                       </p>
                     </div>
@@ -298,25 +312,25 @@ export function LandingHeader() {
                     {user.role === 'owner' && (
                       <>
                         <Link href="/owner/dashboard" onClick={() => setIsMenuOpen(false)}>
-                          <Button variant="ghost" className="w-full justify-start h-12 text-base font-medium transition-colors hover:bg-green-50 hover:text-green-700">
+                          <Button variant="ghost" className={mobileItemCls}>
                             <MapPin className="h-5 w-5 mr-3" />
                             Owner Dashboard
                           </Button>
                         </Link>
                         <Link href="/owner/profile" onClick={() => setIsMenuOpen(false)}>
-                          <Button variant="ghost" className="w-full justify-start h-12 text-base font-medium transition-colors hover:bg-green-50 hover:text-green-700">
+                          <Button variant="ghost" className={mobileItemCls}>
                             <User className="h-5 w-5 mr-3" />
                             My Profile
                           </Button>
                         </Link>
                         <Link href="/owner/bank-details" onClick={() => setIsMenuOpen(false)}>
-                          <Button variant="ghost" className="w-full justify-start h-12 text-base font-medium transition-colors hover:bg-green-50 hover:text-green-700">
+                          <Button variant="ghost" className={mobileItemCls}>
                             <FileText className="h-5 w-5 mr-3" />
                             Payment Details
                           </Button>
                         </Link>
                         <Link href="/owner/analytics" onClick={() => setIsMenuOpen(false)}>
-                          <Button variant="ghost" className="w-full justify-start h-12 text-base font-medium transition-colors hover:bg-green-50 hover:text-green-700">
+                          <Button variant="ghost" className={mobileItemCls}>
                             <ListOrdered className="h-5 w-5 mr-3" />
                             Analytics
                           </Button>
@@ -326,7 +340,7 @@ export function LandingHeader() {
 
                     {user.role === 'admin' && (
                       <Link href="/admin/dashboard" onClick={() => setIsMenuOpen(false)}>
-                        <Button variant="ghost" className="w-full justify-start h-12 text-base font-medium transition-colors hover:bg-green-50 hover:text-green-700">
+                        <Button variant="ghost" className={mobileItemCls}>
                           <Shield className="h-5 w-5 mr-3" />
                           Admin Dashboard
                         </Button>
@@ -336,25 +350,25 @@ export function LandingHeader() {
                     {user.role === 'customer' && (
                       <>
                         <Link href="/dashboard/player" onClick={() => setIsMenuOpen(false)}>
-                          <Button variant="ghost" className="w-full justify-start h-12 text-base font-medium transition-colors hover:bg-green-50 hover:text-green-700">
+                          <Button variant="ghost" className={mobileItemCls}>
                             <ListOrdered className="h-5 w-5 mr-3" />
                             Player Dashboard
                           </Button>
                         </Link>
                         <Link href="/dashboard/player/profile" onClick={() => setIsMenuOpen(false)}>
-                          <Button variant="ghost" className="w-full justify-start h-12 text-base font-medium transition-colors hover:bg-green-50 hover:text-green-700">
+                          <Button variant="ghost" className={mobileItemCls}>
                             <User className="h-5 w-5 mr-3" />
                             My Profile
                           </Button>
                         </Link>
                         <Link href="/dashboard/player/bookings" onClick={() => setIsMenuOpen(false)}>
-                          <Button variant="ghost" className="w-full justify-start h-12 text-base font-medium transition-colors hover:bg-green-50 hover:text-green-700">
+                          <Button variant="ghost" className={mobileItemCls}>
                             <FileText className="h-5 w-5 mr-3" />
                             Booking History
                           </Button>
                         </Link>
                         <Link href="/dashboard/player/loyalty" onClick={() => setIsMenuOpen(false)}>
-                          <Button variant="ghost" className="w-full justify-start h-12 text-base font-medium transition-colors hover:bg-green-50 hover:text-green-700">
+                          <Button variant="ghost" className={mobileItemCls}>
                             <Award className="h-5 w-5 mr-3" />
                             Loyalty Points
                           </Button>
@@ -364,7 +378,7 @@ export function LandingHeader() {
                     
                     <Button 
                       variant="ghost" 
-                      className="w-full justify-start h-12 text-base font-semibold text-red-600 hover:bg-red-50 hover:text-red-700 mt-2"
+                      className={`w-full justify-start h-12 text-base font-semibold mt-2 ${isNight ? 'text-red-400 hover:bg-red-950/40 hover:text-red-300' : 'text-red-600 hover:bg-red-50 hover:text-red-700'}`}
                       onClick={() => {
                         handleLogout();
                         setIsMenuOpen(false);

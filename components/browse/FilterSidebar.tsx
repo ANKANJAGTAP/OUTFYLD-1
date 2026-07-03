@@ -44,23 +44,23 @@ function FilterSection({
   const [open, setOpen] = useState(defaultOpen);
 
   return (
-    <div className="border-b border-gray-50 last:border-0">
+    <div className="border-b border-pitchline/60 last:border-0">
       <button
         onClick={() => setOpen(!open)}
         className="w-full flex items-center justify-between py-3 px-1 group"
       >
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 group-hover:bg-emerald-100 transition-colors">
+          <div className="flex items-center justify-center text-flood-500">
             {icon}
           </div>
-          <span className="text-sm font-semibold text-gray-800">{title}</span>
+          <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-chalk-100">{title}</span>
           {count !== undefined && count > 0 && (
-            <Badge className="bg-emerald-100 text-emerald-700 border-0 text-[10px] h-5 px-1.5">
+            <Badge className="rounded-[3px] border border-flood-500/40 bg-transparent font-mono text-flood-500 text-[10px] h-5 px-1.5">
               {count}
             </Badge>
           )}
         </div>
-        <div className="text-gray-400 group-hover:text-gray-600 transition-colors">
+        <div className="text-chalk-400 group-hover:text-chalk-100 transition-colors">
           {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </div>
       </button>
@@ -103,7 +103,7 @@ function SearchableChipList({
     <div className="space-y-2.5">
       {items.length > 5 && (
         <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-300 h-3.5 w-3.5" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-chalk-400/60 h-3.5 w-3.5" />
           <Input
             placeholder={placeholder}
             value={search}
@@ -111,7 +111,7 @@ function SearchableChipList({
               setSearch(e.target.value);
               setShowAll(true);
             }}
-            className="pl-8 h-8 text-xs rounded-lg border-gray-200 bg-gray-50/50 focus:border-emerald-300 focus:ring-1 focus:ring-emerald-100"
+            className="pl-8 h-8 text-xs rounded-[3px] border-pitchline bg-pitch-800/70 text-chalk-100 placeholder:text-chalk-400/60 focus:border-flood-500/60"
           />
           {search && (
             <button
@@ -119,7 +119,7 @@ function SearchableChipList({
                 setSearch('');
                 setShowAll(false);
               }}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-chalk-400/60 hover:text-chalk-100"
             >
               <X className="h-3 w-3" />
             </button>
@@ -135,10 +135,10 @@ function SearchableChipList({
               <button
                 key={item}
                 onClick={() => onSelect(isSelected ? '' : item)}
-                className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all duration-200 ${
+                className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-[3px] font-mono text-[10px] uppercase tracking-[0.1em] transition-all duration-200 ease-night ${
                   isSelected
-                    ? 'bg-emerald-600 text-white shadow-md shadow-emerald-200'
-                    : 'bg-gray-50 text-gray-600 hover:bg-emerald-50 hover:text-emerald-700 border border-gray-100 hover:border-emerald-200'
+                    ? 'bg-flood-500 text-pitch-900 shadow-flood'
+                    : 'bg-pitch-800/70 text-chalk-400 hover:text-chalk-100 border border-pitchline hover:border-flood-500/50'
                 }`}
               >
                 {isSelected && <Check className="h-3 w-3" />}
@@ -148,13 +148,13 @@ function SearchableChipList({
           })}
         </div>
       ) : (
-        <p className="text-[11px] text-gray-400 text-center py-2">{emptyText}</p>
+        <p className="text-[11px] text-chalk-400 text-center py-2">{emptyText}</p>
       )}
 
       {!search && remaining > 0 && (
         <button
           onClick={() => setShowAll(!showAll)}
-          className="flex items-center gap-1 text-[11px] text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
+          className="flex items-center gap-1 text-[11px] text-flood-500 hover:text-flood-600 font-medium transition-colors"
         >
           {showAll ? (
             <>
@@ -202,10 +202,10 @@ function PriceRangeFilter({
           <button
             key={preset.label}
             onClick={() => onChange(preset.value)}
-            className={`px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all duration-200 ${
+            className={`px-2.5 py-1.5 rounded-[3px] font-mono text-[10px] uppercase tracking-[0.1em] transition-all duration-200 ease-night ${
               isPresetActive(preset.value)
-                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-200'
-                : 'bg-gray-50 text-gray-600 hover:bg-emerald-50 hover:text-emerald-700 border border-gray-100 hover:border-emerald-200'
+                ? 'bg-flood-500 text-pitch-900 shadow-flood'
+                : 'bg-pitch-800/70 text-chalk-400 hover:text-chalk-100 border border-pitchline hover:border-flood-500/50'
             }`}
           >
             {preset.label}
@@ -215,40 +215,40 @@ function PriceRangeFilter({
 
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
-          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-400">₹</span>
+          <span className="absolute left-2 top-1/2 -translate-y-1/2 font-mono text-[10px] text-chalk-400">₹</span>
           <Input
             type="number"
             value={value[0]}
             onChange={(e) => onChange([Number(e.target.value), value[1]])}
             min={range.min}
             max={value[1]}
-            className="pl-5 h-8 text-xs rounded-lg border-gray-200 bg-gray-50/50 focus:border-emerald-300 focus:ring-1 focus:ring-emerald-100"
+            className="pl-5 h-8 font-mono text-xs rounded-[3px] border-pitchline bg-pitch-800/70 text-chalk-100 focus:border-flood-500/60"
             placeholder="Min"
           />
         </div>
-        <span className="text-gray-300 text-xs">—</span>
+        <span className="text-chalk-400/50 text-xs">—</span>
         <div className="relative flex-1">
-          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-400">₹</span>
+          <span className="absolute left-2 top-1/2 -translate-y-1/2 font-mono text-[10px] text-chalk-400">₹</span>
           <Input
             type="number"
             value={value[1]}
             onChange={(e) => onChange([value[0], Number(e.target.value)])}
             min={value[0]}
             max={range.max}
-            className="pl-5 h-8 text-xs rounded-lg border-gray-200 bg-gray-50/50 focus:border-emerald-300 focus:ring-1 focus:ring-emerald-100"
+            className="pl-5 h-8 font-mono text-xs rounded-[3px] border-pitchline bg-pitch-800/70 text-chalk-100 focus:border-flood-500/60"
             placeholder="Max"
           />
         </div>
       </div>
 
       <div className="flex items-center justify-between">
-        <span className="text-[10px] text-gray-400">
+        <span className="font-mono text-[10px] text-chalk-400">
           ₹{value[0].toLocaleString()} – ₹{value[1].toLocaleString()}
         </span>
         {!isPresetActive([range.min, range.max]) && (
           <button
             onClick={() => onChange([range.min, range.max])}
-            className="text-[10px] text-emerald-600 hover:text-emerald-700 font-medium"
+            className="text-[10px] text-flood-500 hover:text-flood-600 font-medium"
           >
             Reset
           </button>
@@ -280,16 +280,16 @@ function RatingFilter({
         <button
           key={r.value}
           onClick={() => onChange(r.value === value ? 0 : r.value)}
-          className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all duration-200 ${
+          className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-[3px] font-mono text-[10px] uppercase tracking-[0.1em] transition-all duration-200 ease-night ${
             value === r.value
-              ? 'bg-emerald-600 text-white shadow-md shadow-emerald-200'
-              : 'bg-gray-50 text-gray-600 hover:bg-emerald-50 hover:text-emerald-700 border border-gray-100 hover:border-emerald-200'
+              ? 'bg-flood-500 text-pitch-900 shadow-flood'
+              : 'bg-pitch-800/70 text-chalk-400 hover:text-chalk-100 border border-pitchline hover:border-flood-500/50'
           }`}
         >
           {r.stars && (
             <Star
               className={`h-3 w-3 ${
-                value === r.value ? 'text-white fill-white' : 'text-yellow-400 fill-yellow-400'
+                value === r.value ? 'text-pitch-900 fill-pitch-900' : 'text-flood-500 fill-flood-500'
               }`}
             />
           )}
@@ -338,10 +338,10 @@ function AmenitiesFilter({
             <button
               key={amenity}
               onClick={() => toggle(amenity)}
-              className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all duration-200 ${
+              className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-[3px] font-mono text-[10px] uppercase tracking-[0.1em] transition-all duration-200 ease-night ${
                 isSelected
-                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-200'
-                  : 'bg-gray-50 text-gray-600 hover:bg-emerald-50 hover:text-emerald-700 border border-gray-100 hover:border-emerald-200'
+                  ? 'bg-flood-500 text-pitch-900 shadow-flood'
+                  : 'bg-pitch-800/70 text-chalk-400 hover:text-chalk-100 border border-pitchline hover:border-flood-500/50'
               }`}
             >
               {isSelected && <Check className="h-3 w-3" />}
@@ -354,7 +354,7 @@ function AmenitiesFilter({
       {remaining > 0 && (
         <button
           onClick={() => setShowAll(!showAll)}
-          className="flex items-center gap-1 text-[11px] text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
+          className="flex items-center gap-1 text-[11px] text-flood-500 hover:text-flood-600 font-medium transition-colors"
         >
           {showAll ? (
             <>
@@ -403,13 +403,13 @@ export function FilterSidebar({
   return (
     <div className="space-y-1">
       {activeCount > 0 && (
-        <div className="flex items-center justify-between px-1 pb-3 border-b border-gray-50">
-          <Badge className="bg-emerald-100 text-emerald-700 border-0 text-[10px] h-5">
+        <div className="flex items-center justify-between px-1 pb-3 border-b border-pitchline/60">
+          <Badge className="rounded-[3px] border border-flood-500/40 bg-transparent font-mono text-flood-500 text-[10px] h-5">
             {activeCount} active
           </Badge>
           <button
             onClick={resetAll}
-            className="inline-flex items-center gap-1 text-[11px] text-gray-400 hover:text-red-500 font-medium transition-colors"
+            className="inline-flex items-center gap-1 text-[11px] text-chalk-400 hover:text-flood-500 font-medium transition-colors"
           >
             <RotateCcw className="h-3 w-3" />
             Reset all
