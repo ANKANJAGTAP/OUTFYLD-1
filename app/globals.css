@@ -147,6 +147,16 @@ body::-webkit-scrollbar {
   animation: nm-scanline 1.6s linear infinite;
   border-radius: 4px;
 }
+/* dashboard greeting — lime pitch-line draws under the name on load */
+@keyframes nm-underline {
+  from {
+    transform: rotate(-1.5deg) scaleX(0);
+  }
+  to {
+    transform: rotate(-1.5deg) scaleX(1);
+  }
+}
+
 /* ticket stub "prints" — content slides in with a 200ms settle */
 @keyframes nm-print {
   from {

@@ -4,17 +4,14 @@ import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { LandingHeader } from '@/components/landing/LandingHeader';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { NightShell } from '@/components/night/NightShell';
+import { SquadSelector } from '@/components/night/SquadSelector';
+import { Mono, StatusDot, SweepButton } from '@/components/night/ui';
 import {
-  History, MapPin, Calendar, Clock, Search,
-  CheckCircle2, XCircle, IndianRupee, Activity,
-  ChevronRight, ArrowRight, Loader2, CalendarCheck,
-  Trophy, MessageSquare, RotateCcw, Filter,
-  ChevronDown, Sparkles,
+  MapPin, Clock, Loader2, MessageSquare, RotateCcw, ChevronDown, ArrowRight,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -62,203 +59,142 @@ interface BookingStats {
 
 type FilterStatus = 'all' | 'confirmed' | 'completed' | 'pending' | 'cancelled';
 
-// ─── Stat Card ───────────────────────────────────────────────────────
+const STATUS: Record<string, { label: string; tone: 'lime' | 'chalk' | 'red' }> = {
+  confirmed: { label: 'Confirmed', tone: 'lime' },
+  completed: { label: 'Completed', tone: 'lime' },
+  pending: { label: 'Pending', tone: 'chalk' },
+  pending_payment: { label: 'Payment due', tone: 'chalk' },
+  cancelled: { label: 'Cancelled', tone: 'red' },
+};
 
-function StatCard({
-  icon,
-  iconGradient,
-  label,
-  value,
-  subtext,
-  active = false,
-  onClick,
+// ─── Season record row with inline expanding ticket stub ────────────
+
+function RecordRow({
+  booking,
+  expanded,
+  onToggle,
 }: {
-  icon: React.ReactNode;
-  iconGradient: string;
-  label: string;
-  value: string;
-  subtext: string;
-  active?: boolean;
-  onClick?: () => void;
+  booking: BookingDisplay;
+  expanded: boolean;
+  onToggle: () => void;
 }) {
-  return (
-    <div
-      onClick={onClick}
-      className={`
-        group bg-white rounded-2xl border shadow-sm
-        p-4 sm:p-5 transition-all duration-300
-        ${onClick ? 'cursor-pointer' : ''}
-        ${active
-          ? 'border-emerald-300 shadow-lg shadow-emerald-50 ring-1 ring-emerald-200'
-          : 'border-gray-100 hover:shadow-lg hover:shadow-emerald-50 hover:border-emerald-100'
-        }
-      `}
-    >
-      <div className="flex items-center justify-between mb-3">
-        <div
-          className={`w-10 h-10 rounded-xl bg-gradient-to-br ${iconGradient} flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform duration-300`}
-        >
-          {icon}
-        </div>
-        {active && <span className="w-2 h-2 rounded-full bg-emerald-500" />}
-      </div>
-      <p className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">{value}</p>
-      <p className="text-xs font-medium text-gray-700 mt-1">{label}</p>
-      <p className="text-[11px] text-gray-400 mt-0.5">{subtext}</p>
-    </div>
-  );
-}
-
-// ─── Booking Card ────────────────────────────────────────────────────
-
-function BookingCard({ booking }: { booking: BookingDisplay }) {
-  const statusConfig: Record<string, { label: string; color: string; bg: string; icon: React.ReactNode }> = {
-    confirmed: {
-      label: 'Confirmed',
-      color: 'text-emerald-700',
-      bg: 'bg-emerald-50 border-emerald-200',
-      icon: <CheckCircle2 className="h-3 w-3" />,
-    },
-    completed: {
-      label: 'Completed',
-      color: 'text-blue-700',
-      bg: 'bg-blue-50 border-blue-200',
-      icon: <CheckCircle2 className="h-3 w-3" />,
-    },
-    pending: {
-      label: 'Pending',
-      color: 'text-amber-700',
-      bg: 'bg-amber-50 border-amber-200',
-      icon: <Clock className="h-3 w-3" />,
-    },
-    pending_payment: {
-      label: 'Payment Pending',
-      color: 'text-amber-700',
-      bg: 'bg-amber-50 border-amber-200',
-      icon: <Clock className="h-3 w-3" />,
-    },
-    cancelled: {
-      label: 'Cancelled',
-      color: 'text-red-600',
-      bg: 'bg-red-50 border-red-200',
-      icon: <XCircle className="h-3 w-3" />,
-    },
-  };
-
-  const status = statusConfig[booking.status] || statusConfig.pending;
-  const isUpcoming = booking.status === 'confirmed';
+  const router = useRouter();
+  const status = STATUS[booking.status] || STATUS.pending;
   const isCompleted = booking.status === 'completed';
+  const d = booking.date ? new Date(booking.date + 'T00:00:00') : null;
 
   return (
-    <div className="group bg-white rounded-xl border border-gray-100 p-4 sm:p-5 hover:border-emerald-100 hover:shadow-md hover:shadow-emerald-50 transition-all duration-300">
-      <div className="flex items-start gap-4">
-        {/* Date badge */}
-        <div className="flex-shrink-0 w-14 h-14 rounded-xl bg-emerald-50 flex flex-col items-center justify-center text-center">
-          <span className="text-lg font-bold text-emerald-700 leading-none">
-            {booking.date ? new Date(booking.date + 'T00:00:00').getDate() : '—'}
+    <div className="border-b border-pitchline/60 transition-colors duration-200 ease-night last:border-0 hover:bg-white/[0.02]">
+      <button
+        onClick={onToggle}
+        className="group flex w-full items-center gap-4 px-4 py-4 text-left sm:gap-5 sm:px-6"
+        aria-expanded={expanded}
+      >
+        <div className="w-11 shrink-0 text-center">
+          <span className="block font-mono text-xl leading-none tabular-nums text-chalk-100">
+            {d ? d.getDate() : '—'}
           </span>
-          <span className="text-[10px] font-medium text-emerald-500 uppercase mt-0.5">
-            {booking.date
-              ? new Date(booking.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short' })
-              : ''}
+          <span className="mt-0.5 block font-mono text-[9px] uppercase tracking-[0.18em] text-flood-500">
+            {d ? d.toLocaleDateString('en-US', { month: 'short' }) : ''}
           </span>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <h4 className="font-semibold text-gray-900 text-sm truncate group-hover:text-emerald-700 transition-colors">
-                {booking.turfName}
-              </h4>
-              <div className="flex items-center gap-1.5 text-xs text-gray-400 mt-1">
-                <MapPin className="h-3 w-3 flex-shrink-0" />
-                <span className="truncate">{booking.location}</span>
-              </div>
-            </div>
-            <span
-              className={`flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${status.bg} ${status.color}`}
-            >
-              {status.icon}
-              {status.label}
-            </span>
-          </div>
-
-          {/* Details */}
-          <div className="flex flex-wrap items-center gap-3 mt-2.5">
-            <span className="flex items-center gap-1 text-xs text-gray-500">
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-display text-lg uppercase leading-tight tracking-tight text-chalk-100 transition-colors duration-200 group-hover:text-flood-500">
+            {booking.turfName}
+          </p>
+          <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-[10px] uppercase tracking-[0.1em] text-chalk-400">
+            <span className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
               {booking.time}
             </span>
-            <span className="flex items-center gap-1 text-xs text-gray-500">
-              <Calendar className="h-3 w-3" />
-              {booking.day}
+            <span className="hidden items-center gap-1 sm:flex">
+              <MapPin className="h-3 w-3" />
+              <span className="max-w-40 truncate normal-case tracking-normal">
+                {booking.location}
+              </span>
             </span>
             {booking.amount > 0 && (
-              <span className="flex items-center gap-1 text-xs font-semibold text-gray-700">
-                <IndianRupee className="h-3 w-3" />
-                {booking.amount.toLocaleString('en-IN')}
-              </span>
+              <Mono className="text-chalk-100">₹{booking.amount.toLocaleString('en-IN')}</Mono>
             )}
           </div>
+        </div>
 
-          {/* Actions */}
-          <div className="flex items-center gap-2 mt-3">
-            {isCompleted && (
-              <>
-                <Link href={`/feedback/${booking.id}`}>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="rounded-lg h-7 px-3 text-[11px] font-medium text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50 border-emerald-200"
-                  >
-                    <MessageSquare className="h-3 w-3 mr-1" />
-                    Give Review
-                  </Button>
-                </Link>
-                <Link href={`/bookings/${booking.id}`}>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="rounded-lg h-7 px-3 text-[11px] font-medium text-gray-600 hover:bg-gray-100 border-gray-200"
-                  >
-                    View Details
-                  </Button>
-                </Link>
-                <Link href={`/book/${booking.turfId}`}>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="rounded-lg h-7 px-3 text-[11px] font-medium text-gray-600 hover:bg-gray-100 border-gray-200"
-                  >
-                    <RotateCcw className="h-3 w-3 mr-1" />
-                    Book Again
-                  </Button>
-                </Link>
-              </>
-            )}
-            {isUpcoming && (
-              <Link href={`/bookings/${booking.id}`}>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="rounded-lg h-7 px-3 text-[11px] font-medium text-gray-600 hover:bg-gray-100 border-gray-200"
+        <span className="flex shrink-0 items-center gap-2 font-mono text-[9px] uppercase tracking-[0.16em] text-chalk-400">
+          <StatusDot tone={status.tone} />
+          <span className="hidden sm:inline">{status.label}</span>
+        </span>
+        <ChevronDown
+          className={`h-4 w-4 shrink-0 text-flood-500 transition-transform duration-300 ease-night ${
+            expanded ? 'rotate-180' : ''
+          }`}
+        />
+      </button>
+
+      {/* inline mini ticket stub — 250ms height ease */}
+      <div
+        className={`grid transition-[grid-template-rows] duration-[250ms] ease-night ${
+          expanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+        }`}
+      >
+        <div className="overflow-hidden">
+          <div className="mx-4 mb-4 sm:mx-6 sm:ml-20">
+            <div className="relative max-w-md overflow-hidden rounded-[4px] border border-pitchline bg-pitch-800/70">
+              <div className="px-5 pb-4 pt-4">
+                <p className="nm-overline text-flood-500">Match ticket</p>
+                <div className="mt-3 grid grid-cols-2 gap-y-2 font-mono text-xs tabular-nums">
+                  <span className="uppercase tracking-[0.1em] text-chalk-400">Date</span>
+                  <span className="text-right text-chalk-100">
+                    {d ? d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+                  </span>
+                  <span className="uppercase tracking-[0.1em] text-chalk-400">Slot</span>
+                  <span className="text-right text-chalk-100">{booking.time}</span>
+                  <span className="uppercase tracking-[0.1em] text-chalk-400">Status</span>
+                  <span className="text-right uppercase text-chalk-100">{status.label}</span>
+                  <span className="uppercase tracking-[0.1em] text-chalk-400">Paid</span>
+                  <span className="text-right text-flood-500">
+                    ₹{booking.amount.toLocaleString('en-IN')}
+                  </span>
+                </div>
+              </div>
+              {/* perforation */}
+              <div className="relative">
+                <span className="absolute left-[-8px] top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-pitch-900" />
+                <span className="absolute right-[-8px] top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-pitch-900" />
+                <div className="mx-3 border-t border-dashed border-pitchline" />
+              </div>
+              <div className="flex flex-wrap items-center gap-3 px-5 py-4">
+                <Link
+                  href={`/bookings/${booking.id}`}
+                  className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.14em] text-flood-500 transition-colors hover:text-flood-600"
                 >
-                  View Details
-                </Button>
-              </Link>
-            )}
-            {!isCompleted && !isUpcoming && (
-              <Link href={`/bookings/${booking.id}`}>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="rounded-lg h-7 px-3 text-[11px] font-medium text-gray-600 hover:bg-gray-100 border-gray-200"
-                >
-                  View Details
-                </Button>
-              </Link>
-            )}
+                  Full details
+                  <ArrowRight className="h-3 w-3" />
+                </Link>
+                {isCompleted && (
+                  <>
+                    <Link
+                      href={`/feedback/${booking.id}`}
+                      className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-400 transition-colors hover:text-chalk-100"
+                    >
+                      <MessageSquare className="h-3 w-3" />
+                      Review
+                    </Link>
+                    <span className="ml-auto">
+                      <SweepButton
+                        onClick={() => router.push(`/book/${booking.turfId}`)}
+                        className="!px-4 !py-2 text-[10px]"
+                      >
+                        <span className="flex items-center gap-1.5">
+                          <RotateCcw className="h-3 w-3" />
+                          Book again
+                        </span>
+                      </SweepButton>
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -266,15 +202,15 @@ function BookingCard({ booking }: { booking: BookingDisplay }) {
   );
 }
 
-// ─── Main Bookings Component ─────────────────────────────────────────
+// ─── Main Bookings — THE SEASON RECORD ───────────────────────────────
 
 function PlayerBookings() {
   const { user } = useAuth();
   const [bookings, setBookings] = useState<BookingRaw[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('all');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  // ── Fetch bookings ──
   useEffect(() => {
     if (!user) return;
 
@@ -296,7 +232,6 @@ function PlayerBookings() {
     fetchBookings();
   }, [user]);
 
-  // ── Transform + compute ──
   const { displayBookings, stats } = useMemo(() => {
     const now = new Date();
     const yyyy = now.getFullYear();
@@ -323,7 +258,6 @@ function PlayerBookings() {
         displayStatus = 'pending_payment';
       }
 
-      // Count stats
       total++;
       if (displayStatus === 'confirmed') {
         confirmed++;
@@ -333,7 +267,11 @@ function PlayerBookings() {
       if (displayStatus === 'pending' || displayStatus === 'pending_payment') pending++;
       if (displayStatus === 'cancelled') cancelled++;
       if (b.status === 'confirmed' || b.paymentStatus === 'paid') {
-        const netAmount = (b.totalAmount || 0) - (b.promoDiscountAmount || 0) - (b.dynamicDiscountAmount || 0) - (b.loyaltyDiscountAmount || 0);
+        const netAmount =
+          (b.totalAmount || 0) -
+          (b.promoDiscountAmount || 0) -
+          (b.dynamicDiscountAmount || 0) -
+          (b.loyaltyDiscountAmount || 0);
         totalSpent += netAmount;
       }
 
@@ -353,13 +291,16 @@ function PlayerBookings() {
         day: b.slot?.day || '',
         time: `${b.slot?.startTime || ''} - ${b.slot?.endTime || ''}`,
         status: displayStatus,
-        amount: (b.totalAmount || 0) - (b.promoDiscountAmount || 0) - (b.dynamicDiscountAmount || 0) - (b.loyaltyDiscountAmount || 0),
+        amount:
+          (b.totalAmount || 0) -
+          (b.promoDiscountAmount || 0) -
+          (b.dynamicDiscountAmount || 0) -
+          (b.loyaltyDiscountAmount || 0),
         sport: b.turfId?.sportsOffered?.[0] || 'Sports',
         createdAt: b.createdAt,
       };
     });
 
-    // Sort: upcoming first (by date asc), then past (by date desc)
     transformed.sort((a, b) => {
       const aUpcoming = a.status === 'confirmed';
       const bUpcoming = b.status === 'confirmed';
@@ -369,7 +310,6 @@ function PlayerBookings() {
       return b.date.localeCompare(a.date);
     });
 
-    // Apply filter
     const filtered =
       statusFilter === 'all'
         ? transformed
@@ -388,270 +328,117 @@ function PlayerBookings() {
 
   if (!user) return null;
 
-  // ── Loading ──
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#fafbfc]">
+      <NightShell ambient={0.6}>
         <LandingHeader />
         <div className="flex items-center justify-center py-32">
           <div className="text-center">
-            <div className="w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center mx-auto mb-4">
-              <Loader2 className="h-7 w-7 text-emerald-600 animate-spin" />
-            </div>
-            <p className="text-gray-500 font-medium">Loading bookings...</p>
-            <p className="text-xs text-gray-400 mt-1">Fetching your booking history</p>
+            <Loader2 className="mx-auto mb-4 h-7 w-7 animate-spin text-flood-500" />
+            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-chalk-400">
+              Pulling the season record…
+            </p>
           </div>
         </div>
-      </div>
+      </NightShell>
     );
   }
 
-  // Filter tabs config
-  const filterTabs: { key: FilterStatus; label: string; count: number }[] = [
-    { key: 'all', label: 'All', count: stats.total },
-    { key: 'confirmed', label: 'Upcoming', count: stats.confirmed },
-    { key: 'completed', label: 'Completed', count: stats.completed },
-    { key: 'pending', label: 'Pending', count: stats.pending },
-    { key: 'cancelled', label: 'Cancelled', count: stats.cancelled },
-  ];
+  // season timeline segments (proportional, lime = completed)
+  const segments = [
+    { key: 'completed', count: stats.completed, cls: 'bg-flood-500' },
+    { key: 'confirmed', count: stats.confirmed, cls: 'bg-chalk-100/70' },
+    { key: 'pending', count: stats.pending, cls: 'bg-chalk-400/40' },
+    { key: 'cancelled', count: stats.cancelled, cls: 'bg-red-900/70' },
+  ].filter((s) => s.count > 0);
 
   return (
-    <div className="min-h-screen bg-[#fafbfc]">
+    <NightShell ambient={0.6}>
       <LandingHeader />
 
-      {/* ─────────── HERO BANNER ─────────── */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-600 via-green-600 to-teal-700" />
-        <div
-          className="absolute inset-0 opacity-10"
-          style={{
-            backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
-            backgroundSize: '24px 24px',
-          }}
-        />
-        <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3 blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-72 h-72 bg-emerald-400/10 rounded-full translate-y-1/2 -translate-x-1/4 blur-3xl" />
-
-        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-20 sm:pb-24">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-5">
-            <div>
-              <Link
-                href="/dashboard/player"
-                className="text-sm text-white/70 hover:text-white flex items-center gap-1.5 transition-colors duration-200 mb-4"
-              >
-                ← Dashboard
-              </Link>
-              <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-2xl sm:text-3xl font-bold text-white">
-                  Booking History
-                </h1>
-                <Badge className="bg-white/15 text-white border-white/20 hover:bg-white/20 text-[10px]">
-                  <History className="h-3 w-3 mr-1" />
-                  {stats.total} Total
-                </Badge>
-              </div>
-              <p className="text-emerald-200 text-sm">
-                Track all your past and upcoming turf reservations.
-              </p>
-            </div>
-
-            <Link href="/browse">
-              <Button className="bg-white text-emerald-700 hover:bg-gray-100 rounded-xl h-11 px-6 font-semibold shadow-xl transition-all duration-200">
-                <Search className="h-4 w-4 mr-2" />
-                Book New
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* ─────────── CONTENT ─────────── */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 -mt-12 relative z-10 pb-12">
-
-        {/* ── Stat Cards ── */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <StatCard
-            icon={<CalendarCheck className="h-4 w-4" />}
-            iconGradient="from-emerald-500 to-green-600"
-            label="Total"
-            value={String(stats.total)}
-            subtext="All bookings"
-            active={statusFilter === 'all'}
-            onClick={() => setStatusFilter('all')}
-          />
-          <StatCard
-            icon={<Activity className="h-4 w-4" />}
-            iconGradient="from-green-500 to-teal-500"
-            label="Upcoming"
-            value={String(stats.confirmed)}
-            subtext="Confirmed"
-            active={statusFilter === 'confirmed'}
-            onClick={() => setStatusFilter('confirmed')}
-          />
-          <StatCard
-            icon={<CheckCircle2 className="h-4 w-4" />}
-            iconGradient="from-blue-500 to-indigo-500"
-            label="Completed"
-            value={String(stats.completed)}
-            subtext="Games played"
-            active={statusFilter === 'completed'}
-            onClick={() => setStatusFilter('completed')}
-          />
-          <StatCard
-            icon={<Clock className="h-4 w-4" />}
-            iconGradient="from-amber-500 to-orange-500"
-            label="Pending"
-            value={String(stats.pending)}
-            subtext="Awaiting"
-            active={statusFilter === 'pending'}
-            onClick={() => setStatusFilter('pending')}
-          />
-          <StatCard
-            icon={<XCircle className="h-4 w-4" />}
-            iconGradient="from-red-500 to-rose-500"
-            label="Cancelled"
-            value={String(stats.cancelled)}
-            subtext="All-time"
-            active={statusFilter === 'cancelled'}
-            onClick={() => setStatusFilter('cancelled')}
-          />
-          <StatCard
-            icon={<IndianRupee className="h-4 w-4" />}
-            iconGradient="from-teal-500 to-cyan-500"
-            label="Spent"
-            value={`₹${stats.totalSpent.toLocaleString('en-IN')}`}
-            subtext="Total paid"
-          />
+      <section className="mx-auto max-w-5xl px-4 pb-8 pt-12 sm:px-6 sm:pt-16 lg:px-8">
+        <p className="nm-overline mb-3 text-chalk-400">The season record</p>
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <h1 className="nm-display-l text-chalk-100">Your fixtures</h1>
+          <p className="font-mono text-xs uppercase tracking-[0.14em] text-chalk-400">
+            <span className="text-chalk-100">{stats.total}</span> played &amp; booked ·{' '}
+            <span className="text-flood-500">₹{stats.totalSpent.toLocaleString('en-IN')}</span> spent
+          </p>
         </div>
 
-        {/* ── Status Progress Bar ── */}
+        {/* SEASON TIMELINE — segmented hairline bar, mono counts above */}
         {stats.total > 0 && (
-          <div className="mt-5 bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-gray-900">Status Overview</h3>
-              <span className="text-xs text-gray-400">{stats.total} total</span>
+          <div className="mt-8">
+            <div className="mb-2 flex gap-4 font-mono text-[9px] uppercase tracking-[0.14em] text-chalk-400">
+              <span>
+                <span className="text-flood-500">{stats.completed}</span> completed
+              </span>
+              <span>
+                <span className="text-chalk-100">{stats.confirmed}</span> upcoming
+              </span>
+              {stats.pending > 0 && <span>{stats.pending} pending</span>}
+              {stats.cancelled > 0 && <span>{stats.cancelled} cancelled</span>}
             </div>
-            <div className="h-3 bg-gray-100 rounded-full overflow-hidden flex">
-              {stats.completed > 0 && (
+            <div className="flex h-[3px] w-full gap-[3px] overflow-hidden">
+              {segments.map((s) => (
                 <div
-                  className="h-full bg-blue-500 transition-all duration-700"
-                  style={{ width: `${(stats.completed / stats.total) * 100}%` }}
+                  key={s.key}
+                  className={`${s.cls} transition-all duration-500 ease-night`}
+                  style={{ width: `${(s.count / stats.total) * 100}%` }}
                 />
-              )}
-              {stats.confirmed > 0 && (
-                <div
-                  className="h-full bg-emerald-500 transition-all duration-700"
-                  style={{ width: `${(stats.confirmed / stats.total) * 100}%` }}
-                />
-              )}
-              {stats.pending > 0 && (
-                <div
-                  className="h-full bg-amber-400 transition-all duration-700"
-                  style={{ width: `${(stats.pending / stats.total) * 100}%` }}
-                />
-              )}
-              {stats.cancelled > 0 && (
-                <div
-                  className="h-full bg-red-400 transition-all duration-700"
-                  style={{ width: `${(stats.cancelled / stats.total) * 100}%` }}
-                />
-              )}
-            </div>
-            <div className="flex flex-wrap items-center gap-5 mt-3">
-              {[
-                { label: 'Completed', count: stats.completed, color: 'bg-blue-500' },
-                { label: 'Upcoming', count: stats.confirmed, color: 'bg-emerald-500' },
-                { label: 'Pending', count: stats.pending, color: 'bg-amber-400' },
-                { label: 'Cancelled', count: stats.cancelled, color: 'bg-red-400' },
-              ]
-                .filter((s) => s.count > 0)
-                .map((s, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <span className={`w-2.5 h-2.5 rounded-full ${s.color}`} />
-                    <span className="text-xs text-gray-500">{s.label} ({s.count})</span>
-                  </div>
-                ))}
+              ))}
             </div>
           </div>
         )}
 
-        {/* ── Filter Tabs ── */}
-        <div className="mt-5 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          {/* Tab bar */}
-          <div className="px-4 sm:px-6 py-3 border-b border-gray-50 flex items-center gap-1 overflow-x-auto [&::-webkit-scrollbar]:hidden">
-            {filterTabs.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setStatusFilter(tab.key)}
-                className={`
-                  flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-medium
-                  whitespace-nowrap transition-all duration-200
-                  ${statusFilter === tab.key
-                    ? 'bg-emerald-50 text-emerald-700'
-                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
-                  }
-                `}
-              >
-                {tab.label}
-                <span
-                  className={`px-1.5 py-0.5 rounded-md text-[10px] font-semibold ${
-                    statusFilter === tab.key
-                      ? 'bg-emerald-100 text-emerald-700'
-                      : 'bg-gray-100 text-gray-400'
-                  }`}
-                >
-                  {tab.count}
-                </span>
-              </button>
-            ))}
-          </div>
+        {/* status tabs — sliding lime underline */}
+        <SquadSelector
+          className="mt-8"
+          options={[
+            { label: `All (${stats.total})`, value: 'all' },
+            { label: `Upcoming (${stats.confirmed})`, value: 'confirmed' },
+            { label: `Completed (${stats.completed})`, value: 'completed' },
+            { label: `Pending (${stats.pending})`, value: 'pending' },
+            { label: `Cancelled (${stats.cancelled})`, value: 'cancelled' },
+          ]}
+          value={statusFilter}
+          onChange={(v) => setStatusFilter(v as FilterStatus)}
+        />
+      </section>
 
-          {/* Booking list */}
-          <div className="p-3 sm:p-4 space-y-3">
-            {displayBookings.length > 0 ? (
-              displayBookings.map((booking) => (
-                <BookingCard key={booking.id} booking={booking} />
-              ))
-            ) : (
-              <div className="text-center py-14 px-6">
-                <div className="w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center mx-auto mb-4">
-                  <Calendar className="h-7 w-7 text-emerald-400" />
-                </div>
-                <h3 className="text-base font-semibold text-gray-900">
-                  {statusFilter === 'all'
-                    ? 'No bookings yet'
-                    : `No ${statusFilter} bookings`}
-                </h3>
-                <p className="text-sm text-gray-400 mt-1.5 max-w-xs mx-auto">
-                  {statusFilter === 'all'
-                    ? 'Start by browsing arenas near you and booking your first game!'
-                    : 'Try selecting a different filter to see more bookings.'}
-                </p>
-                {statusFilter === 'all' && (
-                  <Link href="/browse" className="mt-5 inline-block">
-                    <Button
-                      size="sm"
-                      className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white h-9 px-5 text-xs font-semibold shadow-lg shadow-emerald-200"
-                    >
-                      Browse Arenas
-                      <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-                    </Button>
-                  </Link>
-                )}
-                {statusFilter !== 'all' && (
-                  <button
-                    onClick={() => setStatusFilter('all')}
-                    className="mt-4 text-xs text-emerald-600 hover:text-emerald-700 font-medium"
-                  >
-                    Show all bookings →
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
+      <section className="mx-auto max-w-5xl px-4 pb-20 sm:px-6 lg:px-8">
+        <div className="overflow-hidden rounded-[4px] border border-pitchline bg-pitch-700/80">
+          {displayBookings.length === 0 ? (
+            <div className="px-6 py-16 text-center">
+              <h3 className="font-display text-2xl uppercase tracking-tight text-chalk-100">
+                Nothing in this column
+              </h3>
+              <p className="mx-auto mt-2 max-w-xs text-sm text-chalk-400">
+                {statusFilter === 'all'
+                  ? 'Book your first game and start the record.'
+                  : 'No fixtures with this status yet.'}
+              </p>
+              <Link
+                href="/browse"
+                className="nm-overline mt-6 inline-flex items-center gap-2 rounded-[4px] border border-chalk-400/30 px-5 py-3 text-chalk-100 transition-colors duration-200 ease-night hover:border-flood-500 hover:text-flood-500"
+              >
+                Browse arenas
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+          ) : (
+            displayBookings.map((booking) => (
+              <RecordRow
+                key={booking.id}
+                booking={booking}
+                expanded={expandedId === booking.id}
+                onToggle={() => setExpandedId(expandedId === booking.id ? null : booking.id)}
+              />
+            ))
+          )}
         </div>
-      </div>
-    </div>
+      </section>
+    </NightShell>
   );
 }
 

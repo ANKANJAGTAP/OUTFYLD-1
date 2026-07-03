@@ -4,18 +4,14 @@ import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { LandingHeader } from '@/components/landing/LandingHeader';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { NightShell } from '@/components/night/NightShell';
+import { CountUp } from '@/components/landing/night-match/CountUp';
+import { Mono, StatusDot } from '@/components/night/ui';
 import {
-  MapPin, Calendar, Clock, Star, User, LogOut, Search,
-  History, Heart, Trophy, ChevronRight, Shield,
-  CalendarCheck, Loader2, Sparkles, Activity,
-  ArrowRight, ExternalLink, CheckCircle2, XCircle,
-  IndianRupee, Zap, MessageSquare,
+  MapPin, Clock, User, Search, History, Trophy, ChevronRight,
+  Loader2, MessageSquare, ArrowRight, Heart,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -42,223 +38,89 @@ interface BookingItem {
   sport: string;
 }
 
-// ─── Stat Card ───────────────────────────────────────────────────────
+// ─── Status → dot + overline (no pills) ─────────────────────────────
 
-function StatCard({
-  icon,
-  iconGradient,
-  label,
-  value,
-  subtext,
-}: {
-  icon: React.ReactNode;
-  iconGradient: string;
-  label: string;
-  value: string;
-  subtext: string;
-}) {
-  return (
-    <div className="group bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:shadow-lg hover:shadow-emerald-50 hover:border-emerald-100 transition-all duration-300">
-      <div className="flex items-center justify-between mb-4">
-        <div
-          className={`w-11 h-11 rounded-xl bg-gradient-to-br ${iconGradient} flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform duration-300`}
-        >
-          {icon}
-        </div>
-      </div>
-      <p className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
-        {value}
-      </p>
-      <p className="text-sm font-medium text-gray-900 mt-1">{label}</p>
-      <p className="text-xs text-gray-400 mt-0.5">{subtext}</p>
-    </div>
-  );
-}
+const STATUS: Record<string, { label: string; tone: 'lime' | 'chalk' | 'red' }> = {
+  confirmed: { label: 'Confirmed', tone: 'lime' },
+  completed: { label: 'Completed', tone: 'lime' },
+  pending: { label: 'Pending', tone: 'chalk' },
+  pending_payment: { label: 'Payment due', tone: 'chalk' },
+  cancelled: { label: 'Cancelled', tone: 'red' },
+};
 
-// ─── Booking Card ────────────────────────────────────────────────────
+// ─── Fixture history row ────────────────────────────────────────────
 
-function BookingCard({ booking }: { booking: BookingItem }) {
-  const statusConfig: Record<string, { label: string; color: string; bg: string; icon: React.ReactNode }> = {
-    confirmed: {
-      label: 'Confirmed',
-      color: 'text-emerald-700',
-      bg: 'bg-emerald-50 border-emerald-200',
-      icon: <CheckCircle2 className="h-3 w-3" />,
-    },
-    completed: {
-      label: 'Completed',
-      color: 'text-blue-700',
-      bg: 'bg-blue-50 border-blue-200',
-      icon: <CheckCircle2 className="h-3 w-3" />,
-    },
-    pending: {
-      label: 'Pending',
-      color: 'text-amber-700',
-      bg: 'bg-amber-50 border-amber-200',
-      icon: <Clock className="h-3 w-3" />,
-    },
-    pending_payment: {
-      label: 'Payment Pending',
-      color: 'text-amber-700',
-      bg: 'bg-amber-50 border-amber-200',
-      icon: <Clock className="h-3 w-3" />,
-    },
-    cancelled: {
-      label: 'Cancelled',
-      color: 'text-red-600',
-      bg: 'bg-red-50 border-red-200',
-      icon: <XCircle className="h-3 w-3" />,
-    },
-  };
-
-  const status = statusConfig[booking.status] || statusConfig.pending;
-  const isUpcoming = booking.status === 'confirmed' && new Date(booking.date) >= new Date();
-  const isCompleted = booking.status === 'completed' || (booking.status === 'confirmed' && new Date(booking.date) < new Date());
+function FixtureRow({ booking }: { booking: BookingItem }) {
+  const status = STATUS[booking.status] || STATUS.pending;
+  const isCompleted =
+    booking.status === 'completed' ||
+    (booking.status === 'confirmed' && new Date(booking.date) < new Date());
+  const d = booking.date ? new Date(booking.date + 'T00:00:00') : null;
 
   return (
-    <div className="group flex items-start gap-4 p-4 rounded-xl hover:bg-gray-50 transition-all duration-200">
-      {/* Date badge */}
-      <div className="flex-shrink-0 w-14 h-14 rounded-xl bg-emerald-50 flex flex-col items-center justify-center text-center">
-        <span className="text-lg font-bold text-emerald-700 leading-none">
-          {booking.date ? new Date(booking.date + 'T00:00:00').getDate() : '—'}
+    <div className="group flex items-center gap-4 border-b border-pitchline/60 px-4 py-4 transition-colors duration-200 ease-night last:border-0 hover:bg-white/[0.03] sm:gap-5 sm:px-6">
+      {/* compact mono date block */}
+      <div className="w-11 shrink-0 text-center">
+        <span className="block font-mono text-xl leading-none tabular-nums text-chalk-100">
+          {d ? d.getDate() : '—'}
         </span>
-        <span className="text-[10px] font-medium text-emerald-500 uppercase mt-0.5">
-          {booking.date
-            ? new Date(booking.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short' })
-            : ''}
+        <span className="mt-0.5 block font-mono text-[9px] uppercase tracking-[0.18em] text-flood-500">
+          {d ? d.toLocaleDateString('en-US', { month: 'short' }) : ''}
         </span>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <h4 className="font-semibold text-gray-900 text-sm truncate group-hover:text-emerald-700 transition-colors">
-              {booking.turfName}
-            </h4>
-            <div className="flex items-center gap-1.5 text-xs text-gray-400 mt-1">
-              <MapPin className="h-3 w-3 flex-shrink-0" />
-              <span className="truncate">{booking.location}</span>
-            </div>
-          </div>
-
-          {/* Status badge */}
-          <span
-            className={`flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${status.bg} ${status.color}`}
-          >
-            {status.icon}
-            {status.label}
-          </span>
-        </div>
-
-        {/* Time + Amount */}
-        <div className="flex items-center gap-4 mt-2">
-          <span className="flex items-center gap-1 text-xs text-gray-500">
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-display text-lg uppercase leading-tight tracking-tight text-chalk-100 transition-colors duration-200 group-hover:text-flood-500">
+          {booking.turfName}
+        </p>
+        <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-[10px] uppercase tracking-[0.1em] text-chalk-400">
+          <span className="flex items-center gap-1">
             <Clock className="h-3 w-3" />
             {booking.time}
           </span>
-          <span className="flex items-center gap-1 text-xs text-gray-500">
-            <Calendar className="h-3 w-3" />
-            {booking.day}
+          <span className="hidden items-center gap-1 sm:flex">
+            <MapPin className="h-3 w-3" />
+            <span className="max-w-40 truncate normal-case tracking-normal">{booking.location}</span>
           </span>
-          {booking.amount > 0 && (
-            <span className="flex items-center gap-1 text-xs font-semibold text-gray-700">
-              <IndianRupee className="h-3 w-3" />
-              {booking.amount}
-            </span>
-          )}
+          {booking.amount > 0 && <Mono className="text-chalk-100">₹{booking.amount.toLocaleString('en-IN')}</Mono>}
         </div>
+      </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-2 mt-3">
-          {isCompleted && (
-            <Link href={`/feedback/${booking.id}`}>
-              <Button
-                size="sm"
-                variant="outline"
-                className="rounded-lg h-7 px-3 text-[11px] font-medium text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50 border-emerald-200"
-              >
-                <MessageSquare className="h-3 w-3 mr-1" />
-                Give Review
-              </Button>
-            </Link>
-          )}
-        </div>
+      <div className="flex shrink-0 flex-col items-end gap-2">
+        <span className="flex items-center gap-2 font-mono text-[9px] uppercase tracking-[0.16em] text-chalk-400">
+          <StatusDot tone={status.tone} />
+          {status.label}
+        </span>
+        {isCompleted && (
+          <Link
+            href={`/feedback/${booking.id}`}
+            className="flex items-center gap-1 font-mono text-[9px] uppercase tracking-[0.14em] text-flood-500/80 transition-colors hover:text-flood-500"
+          >
+            <MessageSquare className="h-3 w-3" />
+            Review
+          </Link>
+        )}
       </div>
     </div>
   );
 }
 
-// ─── Quick Action Card ───────────────────────────────────────────────
-
-function QuickAction({
-  icon,
-  label,
-  description,
-  href,
-  gradient,
-  primary = false,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  description: string;
-  href: string;
-  gradient: string;
-  primary?: boolean;
-}) {
-  return (
-    <Link href={href}>
-      <div
-        className={`
-          group relative rounded-2xl border p-5
-          transition-all duration-300 cursor-pointer h-full
-          ${primary
-            ? 'bg-gradient-to-br from-emerald-600 to-green-600 border-emerald-500 text-white shadow-lg shadow-emerald-200 hover:shadow-xl hover:shadow-emerald-300'
-            : 'bg-white border-gray-100 shadow-sm hover:border-emerald-200 hover:shadow-lg hover:shadow-emerald-50'
-          }
-        `}
-      >
-        <div className="flex items-start justify-between">
-          <div
-            className={`
-              w-11 h-11 rounded-xl flex items-center justify-center shadow-lg
-              transition-transform duration-300 group-hover:scale-110
-              ${primary
-                ? 'bg-white/20 text-white'
-                : `bg-gradient-to-br ${gradient} text-white`
-              }
-            `}
-          >
-            {icon}
-          </div>
-          <ChevronRight
-            className={`h-4 w-4 group-hover:translate-x-1 transition-all duration-200 ${
-              primary ? 'text-white/50 group-hover:text-white/80' : 'text-gray-300 group-hover:text-emerald-400'
-            }`}
-          />
-        </div>
-        <h4 className={`font-semibold mt-4 text-sm ${primary ? 'text-white' : 'text-gray-900'}`}>
-          {label}
-        </h4>
-        <p className={`text-xs mt-1 leading-relaxed ${primary ? 'text-emerald-100' : 'text-gray-400'}`}>
-          {description}
-        </p>
-      </div>
-    </Link>
-  );
-}
-
-// ─── Main Player Dashboard ───────────────────────────────────────────
+// ─── Main Player Dashboard — THE PLAYER'S TUNNEL ─────────────────────
 
 function PlayerDashboard() {
-  const { user, logout } = useAuth();
-  const router = useRouter();
+  const { user } = useAuth();
   const [bookings, setBookings] = useState<any[]>([]);
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
   const [totalBookingsCount, setTotalBookingsCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  // count-up runs once per session so route changes don't recount
+  const [counted, setCounted] = useState(true);
 
-  // ── Fetch data ──
+  useEffect(() => {
+    setCounted(sessionStorage.getItem('nm-season-stats') === '1');
+    sessionStorage.setItem('nm-season-stats', '1');
+  }, []);
+
   useEffect(() => {
     if (!user) return;
     const uid = user.uid;
@@ -292,7 +154,6 @@ function PlayerDashboard() {
     fetchDashboardData();
   }, [user?.uid]);
 
-  // ── Compute stats ──
   const stats = useMemo((): PlayerStats => {
     const now = new Date();
     const yyyy = now.getFullYear();
@@ -314,7 +175,11 @@ function PlayerDashboard() {
       if (isConfirmed && isFuture) upcomingGames++;
       if (b.status === 'cancelled') cancelledBookings++;
       if (isConfirmed || b.paymentStatus === 'paid') {
-        const netAmount = (b.totalAmount || 0) - (b.promoDiscountAmount || 0) - (b.dynamicDiscountAmount || 0) - (b.loyaltyDiscountAmount || 0);
+        const netAmount =
+          (b.totalAmount || 0) -
+          (b.promoDiscountAmount || 0) -
+          (b.dynamicDiscountAmount || 0) -
+          (b.loyaltyDiscountAmount || 0);
         totalSpent += netAmount;
       }
     }
@@ -330,7 +195,6 @@ function PlayerDashboard() {
     };
   }, [bookings, totalBookingsCount, loyaltyPoints]);
 
-  // ── Transform bookings for display ──
   const recentBookings = useMemo((): BookingItem[] => {
     const now = new Date();
     const yyyy = now.getFullYear();
@@ -360,16 +224,18 @@ function PlayerDashboard() {
         day: b.slot?.day || '',
         time: `${b.slot?.startTime || ''} - ${b.slot?.endTime || ''}`,
         status: displayStatus,
-        amount: (b.totalAmount || 0) - (b.promoDiscountAmount || 0) - (b.dynamicDiscountAmount || 0) - (b.loyaltyDiscountAmount || 0),
+        amount:
+          (b.totalAmount || 0) -
+          (b.promoDiscountAmount || 0) -
+          (b.dynamicDiscountAmount || 0) -
+          (b.loyaltyDiscountAmount || 0),
         sport: b.turfId?.sportsOffered?.[0] || 'Sports',
       };
     });
   }, [bookings]);
 
-  // Guard after all hooks have run, to satisfy the Rules of Hooks
   if (!user) return null;
 
-  // ── Greeting ──
   const greeting = (() => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good morning';
@@ -377,307 +243,186 @@ function PlayerDashboard() {
     return 'Good evening';
   })();
 
-  // ── Loading ──
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#fafbfc]">
+      <NightShell ambient={0.6}>
         <LandingHeader />
         <div className="flex items-center justify-center py-32">
           <div className="text-center">
-            <div className="w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center mx-auto mb-4">
-              <Loader2 className="h-7 w-7 text-emerald-600 animate-spin" />
-            </div>
-            <p className="text-gray-500 font-medium">Loading your dashboard...</p>
-            <p className="text-xs text-gray-400 mt-1">Fetching your bookings and stats</p>
+            <Loader2 className="mx-auto mb-4 h-7 w-7 animate-spin text-flood-500" />
+            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-chalk-400">
+              Walking the tunnel…
+            </p>
           </div>
         </div>
-      </div>
+      </NightShell>
     );
   }
 
+  const seasonStats = [
+    { label: 'Total bookings', value: stats.totalBookings },
+    { label: 'Completed', value: stats.completedGames },
+    { label: 'Upcoming', value: stats.upcomingGames },
+    { label: 'Points', value: stats.loyaltyPoints },
+    { label: 'Spent', value: stats.totalSpent, prefix: '₹' },
+    { label: 'Cancelled', value: stats.cancelledBookings },
+  ];
+
   return (
-    <div className="min-h-screen bg-[#fafbfc]">
+    <NightShell ambient={0.6}>
       <LandingHeader />
 
-      {/* ─────────── HERO BANNER ─────────── */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-600 via-green-600 to-teal-700" />
-        <div
-          className="absolute inset-0 opacity-10"
-          style={{
-            backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
-            backgroundSize: '24px 24px',
-          }}
-        />
-        <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3 blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-72 h-72 bg-emerald-400/10 rounded-full translate-y-1/2 -translate-x-1/4 blur-3xl" />
+      {/* ── greeting — Anton, lime pitch-line drawn under the name ── */}
+      <section className="mx-auto max-w-7xl px-4 pb-10 pt-12 sm:px-6 sm:pt-16 lg:px-8">
+        <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
+          <div>
+            <p className="nm-overline mb-3 text-chalk-400">The player&apos;s tunnel</p>
+            <h1 className="nm-display-l text-chalk-100">
+              {greeting},{' '}
+              <span className="relative inline-block">
+                {user.name?.split(' ')[0]}
+                <span
+                  className="absolute -bottom-2 left-0 h-[2px] w-full origin-left -rotate-[1.5deg] bg-flood-500 shadow-flood motion-safe:animate-[nm-underline_0.7s_cubic-bezier(0.16,1,0.3,1)_0.3s_backwards]"
+                  aria-hidden
+                />
+              </span>
+            </h1>
+          </div>
+          <Link
+            href="/browse"
+            className="nm-overline inline-flex shrink-0 items-center gap-2 rounded-[4px] bg-flood-500 px-6 py-3.5 text-pitch-900 transition-[transform,box-shadow] duration-200 ease-night hover:shadow-flood active:translate-y-[2px]"
+          >
+            <Search className="h-4 w-4" />
+            Find arenas
+          </Link>
+        </div>
+      </section>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-20 sm:pb-24">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-5">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-2xl sm:text-3xl font-bold text-white">
-                  {greeting}, {user.name?.split(' ')[0]}! 🏏
-                </h1>
-                {loyaltyPoints > 0 && (
-                  <Badge className="bg-white/15 text-white border-white/20 hover:bg-white/20 text-[10px]">
-                    <Trophy className="h-3 w-3 mr-1" />
-                    {loyaltyPoints} pts
-                  </Badge>
+      {/* ── SEASON STATS — one strip, hairline separators, scoreboard digits ── */}
+      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-3 gap-y-8 rounded-[4px] border border-pitchline bg-pitch-700/80 px-6 py-7 lg:grid-cols-6 lg:divide-x lg:divide-pitchline/60">
+          {seasonStats.map((s, i) => (
+            <div key={s.label} className={i > 0 ? 'lg:pl-7' : ''}>
+              <div className="font-mono text-2xl tabular-nums tracking-tight text-chalk-100 sm:text-3xl">
+                {s.prefix || ''}
+                {counted ? (
+                  s.value.toLocaleString('en-IN')
+                ) : (
+                  <CountUp value={s.value} />
                 )}
               </div>
-              <p className="text-emerald-200 text-sm">
-                Ready to book your next game? Find and reserve the best arenas near you.
+              <p className="mt-1.5 font-mono text-[9px] uppercase tracking-[0.16em] text-chalk-400">
+                {s.label}
               </p>
             </div>
+          ))}
+        </div>
+      </section>
 
-            <Link href="/browse">
-              <Button className="bg-white text-emerald-700 hover:bg-gray-100 rounded-xl h-11 px-6 font-semibold shadow-xl transition-all duration-200">
-                <Search className="h-4 w-4 mr-2" />
-                Find Arenas
-              </Button>
+      {/* ── main grid ── */}
+      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-4 pb-16 pt-6 sm:px-6 lg:grid-cols-3 lg:px-8">
+        {/* FIXTURE HISTORY */}
+        <div className="overflow-hidden rounded-[4px] border border-pitchline bg-pitch-700/80 lg:col-span-2">
+          <div className="flex items-center justify-between border-b border-pitchline/60 px-6 py-4">
+            <p className="nm-overline text-chalk-400">Fixture history</p>
+            <Link
+              href="/dashboard/player/bookings"
+              className="group flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.14em] text-flood-500"
+            >
+              View all
+              <ChevronRight className="h-3.5 w-3.5 transition-transform duration-200 ease-night group-hover:translate-x-1" />
             </Link>
           </div>
-        </div>
-      </div>
 
-      {/* ─────────── MAIN CONTENT ─────────── */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-12 relative z-10 pb-12">
-
-        {/* ── Stat Cards ── */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-          <StatCard
-            icon={<CalendarCheck className="h-5 w-5" />}
-            iconGradient="from-emerald-500 to-green-600"
-            label="Total Bookings"
-            value={String(stats.totalBookings)}
-            subtext="All-time bookings"
-          />
-          <StatCard
-            icon={<CheckCircle2 className="h-5 w-5" />}
-            iconGradient="from-green-500 to-teal-500"
-            label="Completed"
-            value={String(stats.completedGames)}
-            subtext="Games played"
-          />
-          <StatCard
-            icon={<Activity className="h-5 w-5" />}
-            iconGradient="from-teal-500 to-cyan-500"
-            label="Upcoming"
-            value={String(stats.upcomingGames)}
-            subtext="Scheduled games"
-          />
-          <StatCard
-            icon={<Trophy className="h-5 w-5" />}
-            iconGradient="from-amber-500 to-orange-500"
-            label="Loyalty Points"
-            value={String(stats.loyaltyPoints)}
-            subtext="Earned rewards"
-          />
-          <StatCard
-            icon={<IndianRupee className="h-5 w-5" />}
-            iconGradient="from-cyan-500 to-sky-500"
-            label="Total Spent"
-            value={`₹${stats.totalSpent.toLocaleString('en-IN')}`}
-            subtext="On bookings"
-          />
-          <StatCard
-            icon={<XCircle className="h-5 w-5" />}
-            iconGradient="from-gray-400 to-gray-500"
-            label="Cancelled"
-            value={String(stats.cancelledBookings)}
-            subtext="Cancelled bookings"
-          />
-        </div>
-
-        {/* ── Main Grid ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mt-5">
-
-          {/* Recent Bookings */}
-          <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="px-6 py-5 border-b border-gray-50 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center">
-                  <History className="h-4 w-4 text-emerald-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 text-[15px]">Recent Bookings</h3>
-                  <p className="text-xs text-gray-400 mt-0.5">Your recent and upcoming reservations</p>
-                </div>
-              </div>
-              <Link href="/dashboard/player/bookings">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg text-xs font-medium"
-                >
-                  View All
-                  <ChevronRight className="h-3.5 w-3.5 ml-1" />
-                </Button>
+          {recentBookings.length === 0 ? (
+            <div className="px-6 py-16 text-center">
+              <h3 className="font-display text-2xl uppercase tracking-tight text-chalk-100">
+                No fixtures yet
+              </h3>
+              <p className="mx-auto mt-2 max-w-xs text-sm text-chalk-400">
+                Browse arenas near you and book your first game.
+              </p>
+              <Link
+                href="/browse"
+                className="nm-overline mt-6 inline-flex items-center gap-2 rounded-[4px] border border-chalk-400/30 px-5 py-3 text-chalk-100 transition-colors duration-200 ease-night hover:border-flood-500 hover:text-flood-500"
+              >
+                Browse arenas
+                <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </div>
-
-            <div className="p-2">
-              {recentBookings.length === 0 ? (
-                <div className="text-center py-12 px-6">
-                  <div className="w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center mx-auto mb-4">
-                    <Calendar className="h-7 w-7 text-emerald-400" />
-                  </div>
-                  <h3 className="text-base font-semibold text-gray-900">No bookings yet</h3>
-                  <p className="text-sm text-gray-400 mt-1.5 max-w-xs mx-auto">
-                    Start by browsing arenas near you and booking your first game!
-                  </p>
-                  <Link href="/browse" className="mt-5 inline-block">
-                    <Button
-                      size="sm"
-                      className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white h-9 px-5 text-xs font-semibold shadow-lg shadow-emerald-200"
-                    >
-                      Browse Arenas
-                      <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-                    </Button>
-                  </Link>
-                </div>
-              ) : (
-                <>
-                  {recentBookings.map((booking, i) => (
-                    <div key={booking.id}>
-                      <BookingCard booking={booking} />
-                      {i < recentBookings.length - 1 && (
-                        <Separator className="mx-4" />
-                      )}
-                    </div>
-                  ))}
-                </>
-              )}
+          ) : (
+            <div>
+              {recentBookings.map((booking) => (
+                <FixtureRow key={booking.id} booking={booking} />
+              ))}
             </div>
+          )}
+        </div>
 
-            {recentBookings.length > 0 && (
-              <div className="px-6 py-4 border-t border-gray-50">
-                <Link href="/dashboard/player/bookings">
-                  <Button
-                    variant="outline"
-                    className="w-full rounded-xl border-gray-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 h-10 text-sm font-medium transition-all"
-                  >
-                    <History className="h-4 w-4 mr-2" />
-                    View All Bookings ({stats.totalBookings})
-                  </Button>
+        {/* right rail */}
+        <div className="space-y-6">
+          {/* quick actions — dark rows, lime chevron nudge */}
+          <div className="overflow-hidden rounded-[4px] border border-pitchline bg-pitch-700/80">
+            <div className="border-b border-pitchline/60 px-6 py-4">
+              <p className="nm-overline text-chalk-400">Quick actions</p>
+            </div>
+            <div>
+              {[
+                { icon: <History className="h-4 w-4" />, label: 'Booking history', desc: 'The season record', href: '/dashboard/player/bookings' },
+                { icon: <Trophy className="h-4 w-4" />, label: 'Rewards & points', desc: `${loyaltyPoints.toLocaleString('en-IN')} points available`, href: '/dashboard/player/loyalty' },
+                { icon: <User className="h-4 w-4" />, label: 'My profile', desc: 'Player card & settings', href: '/dashboard/player/profile' },
+              ].map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="group flex items-center gap-3.5 border-b border-pitchline/60 px-6 py-4 transition-colors duration-200 ease-night last:border-0 hover:bg-white/[0.03]"
+                >
+                  <span className="text-flood-500">{item.icon}</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-mono text-[11px] uppercase tracking-[0.14em] text-chalk-100">
+                      {item.label}
+                    </span>
+                    <span className="mt-0.5 block font-mono text-[10px] text-chalk-400">{item.desc}</span>
+                  </span>
+                  <ChevronRight className="h-4 w-4 text-flood-500 transition-transform duration-200 ease-night group-hover:translate-x-1" />
                 </Link>
-              </div>
-            )}
+              ))}
+            </div>
           </div>
 
-          {/* Quick Actions */}
-          <div className="space-y-5">
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-              <div className="px-6 py-5 border-b border-gray-50">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center">
-                    <Zap className="h-4 w-4 text-green-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900 text-[15px]">Quick Actions</h3>
-                    <p className="text-xs text-gray-400 mt-0.5">Find and book your next game</p>
-                  </div>
-                </div>
-              </div>
+          {/* loyalty promo — THE one glowing element */}
+          <Link
+            href="/dashboard/player/loyalty"
+            className="block rounded-[4px] border border-flood-500/50 bg-pitch-700/90 p-6 shadow-flood transition-[box-shadow,border-color] duration-300 ease-night hover:border-flood-500"
+          >
+            <p className="nm-overline flex items-center gap-2 text-flood-500">
+              <Trophy className="h-4 w-4" />
+              Loyalty rewards
+            </p>
+            <p className="mt-4 font-mono text-4xl tabular-nums tracking-tight text-chalk-100">
+              {loyaltyPoints.toLocaleString('en-IN')}
+            </p>
+            <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-400">
+              Points available
+            </p>
+            <p className="mt-4 border-t border-pitchline/60 pt-4 text-xs leading-relaxed text-chalk-400">
+              Earn points with every booking. Redeem them for discounts on future games.
+            </p>
+          </Link>
 
-              <div className="p-3 space-y-2">
-                <Link href="/browse" className="block">
-                  <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 transition-colors cursor-pointer group">
-                    <div className="w-9 h-9 rounded-lg bg-emerald-600 flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
-                      <Search className="h-4 w-4" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-emerald-800">Browse All Arenas</p>
-                      <p className="text-[11px] text-emerald-600">Find the perfect turf near you</p>
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-emerald-400 group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </Link>
-
-                {[
-                  {
-                    icon: <History className="h-4 w-4" />,
-                    label: 'Booking History',
-                    desc: 'View past bookings',
-                    href: '/dashboard/player/bookings',
-                  },
-                  {
-                    icon: <Trophy className="h-4 w-4" />,
-                    label: 'Rewards & Points',
-                    desc: `${loyaltyPoints} points available`,
-                    href: '/dashboard/player/loyalty',
-                  },
-                  {
-                    icon: <User className="h-4 w-4" />,
-                    label: 'My Profile',
-                    desc: 'Account settings',
-                    href: '/dashboard/player/profile',
-                  },
-                ].map((item, i) => (
-                  <Link key={i} href={item.href} className="block">
-                    <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer group">
-                      <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">
-                        {item.icon}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900">{item.label}</p>
-                        <p className="text-[11px] text-gray-400">{item.desc}</p>
-                      </div>
-                      <ChevronRight className="h-4 w-4 text-gray-300 group-hover:text-emerald-400 group-hover:translate-x-1 transition-all" />
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            {/* Loyalty Card */}
-            <div className="bg-gradient-to-br from-emerald-600 to-teal-700 rounded-2xl p-5 text-white relative overflow-hidden">
-              <div
-                className="absolute inset-0 opacity-10"
-                style={{
-                  backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
-                  backgroundSize: '16px 16px',
-                }}
-              />
-              <div className="relative">
-                <div className="flex items-center gap-2 mb-3">
-                  <Trophy className="h-5 w-5 text-amber-300" />
-                  <span className="text-sm font-semibold">Loyalty Rewards</span>
-                </div>
-                <p className="text-3xl font-bold">{loyaltyPoints}</p>
-                <p className="text-emerald-200 text-xs mt-1">
-                  Points available
-                </p>
-                <Separator className="my-4 bg-white/20" />
-                <p className="text-emerald-100 text-xs leading-relaxed">
-                  Earn points with every booking. Redeem them for discounts on future games!
-                </p>
-              </div>
-            </div>
-
-            {/* Favorites placeholder */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-              <div className="px-6 py-5 border-b border-gray-50">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-red-50 flex items-center justify-center">
-                    <Heart className="h-4 w-4 text-red-500" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900 text-[15px]">Favorite Arenas</h3>
-                    <p className="text-xs text-gray-400 mt-0.5">Your saved spots</p>
-                  </div>
-                </div>
-              </div>
-              <div className="p-6 text-center">
-                <Heart className="h-8 w-8 text-gray-200 mx-auto mb-2" />
-                <p className="text-xs text-gray-400">Coming soon</p>
-              </div>
-            </div>
+          {/* favorites placeholder */}
+          <div className="rounded-[4px] border border-pitchline bg-pitch-700/60 px-6 py-5">
+            <p className="nm-overline flex items-center gap-2 text-chalk-400">
+              <Heart className="h-3.5 w-3.5" />
+              Favourite arenas
+            </p>
+            <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-400/60">
+              Coming soon
+            </p>
           </div>
         </div>
       </div>
-    </div>
+    </NightShell>
   );
 }
 
