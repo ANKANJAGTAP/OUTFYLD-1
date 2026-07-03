@@ -30,6 +30,22 @@ import PaymentModal from '@/components/booking/PaymentModal';
 import { WeekCalendar } from '@/components/booking/WeekCalendar';
 import TurfImageGallery from '@/components/booking/TurfImageGallery';
 import { useAuth } from '@/contexts/AuthContext';
+import { OdometerText } from '@/components/night/OdometerText';
+
+// Google Maps night styling — proper styled map (not a CSS filter hack),
+// tuned toward the pitch palette. Lime marker is drawn as a symbol.
+const NIGHT_MAP_STYLES: google.maps.MapTypeStyle[] = [
+  { elementType: 'geometry', stylers: [{ color: '#101914' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#8fa096' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#0a0f0c' }] },
+  { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },
+  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#14211a' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#1d2a23' }] },
+  { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#0e1512' }] },
+  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#2a3a30' }] },
+  { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0b1a17' }] },
+];
 
 interface TurfData {
   _id: string;
@@ -534,10 +550,12 @@ const TurfDetailsPage = memo(function TurfDetailsPage({ turfId }: TurfDetailsPag
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Loading turf details...</p>
+          <Loader2 className="mx-auto mb-4 h-8 w-8 animate-spin text-flood-500" />
+          <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-chalk-400">
+            Loading the ground…
+          </p>
         </div>
       </div>
     );
@@ -545,56 +563,58 @@ const TurfDetailsPage = memo(function TurfDetailsPage({ turfId }: TurfDetailsPag
 
   if (error || !turf) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Alert className="max-w-md">
-          <AlertDescription>
-            {error || 'Turf not found'}
-          </AlertDescription>
-        </Alert>
+      <div className="flex min-h-screen items-center justify-center px-6">
+        <div className="max-w-md rounded-[4px] border border-red-900/60 bg-red-950/20 px-5 py-4 text-sm text-red-200">
+          {error || 'Turf not found'}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Alert Message */}
+    <div className="min-h-screen">
+      {/* Alert Message — floodlight-language toasts */}
       {alertMessage && (
-        <div className="fixed top-4 right-4 z-50 max-w-sm">
-          <Alert className={`${
-            alertMessage.type === 'error' ? 'border-red-200 bg-red-50' :
-            alertMessage.type === 'warning' ? 'border-yellow-200 bg-yellow-50' :
-            alertMessage.type === 'success' ? 'border-green-200 bg-green-50' :
-            'border-blue-200 bg-blue-50'
-          }`}>
-            <AlertDescription className={`${
-              alertMessage.type === 'error' ? 'text-red-800' :
-              alertMessage.type === 'warning' ? 'text-yellow-800' :
-              alertMessage.type === 'success' ? 'text-green-800' :
-              'text-blue-800'
-            }`}>
-              {alertMessage.message}
-            </AlertDescription>
-          </Alert>
+        <div className="fixed right-4 top-20 z-50 max-w-sm">
+          <div
+            className={`rounded-[4px] border px-4 py-3 text-sm backdrop-blur-md ${
+              alertMessage.type === 'error'
+                ? 'border-red-900/70 bg-red-950/70 text-red-200'
+                : alertMessage.type === 'warning'
+                  ? 'border-amber-900/70 bg-amber-950/60 text-amber-200'
+                  : alertMessage.type === 'success'
+                    ? 'border-flood-500/50 bg-pitch-700/90 text-chalk-100 shadow-flood'
+                    : 'border-pitchline bg-pitch-700/90 text-chalk-100'
+            }`}
+          >
+            {alertMessage.message}
+          </div>
         </div>
       )}
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">{turf.businessName}</h1>
-          <div className="flex items-center text-gray-600 mb-4">
-            <MapPin className="w-4 h-4 mr-1" />
-            <span>{turf.location.address}, {turf.location.city}, {turf.location.state} - {turf.location.pincode}</span>
+
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        {/* Header — the match ticket masthead */}
+        <div className="mb-10">
+          <p className="nm-overline mb-3 text-flood-500">
+            The match ticket · {turf.location.city || 'OutFyld arena'}
+          </p>
+          <h1 className="nm-display-l text-chalk-100">{turf.businessName}</h1>
+          <div className="mt-4 flex items-center gap-2 text-chalk-400">
+            <MapPin className="h-4 w-4 shrink-0" />
+            <span className="text-sm">
+              {turf.location.address}, {turf.location.city}, {turf.location.state} -{' '}
+              {turf.location.pincode}
+            </span>
           </div>
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center">
-              <Phone className="w-4 h-4 mr-1" />
-              <span className="text-sm">{turf.phone || 'N/A'}</span>
-            </div>
-            <div className="flex items-center">
-              <Mail className="w-4 h-4 mr-1" />
-              <span className="text-sm">{turf.email}</span>
-            </div>
+          <div className="mt-2 flex items-center gap-6 font-mono text-xs text-chalk-400">
+            <span className="flex items-center gap-1.5">
+              <Phone className="h-3.5 w-3.5" />
+              {turf.phone || 'N/A'}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Mail className="h-3.5 w-3.5" />
+              {turf.email}
+            </span>
           </div>
         </div>
 
@@ -605,50 +625,43 @@ const TurfDetailsPage = memo(function TurfDetailsPage({ turfId }: TurfDetailsPag
             <TurfImageGallery images={turf.turfImages} altFallback={turf.businessName} />
 
             {/* About */}
-            <Card>
-              <CardHeader>
-                <CardTitle>About This Turf</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-700">{turf.about}</p>
-              </CardContent>
-            </Card>
+            <div className="rounded-[4px] border border-pitchline bg-pitch-700/90 p-6">
+              <p className="nm-overline mb-4 text-chalk-400">About this ground</p>
+              <p className="text-sm leading-relaxed text-chalk-100/90">{turf.about}</p>
+            </div>
 
             {/* Sports & Amenities */}
-            <div className="grid md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Sports Offered</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2">
-                    {turf.sportsOffered.map((sport) => (
-                      <Badge key={sport} variant="secondary">
-                        {sport}
-                      </Badge>
-                    ))}
-                    {turf.customSport && (
-                      <Badge variant="secondary">{turf.customSport}</Badge>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="rounded-[4px] border border-pitchline bg-pitch-700/90 p-6">
+                <p className="nm-overline mb-4 text-chalk-400">Sports on offer</p>
+                <div className="flex flex-wrap gap-x-5 gap-y-2">
+                  {turf.sportsOffered.map((sport) => (
+                    <span
+                      key={sport}
+                      className="font-mono text-[11px] uppercase tracking-[0.16em] text-chalk-100"
+                    >
+                      {sport}
+                    </span>
+                  ))}
+                  {turf.customSport && (
+                    <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-chalk-100">
+                      {turf.customSport}
+                    </span>
+                  )}
+                </div>
+              </div>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Amenities</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {turf.amenities.map((amenity) => (
-                      <div key={amenity} className="flex items-center">
-                        {amenityIcons[amenity] || <Users className="w-4 h-4" />}
-                        <span className="ml-2">{amenity}</span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="rounded-[4px] border border-pitchline bg-pitch-700/90 p-6">
+                <p className="nm-overline mb-4 text-chalk-400">Amenities</p>
+                <div className="space-y-2.5">
+                  {turf.amenities.map((amenity) => (
+                    <div key={amenity} className="flex items-center text-flood-500">
+                      {amenityIcons[amenity] || <Users className="h-4 w-4" />}
+                      <span className="ml-2.5 text-sm text-chalk-100/90">{amenity}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
 
             {/* Location Map */}
@@ -664,36 +677,50 @@ const TurfDetailsPage = memo(function TurfDetailsPage({ turfId }: TurfDetailsPag
               if (isNaN(lat) || isNaN(lng)) return null;
               
               return (
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle>Location</CardTitle>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="flex items-center gap-2"
+                <div className="overflow-hidden rounded-[4px] border border-pitchline bg-pitch-700/90">
+                  <div className="flex items-center justify-between border-b border-pitchline/60 px-6 py-4">
+                    <p className="nm-overline text-chalk-400">Find the ground</p>
+                    <button
+                      className="flex items-center gap-2 rounded-[3px] border border-pitchline px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-chalk-100 transition-colors duration-200 ease-night hover:border-flood-500 hover:text-flood-500"
                       onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank')}
                     >
-                      <ExternalLink className="w-4 h-4" />
+                      <ExternalLink className="h-3.5 w-3.5" />
                       Open in Maps
-                    </Button>
-                  </CardHeader>
-                  <CardContent className="p-0 overflow-hidden">
-                    <GoogleMap
-                      mapContainerStyle={mapContainerStyle}
-                      center={{ lat, lng }}
-                      zoom={15}
-                    >
-                      <MarkerF 
-                        position={{ lat, lng }} 
-                        animation={window.google?.maps?.Animation?.DROP}
-                      />
-                    </GoogleMap>
-                    <div className="p-4 text-sm text-gray-600 bg-gray-50 flex items-start gap-2 border-t">
-                      <MapPin className="w-5 h-5 text-gray-400 shrink-0" />
-                      <p>{turf.location?.address}, {turf.location?.city}, {turf.location?.state} - {turf.location?.pincode}</p>
-                    </div>
-                  </CardContent>
-                </Card>
+                    </button>
+                  </div>
+                  <GoogleMap
+                    mapContainerStyle={mapContainerStyle}
+                    center={{ lat, lng }}
+                    zoom={15}
+                    options={{
+                      styles: NIGHT_MAP_STYLES,
+                      disableDefaultUI: true,
+                      zoomControl: true,
+                      backgroundColor: '#0e1512',
+                    }}
+                  >
+                    {/* lime marker with a soft flood-glow ring */}
+                    <MarkerF
+                      position={{ lat, lng }}
+                      icon={{
+                        path: window.google?.maps?.SymbolPath?.CIRCLE,
+                        scale: 9,
+                        fillColor: '#C8F135',
+                        fillOpacity: 1,
+                        strokeColor: '#C8F135',
+                        strokeOpacity: 0.25,
+                        strokeWeight: 10,
+                      }}
+                    />
+                  </GoogleMap>
+                  <div className="flex items-start gap-2 border-t border-pitchline/60 px-6 py-4 text-sm text-chalk-400">
+                    <MapPin className="h-4 w-4 shrink-0 text-flood-500" />
+                    <p>
+                      {turf.location?.address}, {turf.location?.city}, {turf.location?.state} -{' '}
+                      {turf.location?.pincode}
+                    </p>
+                  </div>
+                </div>
               );
             })()}
 
@@ -705,49 +732,40 @@ const TurfDetailsPage = memo(function TurfDetailsPage({ turfId }: TurfDetailsPag
                 onDateSelect={handleDateSelect}
               />
 
-              {/* Available Slots for Selected Date */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>
-                    {selectedDate 
-                      ? `Available Slots - ${format(selectedDate, 'EEEE, MMM d')}`
-                      : 'Select a Date to View Slots'
-                    }
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
+              {/* FIXTURE SLOTS — mono time chips: chalk available, lime selected, struck silhouette booked */}
+              <div className="rounded-[4px] border border-pitchline bg-pitch-700/90">
+                <div className="border-b border-pitchline/60 px-6 py-4">
+                  <p className="nm-overline text-chalk-400">
+                    {selectedDate
+                      ? `Fixture slots — ${format(selectedDate, 'EEEE, MMM d')}`
+                      : 'Pick a matchday to view slots'}
+                  </p>
+                </div>
+                <div className="p-6">
                   {selectedDate ? (
                     availableSlotsForSelectedDate.length > 0 ? (
-                      <div className="grid grid-cols-3 lg:grid-cols-4 gap-2">
-                        {availableSlotsForSelectedDate.map((slot, index) => {
-                          // Check if this slot is selected
-                          const isSlotSelected = selectedSlots.some(s => 
-                            s.startTime === slot.startTime && 
-                            s.endTime === slot.endTime &&
-                            selectedDate && isSameDay(s.date, selectedDate)
+                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+                        {availableSlotsForSelectedDate.map((slot) => {
+                          const isSlotSelected = selectedSlots.some(
+                            (s) =>
+                              s.startTime === slot.startTime &&
+                              s.endTime === slot.endTime &&
+                              selectedDate &&
+                              isSameDay(s.date, selectedDate)
                           );
-                          
-                          // Create unique key - since we removed duplicates, this is safe
                           const uniqueKey = `${slot.startTime}-${slot.endTime}`;
-                          
+
                           return (
-                            <Button
+                            <button
                               key={uniqueKey}
                               type="button"
-                              variant={
-                                isSlotSelected
-                                  ? "default"
-                                  : slot.isBooked 
-                                    ? "destructive"
-                                    : "outline"
-                              }
                               disabled={slot.isBooked}
-                              className={`text-sm ${
-                                slot.isBooked 
-                                  ? 'bg-red-100 text-red-800 border-red-300 cursor-not-allowed hover:bg-red-100' 
+                              className={`flex flex-col items-center rounded-[3px] border px-2 py-2.5 font-mono transition-[background-color,border-color,box-shadow,color] duration-200 ease-night ${
+                                slot.isBooked
+                                  ? 'cursor-not-allowed border-pitchline/50 text-chalk-400/35'
                                   : isSlotSelected
-                                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                                    : ''
+                                    ? 'border-flood-500 bg-flood-500 text-pitch-900 shadow-flood'
+                                    : 'border-pitchline bg-pitch-800/60 text-chalk-100 hover:border-flood-500/60'
                               }`}
                               onClick={(e) => {
                                 e.preventDefault();
@@ -756,149 +774,188 @@ const TurfDetailsPage = memo(function TurfDetailsPage({ turfId }: TurfDetailsPag
                                 }
                               }}
                             >
-                              <div className="flex flex-col items-center">
-                                <span>{slot.startTime} - {slot.endTime}</span>
-                                {(() => {
-                                  if (slot.isBooked) return <span className="text-xs">(Booked)</span>;
-                                  if (isSlotSelected) return <span className="text-xs">✓</span>;
-                                  const { offerPrice, discountPercent } = getSlotOfferPrice(slot.startTime);
-                                  if (discountPercent > 0 && turf) {
-                                    return (
-                                      <span className="text-xs mt-0.5">
-                                        <span className="line-through text-gray-400">₹{turf.pricing}</span>{' '}
-                                        <span className="text-green-600 font-bold">₹{offerPrice}</span>
-                                      </span>
-                                    );
-                                  }
-                                  return turf ? <span className="text-xs mt-0.5">₹{turf.pricing}</span> : null;
-                                })()}
-                              </div>
-                            </Button>
+                              <span
+                                className={`text-xs tabular-nums ${slot.isBooked ? 'line-through' : ''}`}
+                              >
+                                {slot.startTime}–{slot.endTime}
+                              </span>
+                              {(() => {
+                                if (slot.isBooked)
+                                  return (
+                                    <span className="mt-0.5 text-[10px] uppercase tracking-[0.1em]">
+                                      Taken
+                                    </span>
+                                  );
+                                const { offerPrice, discountPercent } = getSlotOfferPrice(slot.startTime);
+                                if (discountPercent > 0 && turf) {
+                                  return (
+                                    <span className="mt-0.5 text-[10px] tabular-nums">
+                                      <span
+                                        className={`line-through ${isSlotSelected ? 'text-pitch-900/50' : 'text-chalk-400/60'}`}
+                                      >
+                                        ₹{turf.pricing}
+                                      </span>{' '}
+                                      ₹{offerPrice}
+                                    </span>
+                                  );
+                                }
+                                return turf ? (
+                                  <span className="mt-0.5 text-[10px] tabular-nums">₹{turf.pricing}</span>
+                                ) : null;
+                              })()}
+                            </button>
                           );
                         })}
                       </div>
                     ) : (
-                      <div className="text-center py-8 text-gray-500">
-                        <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                        <p>No slots available for this date</p>
+                      <div className="py-10 text-center text-chalk-400">
+                        <Clock className="mx-auto mb-3 h-7 w-7 opacity-50" />
+                        <p className="font-mono text-[11px] uppercase tracking-[0.14em]">
+                          No slots on this date
+                        </p>
                       </div>
                     )
                   ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                      <p>Please select a date to view available slots</p>
+                    <div className="py-10 text-center text-chalk-400">
+                      <Clock className="mx-auto mb-3 h-7 w-7 opacity-50" />
+                      <p className="font-mono text-[11px] uppercase tracking-[0.14em]">
+                        Pick a matchday above
+                      </p>
                     </div>
                   )}
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Sidebar */}
+          {/* Sidebar — THE TICKET STUB */}
           <div className="lg:col-span-1">
-            <Card className="sticky top-4">
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>Booking Summary</span>
-                  {turf.discountPercent && turf.discountPercent > 0 ? (
-                    <div className="text-right">
-                      <span className="text-sm line-through text-gray-400 mr-1">₹{turf.pricing}</span>
-                      <span className="text-2xl font-bold text-green-600">₹{turf.offerPrice}</span>
-                      <span className="block text-xs text-green-500 font-medium">{turf.offerLabel}</span>
-                    </div>
-                  ) : (
-                    <span className="text-2xl font-bold text-green-600">₹{turf.pricing}</span>
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
+            <div className="sticky top-24 overflow-hidden rounded-[4px] border border-pitchline bg-pitch-700/95">
+              {/* stub masthead */}
+              <div className="px-6 pb-5 pt-6">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="nm-overline mb-2 text-flood-500">Match ticket</p>
+                    <h3 className="line-clamp-2 font-display text-2xl uppercase leading-none tracking-tight text-chalk-100">
+                      {turf.businessName}
+                    </h3>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    {turf.discountPercent && turf.discountPercent > 0 ? (
+                      <>
+                        <span className="block font-mono text-xs text-chalk-400/70 line-through">
+                          ₹{turf.pricing}
+                        </span>
+                        <span className="font-mono text-2xl tracking-tight text-chalk-100">
+                          ₹{turf.offerPrice}
+                        </span>
+                        <span className="block font-mono text-[9px] uppercase tracking-[0.12em] text-flood-500">
+                          {turf.offerLabel}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="font-mono text-2xl tracking-tight text-chalk-100">
+                        ₹{turf.pricing}
+                      </span>
+                    )}
+                    <span className="block font-mono text-[9px] uppercase tracking-[0.12em] text-chalk-400">
+                      per hour
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4 px-6 pb-5">
                   {selectedSlots.length > 0 && selectedDate ? (
-                    <div>
-                      <h4 className="font-medium text-gray-900 mb-2">
-                        Selected Slots ({selectedSlots.length})
-                      </h4>
-                      <div className="bg-gray-50 p-3 rounded-lg space-y-2">
-                        <p className="font-medium">{format(selectedDate, 'EEEE, MMM d')}</p>
+                    <div key={`${format(selectedDate, 'yyyy-MM-dd')}-${selectedSlots.length}`} className="nm-print">
+                      <p className="nm-overline mb-2 text-chalk-400">
+                        Selected slots ({selectedSlots.length})
+                      </p>
+                      <div className="space-y-2 rounded-[3px] border border-pitchline/70 bg-pitch-800/60 p-3">
+                        <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-chalk-100">
+                          {format(selectedDate, 'EEEE, MMM d')}
+                        </p>
                         <div className="space-y-1">
                           {selectedSlots.map((slot, index) => {
                             const { offerPrice, discountPercent } = getSlotOfferPrice(slot.startTime);
                             const showOffer = !promoApplied && discountPercent > 0;
                             return (
-                              <div key={index} className="flex justify-between items-center text-sm">
-                                <span className="text-gray-600">
-                                  {slot.startTime} - {slot.endTime}
+                              <div key={index} className="flex items-center justify-between font-mono text-xs tabular-nums">
+                                <span className="text-chalk-400">
+                                  {slot.startTime}–{slot.endTime}
                                 </span>
                                 {showOffer ? (
-                                  <span>
-                                    <span className="line-through text-gray-400 text-xs mr-1">₹{turf.pricing}</span>
-                                    <span className="text-green-600 font-medium">₹{offerPrice}</span>
+                                  <span className="text-chalk-100">
+                                    <span className="mr-1.5 text-[10px] text-chalk-400/60 line-through">₹{turf.pricing}</span>
+                                    ₹{offerPrice}
                                   </span>
                                 ) : (
-                                  <span className="text-green-600 font-medium">₹{turf.pricing}</span>
+                                  <span className="text-chalk-100">₹{turf.pricing}</span>
                                 )}
                               </div>
                             );
                           })}
                         </div>
                       </div>
-                      
+
                       {/* Reservation Timer */}
                       {reservationExpiry && countdown > 0 && (
-                        <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg">
+                        <div className="mt-3 rounded-[3px] border border-flood-500/40 bg-flood-500/[0.06] p-3">
                           <div className="flex items-center justify-between">
-                            <div className="flex items-center text-blue-700">
-                              <Lock className="w-4 h-4 mr-2" />
-                              <span className="text-sm font-medium">Slots Reserved</span>
+                            <div className="flex items-center text-chalk-100">
+                              <Lock className="mr-2 h-4 w-4 text-flood-500" />
+                              <span className="font-mono text-[11px] uppercase tracking-[0.12em]">
+                                Slots reserved
+                              </span>
                             </div>
-                            <div className="text-blue-600 font-mono text-sm">
+                            <div className="font-mono text-sm tabular-nums text-flood-500">
                               {Math.floor(countdown / 60)}:{(countdown % 60).toString().padStart(2, '0')}
                             </div>
                           </div>
-                          <p className="text-xs text-blue-600 mt-1">
-                            Complete payment within {Math.floor(countdown / 60)} minutes
+                          <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.1em] text-chalk-400">
+                            Complete payment within {Math.floor(countdown / 60)} min
                           </p>
                         </div>
                       )}
-                      <Separator className="my-4" />
+                      <Separator className="my-4 bg-pitchline" />
 
                       {/* Dynamic discount summary */}
                       {dynamicDiscountAmount > 0 && (
-                        <div className="flex justify-between text-sm text-green-600 mb-1">
-                          <span>🔥 Dynamic Discount</span>
-                          <span>-₹{dynamicDiscountAmount}</span>
+                        <div className="mb-1 flex justify-between font-mono text-xs tabular-nums text-flood-500">
+                          <span className="uppercase tracking-[0.1em]">Off-peak discount</span>
+                          <span>−₹{dynamicDiscountAmount}</span>
                         </div>
                       )}
 
                       {/* Promo discount display */}
                       {promoApplied && (
-                        <div className="flex justify-between text-sm text-green-600 mb-1">
-                          <span className="flex items-center gap-1">
+                        <div className="mb-1 flex justify-between font-mono text-xs tabular-nums text-flood-500">
+                          <span className="flex items-center gap-2 uppercase tracking-[0.1em]">
                             WELCOME100
                             <button
                               onClick={() => {
                                 setPromoApplied(false);
                                 setPromoCode('');
                               }}
-                              className="text-xs text-red-500 underline"
+                              className="text-[10px] text-chalk-400 underline hover:text-chalk-100"
                             >
                               Remove
                             </button>
                           </span>
-                          <span>-₹{Math.min(100, turf.pricing * selectedSlots.length)}</span>
+                          <span>−₹{Math.min(100, turf.pricing * selectedSlots.length)}</span>
                         </div>
                       )}
 
                       {/* Promo code input */}
                       {!promoApplied && (
                         <div className="mb-3">
-                          <label className="text-xs text-gray-500 flex items-center gap-1 mb-1">
-                            <Tag className="w-3 h-3" /> Have a promo code?
+                          <label className="mb-1.5 flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-chalk-400">
+                            <Tag className="h-3 w-3" /> Promo code
                           </label>
                           <div className="flex gap-2">
                             <input
                               type="text"
-                              className="flex-1 text-sm border rounded px-2 py-1"
+                              className="min-w-0 flex-1 rounded-[3px] border border-pitchline bg-pitch-800/70 px-2.5 py-1.5 font-mono text-sm text-chalk-100 outline-none transition-[border-color] duration-200 ease-night placeholder:text-chalk-400/40 focus:border-flood-500/60"
                               placeholder="WELCOME100"
                               value={promoCode}
                               onChange={(e) => {
@@ -945,50 +1002,84 @@ const TurfDetailsPage = memo(function TurfDetailsPage({ turfId }: TurfDetailsPag
                               {promoChecking ? '...' : 'Apply'}
                             </Button>
                           </div>
-                          {promoError && <p className="text-xs text-red-500 mt-1">{promoError}</p>}
+                          {promoError && (
+                            <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.1em] text-red-400">
+                              {promoError}
+                            </p>
+                          )}
                         </div>
                       )}
-
-                      <div className="flex justify-between font-medium">
-                        <span>Total Amount:</span>
-                        <span className="text-green-600 text-lg">
-                          ₹{selectedSlotsTotal.toLocaleString()}
-                        </span>
-                      </div>
                     </div>
                   ) : (
-                    <div className="text-center text-gray-500 py-8">
-                      <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                      <p>Select a date and time slots to continue</p>
+                    <div className="py-8 text-center text-chalk-400">
+                      <Clock className="mx-auto mb-3 h-7 w-7 opacity-50" />
+                      <p className="font-mono text-[11px] uppercase tracking-[0.14em]">
+                        Pick a matchday &amp; slots
+                      </p>
                     </div>
                   )}
-                  
-                  <Button 
-                    type="button"
-                    className="w-full" 
-                    disabled={selectedSlots.length === 0 || !selectedDate || slotVerificationLoading}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleProceedToPayment();
-                    }}
-                  >
-                    {slotVerificationLoading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Verifying Availability...
-                      </>
-                    ) : (
-                      <>
-                        Proceed to Payment
-                        {selectedSlots.length > 0 && (
-                          <span className="ml-2">({selectedSlots.length} slot{selectedSlots.length > 1 ? 's' : ''})</span>
-                        )}
-                      </>
-                    )}
-                  </Button>
+              </div>
+
+              {/* perforation — punched notches + dashed tear */}
+              <div className="relative">
+                <span className="absolute left-[-9px] top-1/2 h-[18px] w-[18px] -translate-y-1/2 rounded-full bg-pitch-900" />
+                <span className="absolute right-[-9px] top-1/2 h-[18px] w-[18px] -translate-y-1/2 rounded-full bg-pitch-900" />
+                <div className="mx-4 border-t border-dashed border-pitchline" />
+              </div>
+
+              {/* stub footer — barcode strip, total, the ONE lime action */}
+              <div className="space-y-4 px-6 py-5">
+                <div className="flex items-end justify-between">
+                  <div>
+                    <div
+                      aria-hidden
+                      className="h-8 w-36 opacity-40"
+                      style={{
+                        backgroundImage:
+                          'repeating-linear-gradient(90deg, rgba(243,247,241,0.7) 0 2px, transparent 2px 5px, rgba(243,247,241,0.7) 5px 6px, transparent 6px 11px, rgba(243,247,241,0.7) 11px 12px, transparent 12px 15px)',
+                      }}
+                    />
+                    <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.2em] text-chalk-400/70">
+                      OutFyld · {turfId.slice(-8)}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-400">
+                      Total
+                    </p>
+                    <p className="font-mono text-2xl tracking-tight text-flood-500">
+                      ₹<OdometerText value={selectedSlotsTotal} />
+                    </p>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
+
+                <button
+                  type="button"
+                  className="nm-overline inline-flex w-full items-center justify-center gap-2 rounded-[4px] bg-flood-500 px-6 py-4 text-pitch-900 transition-[transform,box-shadow,background-color,opacity] duration-200 ease-night hover:bg-flood-600 hover:shadow-flood active:translate-y-[2px] disabled:pointer-events-none disabled:opacity-35"
+                  disabled={selectedSlots.length === 0 || !selectedDate || slotVerificationLoading}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleProceedToPayment();
+                  }}
+                >
+                  {slotVerificationLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Verifying availability…
+                    </>
+                  ) : (
+                    <>
+                      Proceed to payment
+                      {selectedSlots.length > 0 && (
+                        <span className="font-mono tabular-nums">
+                          ({selectedSlots.length})
+                        </span>
+                      )}
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>

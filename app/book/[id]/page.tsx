@@ -4,6 +4,7 @@ import React, { use } from 'react';
 import dynamic from 'next/dynamic';
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import { Footer } from '@/components/landing/Footer';
+import { NightShell } from '@/components/night/NightShell';
 import { Loader2 } from 'lucide-react';
 
 // Dynamic import — TurfDetailsPage bundles @react-google-maps/api (7.4MB)
@@ -13,8 +14,8 @@ const TurfDetailsPage = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <Loader2 className="h-8 w-8 text-emerald-500 animate-spin" />
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-flood-500" />
       </div>
     ),
   }
@@ -29,10 +30,11 @@ interface BookPageProps {
 export default function BookPage(props: BookPageProps) {
   const params = use(props.params);
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-green-50">
+    // work surface → ambient dialed to 60%
+    <NightShell ambient={0.6}>
       <LandingHeader />
       <TurfDetailsPage turfId={params.id} />
       <Footer />
-    </div>
+    </NightShell>
   );
 }

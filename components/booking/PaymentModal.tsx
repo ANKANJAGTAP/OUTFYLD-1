@@ -351,7 +351,7 @@ export default function PaymentModal({
                       onChange={(e) => setUseLoyaltyPoints(e.target.checked)}
                       disabled={loadingLoyalty || processing}
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-flood-500"></div>
                   </label>
                 </div>
               )}
@@ -362,19 +362,19 @@ export default function PaymentModal({
                   <span>₹{totalAmount}</span>
                 </div>
                 {hasDynamicDiscount && (
-                  <div className="flex justify-between text-sm text-green-600">
+                  <div className="flex justify-between text-sm text-flood-500">
                     <span>🔥 Dynamic Discount:</span>
                     <span>-₹{dynamicDiscountTotal}</span>
                   </div>
                 )}
                 {appliedPromoCode && (
-                  <div className="flex justify-between text-sm text-green-600">
+                  <div className="flex justify-between text-sm text-flood-500">
                     <span>Promo ({appliedPromoCode}):</span>
                     <span>-₹{promoTotal}</span>
                   </div>
                 )}
                 {useLoyaltyPoints && (
-                  <div className="flex justify-between text-sm text-purple-600">
+                  <div className="flex justify-between text-sm text-flood-500">
                     <span>Loyalty Discount:</span>
                     <span>-₹{loyaltyDiscount}</span>
                   </div>
@@ -391,7 +391,7 @@ export default function PaymentModal({
           <div className="mt-4">
             {currentStep === 'ready' && (
               <div className="space-y-4">
-                <div className="bg-green-50 p-4 rounded-lg text-center">
+                <div className="rounded-lg border border-flood-500/40 bg-flood-500/[0.06] p-4 text-center">
                   <CreditCard className="h-10 w-10 mx-auto text-green-600 mb-3" />
                   <h3 className="text-lg font-semibold mb-1">Secure Payment</h3>
                   <p className="text-sm text-gray-600 mb-1">

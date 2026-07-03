@@ -1,26 +1,21 @@
 'use client';
 
-import React, { useState, useEffect, memo } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock } from 'lucide-react';
-import { 
-  format, 
-  addDays, 
-  startOfWeek, 
-  isSameDay, 
-  isPast, 
-  isToday, 
-  addWeeks, 
-  subWeeks,
+import React, { useState, memo } from 'react';
+import { ChevronLeft, ChevronRight, Clock } from 'lucide-react';
+import {
+  format,
+  addDays,
+  startOfWeek,
+  isSameDay,
+  isPast,
+  isToday,
   startOfMonth,
   endOfMonth,
   eachDayOfInterval,
   isSameMonth,
   addMonths,
   isAfter,
-  startOfDay
+  startOfDay,
 } from 'date-fns';
 
 interface WeekCalendarProps {
@@ -29,110 +24,81 @@ interface WeekCalendarProps {
   className?: string;
 }
 
-const WeekCalendar = memo(function WeekCalendar({ selectedDate, onDateSelect, className }: WeekCalendarProps) {
+/**
+ * Night Match booking calendar — dark grid, Geist Mono digits, lime
+ * selection ring with flood glow. No default white calendar anywhere.
+ */
+const WeekCalendar = memo(function WeekCalendar({
+  selectedDate,
+  onDateSelect,
+  className = '',
+}: WeekCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const today = startOfDay(new Date());
   const maxBookingDate = addMonths(today, 1); // 1 month from today
 
-  // Get all days in the current month
   const monthStart = startOfMonth(currentMonth);
-  const monthEnd = endOfMonth(currentMonth);
-  const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
-
-  // Get the first day of the week for the month (to align the grid)
   const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 });
-  const calendarEnd = addDays(calendarStart, 41); // 6 weeks worth of days
+  const calendarEnd = addDays(calendarStart, 41); // 6 weeks
   const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 
-  const goToPreviousMonth = () => {
-    setCurrentMonth(prev => addMonths(prev, -1));
-  };
+  const goToPreviousMonth = () => setCurrentMonth((prev) => addMonths(prev, -1));
+  const goToNextMonth = () => setCurrentMonth((prev) => addMonths(prev, 1));
+  const goToCurrentMonth = () => setCurrentMonth(new Date());
 
-  const goToNextMonth = () => {
-    setCurrentMonth(prev => addMonths(prev, 1));
-  };
+  const isDayPast = (date: Date) => isPast(date) && !isToday(date);
+  const isDaySelected = (date: Date) => (selectedDate ? isSameDay(date, selectedDate) : false);
+  const isDayDisabled = (date: Date) => isDayPast(date) || isAfter(date, maxBookingDate);
+  const isDayInCurrentMonth = (date: Date) => isSameMonth(date, currentMonth);
 
-  const goToCurrentMonth = () => {
-    setCurrentMonth(new Date());
-  };
-
-  const isDayPast = (date: Date) => {
-    return isPast(date) && !isToday(date);
-  };
-
-  const isDaySelected = (date: Date) => {
-    return selectedDate ? isSameDay(date, selectedDate) : false;
-  };
-
-  const isDayDisabled = (date: Date) => {
-    return isDayPast(date) || isAfter(date, maxBookingDate);
-  };
-
-  const isDayInCurrentMonth = (date: Date) => {
-    return isSameMonth(date, currentMonth);
-  };
-
-  // Check if we can navigate to previous/next month
   const canGoToPrevious = !isSameMonth(currentMonth, today);
   const canGoToNext = !isSameMonth(currentMonth, maxBookingDate);
 
+  const navBtn =
+    'inline-flex items-center gap-1 rounded-[3px] border border-pitchline px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-chalk-100 transition-colors duration-200 ease-night hover:border-flood-500 hover:text-flood-500 disabled:pointer-events-none disabled:opacity-30';
+
   return (
-    <Card className={className}>
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <CalendarIcon className="h-5 w-5 text-blue-600" />
-            <span className="text-lg">Select Date</span>
-          </div>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Month Navigation */}
+    <div className={`rounded-[4px] border border-pitchline bg-pitch-700/90 ${className}`}>
+      <div className="border-b border-pitchline/60 px-6 py-4">
+        <p className="nm-overline text-chalk-400">Pick your matchday</p>
+      </div>
+
+      <div className="space-y-4 p-6">
+        {/* Month navigation */}
         <div className="flex items-center justify-between">
-          <Button 
-            type="button"
-            variant="outline" 
-            size="sm" 
-            onClick={goToPreviousMonth}
-            disabled={!canGoToPrevious}
-            className="flex items-center gap-1"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            Previous
-          </Button>
-          
+          <button type="button" onClick={goToPreviousMonth} disabled={!canGoToPrevious} className={navBtn}>
+            <ChevronLeft className="h-3.5 w-3.5" />
+            Prev
+          </button>
+
           <div className="text-center">
-            <h3 className="text-lg font-semibold text-gray-900">
+            <h3 className="font-display text-2xl uppercase tracking-tight text-chalk-100">
               {format(currentMonth, 'MMMM yyyy')}
             </h3>
-            <p className="text-xs text-gray-500">
-              Book up to {format(maxBookingDate, 'MMM d, yyyy')}
+            <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.12em] text-chalk-400">
+              Book up to {format(maxBookingDate, 'MMM d')}
             </p>
           </div>
-          
-          <Button 
-            type="button"
-            variant="outline" 
-            size="sm" 
-            onClick={goToNextMonth}
-            disabled={!canGoToNext}
-            className="flex items-center gap-1"
-          >
+
+          <button type="button" onClick={goToNextMonth} disabled={!canGoToNext} className={navBtn}>
             Next
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+            <ChevronRight className="h-3.5 w-3.5" />
+          </button>
         </div>
 
-        {/* Day Headers */}
-        <div className="grid grid-cols-7 gap-1 mb-2">
-          {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
-            <div key={day} className="text-center text-xs font-medium text-gray-500 py-2">
+        {/* Day headers */}
+        <div className="grid grid-cols-7 gap-1">
+          {['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map((day) => (
+            <div
+              key={day}
+              className="py-1.5 text-center font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-400"
+            >
               {day}
             </div>
           ))}
         </div>
 
-        {/* Calendar Grid */}
+        {/* Grid — mono digits, lime selection */}
         <div className="grid grid-cols-7 gap-1">
           {calendarDays.slice(0, 42).map((date, index) => {
             const isSelected = isDaySelected(date);
@@ -141,84 +107,64 @@ const WeekCalendar = memo(function WeekCalendar({ selectedDate, onDateSelect, cl
             const isCurrentMonth = isDayInCurrentMonth(date);
 
             return (
-              <Button
+              <button
                 key={index}
                 type="button"
-                variant="ghost"
-                className={`
-                  h-12 w-full p-1 relative text-sm font-medium
-                  ${!isCurrentMonth ? 'text-gray-300 hover:text-gray-400' : ''}
-                  ${isDisabled ? 'opacity-40 cursor-not-allowed hover:bg-transparent' : ''}
-                  ${isTodayDay && !isSelected ? 'bg-blue-50 text-blue-700 border border-blue-200' : ''}
-                  ${isSelected ? 'bg-blue-600 text-white hover:bg-blue-700' : ''}
-                  ${!isDisabled && !isSelected && isCurrentMonth ? 'hover:bg-gray-100' : ''}
-                `}
                 disabled={isDisabled}
                 onClick={() => {
                   if (!isDisabled) onDateSelect(date);
                 }}
+                className={`relative h-11 w-full rounded-[3px] font-mono text-sm tabular-nums transition-[background-color,color,box-shadow] duration-200 ease-night ${
+                  isSelected
+                    ? 'bg-flood-500 font-semibold text-pitch-900 shadow-flood'
+                    : isDisabled
+                      ? 'cursor-not-allowed text-chalk-400/25'
+                      : isCurrentMonth
+                        ? 'text-chalk-100 hover:bg-white/5 hover:text-flood-500'
+                        : 'text-chalk-400/40 hover:text-chalk-400'
+                } ${isTodayDay && !isSelected ? 'border border-flood-500/50' : ''}`}
               >
-                <span className="relative z-10">
-                  {format(date, 'd')}
-                </span>
-                
-                {/* Today indicator */}
+                {format(date, 'd')}
                 {isTodayDay && !isSelected && (
-                  <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-blue-600 rounded-full"></div>
+                  <span className="absolute bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-flood-500" />
                 )}
-                
-                {/* Selected indicator */}
-                {isSelected && (
-                  <div className="absolute inset-0 bg-blue-600 rounded-md"></div>
-                )}
-              </Button>
+              </button>
             );
           })}
         </div>
 
-        {/* Today Button */}
+        {/* Back to today */}
         {!isSameMonth(currentMonth, today) && (
-          <div className="flex justify-center pt-2">
-            <Button 
-              type="button"
-              variant="outline" 
-              size="sm" 
-              onClick={goToCurrentMonth}
-              className="text-blue-600 border-blue-300 hover:bg-blue-50"
-            >
-              <Clock className="h-4 w-4 mr-1" />
-              Go to Today
-            </Button>
+          <div className="flex justify-center pt-1">
+            <button type="button" onClick={goToCurrentMonth} className={navBtn}>
+              <Clock className="h-3.5 w-3.5" />
+              Go to today
+            </button>
           </div>
         )}
 
-        {/* Selected Date Info */}
+        {/* Selected date readout */}
         {selectedDate && (
-          <div className="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-green-900">
-                  Selected Date
-                </p>
-                <p className="text-lg font-semibold text-green-800">
-                  {format(selectedDate, 'EEEE, MMM d, yyyy')}
-                </p>
-              </div>
-              <Badge variant="secondary" className="bg-green-100 text-green-700">
-                {isSameDay(selectedDate, today) ? 'Today' : 
-                 format(selectedDate, 'EEE')}
-              </Badge>
+          <div className="flex items-center justify-between rounded-[3px] border border-flood-500/40 bg-flood-500/[0.06] px-4 py-3">
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-400">
+                Matchday
+              </p>
+              <p className="font-display text-xl uppercase tracking-tight text-chalk-100">
+                {format(selectedDate, 'EEEE, MMM d')}
+              </p>
             </div>
+            <span className="nm-overline text-flood-500">
+              {isSameDay(selectedDate, today) ? 'Today' : format(selectedDate, 'EEE')}
+            </span>
           </div>
         )}
 
-        {/* Booking Restrictions Info */}
-        <div className="text-xs text-gray-500 text-center space-y-1 pt-2 border-t">
-          <p>• Bookings available for the next 30 days</p>
-          <p>• Past dates are not available for booking</p>
+        <div className="space-y-1 border-t border-pitchline/60 pt-3 text-center font-mono text-[10px] uppercase tracking-[0.1em] text-chalk-400/80">
+          <p>Bookings open for the next 30 days</p>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 });
 

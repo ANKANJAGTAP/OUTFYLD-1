@@ -28,8 +28,8 @@ export default function TurfImageGallery({ images, altFallback }: TurfImageGalle
     return (
       <Card>
         <CardContent className="p-0">
-          <div className="relative h-64 md:h-96 bg-gray-200 rounded-xl flex items-center justify-center">
-            <span className="text-gray-400">No images available</span>
+          <div className="relative flex h-64 items-center justify-center rounded-xl bg-pitch-800 md:h-96">
+            <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-chalk-400">No images available</span>
           </div>
         </CardContent>
       </Card>

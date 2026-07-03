@@ -28,7 +28,7 @@ export function LandingHeader() {
   const isHome = pathname === '/';
   // Night Match routes share the dark floodlit header treatment
   const NIGHT_ROUTES = ['/', '/browse', '/about', '/contact'];
-  const isNight = NIGHT_ROUTES.includes(pathname);
+  const isNight = NIGHT_ROUTES.includes(pathname) || pathname.startsWith('/book/');
 
   // Handle scroll to change header background on home page
   useEffect(() => {
