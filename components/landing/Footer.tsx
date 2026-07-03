@@ -19,7 +19,7 @@ export function Footer() {
                 />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-green-400">OutFyld</h1>
+                <h1 className="text-2xl font-bold text-flood-500">OutFyld</h1>
                 {/* <p className="text-xs text-gray-400">Sangli & Miraj</p> */}
               </div>
             </div>
@@ -28,20 +28,20 @@ export function Footer() {
               Making sports more accessible for everyone.
             </p>
             <div className="flex space-x-4">
-              <Link href="#" className="text-gray-400 hover:text-green-400 transition-colors">
+              <Link href="#" className="text-gray-400 hover:text-flood-500 transition-colors">
                 <Facebook className="h-5 w-5" />
               </Link>
-              <Link href="#" className="text-gray-400 hover:text-green-400 transition-colors">
+              <Link href="#" className="text-gray-400 hover:text-flood-500 transition-colors">
                 <Instagram className="h-5 w-5" />
               </Link>
-              <Link href="#" className="text-gray-400 hover:text-green-400 transition-colors">
+              <Link href="#" className="text-gray-400 hover:text-flood-500 transition-colors">
                 <Twitter className="h-5 w-5" />
               </Link>
             </div>
           </div>
 
           <div>
-            <h4 className="font-semibold mb-6 text-green-400">Quick Links</h4>
+            <h4 className="font-semibold mb-6 text-flood-500">Quick Links</h4>
             <ul className="space-y-3">
               <li><Link href="/browse" className="text-gray-400 hover:text-white transition-colors">Browse Arenas</Link></li>
               <li><Link href="/about" className="text-gray-400 hover:text-white transition-colors">About Us</Link></li>
@@ -51,7 +51,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="font-semibold mb-6 text-green-400">For Business</h4>
+            <h4 className="font-semibold mb-6 text-flood-500">For Business</h4>
             <ul className="space-y-3">
               <li><Link href="/auth/register" className="text-gray-400 hover:text-white transition-colors">List Your Arena</Link></li>
               <li><Link href="/owner/dashboard" className="text-gray-400 hover:text-white transition-colors">Owner Dashboard</Link></li>
@@ -61,19 +61,19 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="font-semibold mb-6 text-green-400">Contact Info</h4>
+            <h4 className="font-semibold mb-6 text-flood-500">Contact Info</h4>
             <div className="space-y-4">
               <div className="flex items-center">
-                <MapPin className="h-4 w-4 mr-3 text-green-400" />
+                <MapPin className="h-4 w-4 mr-3 text-flood-500" />
                 <span className="text-gray-400 text-sm">Sangli-Miraj, Maharashtra</span>
               </div>
               <div className="flex items-center">
-                <Phone className="h-4 w-4 mr-3 text-green-400" />
-                <a href="tel:+917058526196" className="text-gray-400 text-sm hover:text-green-400">+91 7058526196</a>
+                <Phone className="h-4 w-4 mr-3 text-flood-500" />
+                <a href="tel:+917058526196" className="text-gray-400 text-sm hover:text-flood-500">+91 7058526196</a>
               </div>
               <div className="flex items-center">
-                <Mail className="h-4 w-4 mr-3 text-green-400" />
-                <a href="mailto:admin@outfyld.in" className="text-gray-400 text-sm hover:text-green-400">admin@outfyld.in</a>
+                <Mail className="h-4 w-4 mr-3 text-flood-500" />
+                <a href="mailto:admin@outfyld.in" className="text-gray-400 text-sm hover:text-flood-500">admin@outfyld.in</a>
               </div>
             </div>
           </div>

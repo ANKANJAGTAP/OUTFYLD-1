@@ -76,11 +76,11 @@ export default function ProtectedRoute({
   // Show loading spinner while checking authentication
   if (initialLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Card className="w-96">
+      <div className="min-h-screen flex items-center justify-center bg-pitch-900">
+        <Card className="w-96 border-pitchline bg-pitch-700 text-chalk-100">
           <CardContent className="flex flex-col items-center justify-center p-8">
-            <Loader2 className="h-8 w-8 animate-spin text-green-500 mb-4" />
-            <p className="text-gray-600">Loading...</p>
+            <Loader2 className="h-8 w-8 animate-spin text-flood-500 mb-4" />
+            <p className="text-chalk-400">Loading...</p>
           </CardContent>
         </Card>
       </div>
@@ -90,11 +90,11 @@ export default function ProtectedRoute({
   // Show error if authentication is required but user is not authenticated
   if (requireAuth && !firebaseUser) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Card className="w-96">
+      <div className="min-h-screen flex items-center justify-center bg-pitch-900">
+        <Card className="w-96 border-pitchline bg-pitch-700 text-chalk-100">
           <CardContent className="flex flex-col items-center justify-center p-8">
             <AlertCircle className="h-8 w-8 text-red-500 mb-4" />
-            <p className="text-gray-600">Redirecting to login...</p>
+            <p className="text-chalk-400">Redirecting to login...</p>
           </CardContent>
         </Card>
       </div>
@@ -104,11 +104,11 @@ export default function ProtectedRoute({
   // Show error if email verification is required but not verified
   if (requireEmailVerified && firebaseUser && !isEmailVerified()) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Card className="w-96">
+      <div className="min-h-screen flex items-center justify-center bg-pitch-900">
+        <Card className="w-96 border-pitchline bg-pitch-700 text-chalk-100">
           <CardContent className="flex flex-col items-center justify-center p-8">
             <AlertCircle className="h-8 w-8 text-yellow-500 mb-4" />
-            <p className="text-gray-600">Please verify your email to continue...</p>
+            <p className="text-chalk-400">Please verify your email to continue...</p>
           </CardContent>
         </Card>
       </div>
@@ -118,11 +118,11 @@ export default function ProtectedRoute({
   // Show error if role mismatch
   if (requireRole && user && user.role !== requireRole) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Card className="w-96">
+      <div className="min-h-screen flex items-center justify-center bg-pitch-900">
+        <Card className="w-96 border-pitchline bg-pitch-700 text-chalk-100">
           <CardContent className="flex flex-col items-center justify-center p-8">
             <AlertCircle className="h-8 w-8 text-red-500 mb-4" />
-            <p className="text-gray-600">Access denied. Redirecting...</p>
+            <p className="text-chalk-400">Access denied. Redirecting...</p>
           </CardContent>
         </Card>
       </div>
