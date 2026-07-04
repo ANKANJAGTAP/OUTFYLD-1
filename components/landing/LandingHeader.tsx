@@ -31,6 +31,9 @@ export function LandingHeader() {
   const isNight =
     NIGHT_ROUTES.includes(pathname) ||
     pathname.startsWith('/book/') ||
+    pathname.startsWith('/bookings/') ||
+    pathname.startsWith('/feedback/') ||
+    pathname.startsWith('/careers') ||
     pathname.startsWith('/dashboard');
 
   // Handle scroll to change header background on home page

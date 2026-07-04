@@ -5,57 +5,54 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import { NightFooter } from '@/components/landing/night-match/NightFooter';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { NightShell } from '@/components/night/NightShell';
+import { NightLoader } from '@/components/night/NightLoader';
+import { Reveal } from '@/components/landing/night-match/Reveal';
+import {
+  nightCard,
+  nightPrimaryBtn,
+  nightGhostBtn,
+  Overline,
+  StatusDot,
+  Mono,
+} from '@/components/night/ui';
 import {
   CheckCircle2, Clock, Calendar, MapPin, Download, ArrowLeft,
-  Activity, CreditCard, Loader2, Receipt, Sparkles, Share2,
-  Copy, ArrowRight, AlertCircle, Ticket, ExternalLink,
-  Phone, Mail, Building,
+  CreditCard, Copy, ArrowRight, Mail, Phone,
 } from 'lucide-react';
 
-/* ─── Info Row ──────────────────────────────────────────────────────── */
-function InfoRow({
+/* ─── Ticket Row — a printed line on the match ticket ───────────────── */
+function TicketRow({
   icon,
-  iconBg,
-  iconColor,
   label,
   value,
   subtext,
 }: {
   icon: React.ReactNode;
-  iconBg: string;
-  iconColor: string;
   label: string;
   value: string;
   subtext?: string;
 }) {
   return (
-    <div className="group flex items-start gap-4 p-4 rounded-xl hover:bg-gray-50 transition-all duration-200">
-      <div
-        className={`flex-shrink-0 w-11 h-11 rounded-xl ${iconBg} flex items-center justify-center group-hover:scale-105 transition-transform duration-200`}
-      >
-        <div className={iconColor}>{icon}</div>
-      </div>
+    <div className="flex items-start gap-3 border-b border-pitchline/50 py-3.5 last:border-b-0 sm:border-b-0 sm:py-2">
+      <span className="mt-0.5 shrink-0 text-flood-500">{icon}</span>
       <div className="min-w-0">
-        <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-chalk-400">
           {label}
         </p>
-        <p className="text-[15px] text-gray-900 font-medium mt-0.5">{value}</p>
+        <p className="mt-0.5 truncate text-sm text-chalk-100">{value}</p>
         {subtext && (
-          <p className="text-[11px] text-gray-400 mt-1">{subtext}</p>
+          <p className="mt-0.5 truncate font-mono text-[11px] text-chalk-400/80">{subtext}</p>
         )}
       </div>
     </div>
   );
 }
 
-/* ─── Payment Line ──────────────────────────────────────────────────── */
+/* ─── Payment Line — mono ledger row ────────────────────────────────── */
 function PaymentLine({
   label,
   value,
-  highlight,
   discount,
   bold,
 }: {
@@ -67,34 +64,32 @@ function PaymentLine({
 }) {
   return (
     <div
-      className={`flex justify-between items-center ${
-        bold ? 'pt-3 border-t border-gray-200' : ''
+      className={`flex items-center justify-between ${
+        bold ? 'border-t border-pitchline pt-3' : ''
       }`}
     >
       <span
         className={
           bold
-            ? 'font-bold text-gray-900 text-lg'
+            ? 'nm-overline text-chalk-100'
             : discount
-            ? 'text-green-600 text-sm'
-            : 'text-gray-600 text-sm'
+            ? 'font-mono text-xs uppercase tracking-[0.1em] text-flood-500'
+            : 'font-mono text-xs uppercase tracking-[0.1em] text-chalk-400'
         }
       >
         {label}
       </span>
-      <span
+      <Mono
         className={
           bold
-            ? 'font-bold text-gray-900 text-lg'
+            ? 'text-xl text-flood-500'
             : discount
-            ? 'text-green-600 text-sm font-medium'
-            : highlight
-            ? 'text-gray-900 font-semibold'
-            : 'text-gray-900 text-sm'
+            ? 'text-sm text-flood-500'
+            : 'text-sm text-chalk-100'
         }
       >
         {value}
-      </span>
+      </Mono>
     </div>
   );
 }
@@ -145,227 +140,159 @@ export default function BookingDetailsPage(
   /* ── Loading State ── */
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#fafbfc] flex flex-col">
+      <NightShell ambient={0.55}>
         <LandingHeader />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="relative mx-auto w-16 h-16 mb-5">
-              <div className="w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center">
-                <Loader2 className="h-8 w-8 text-emerald-500 animate-spin" />
-              </div>
-            </div>
-            <p className="text-sm text-gray-500 font-medium">
-              Loading booking details…
-            </p>
-          </div>
+        <div className="flex min-h-[70vh] items-center justify-center">
+          <NightLoader label="Printing your ticket…" />
         </div>
         <NightFooter />
-      </div>
+      </NightShell>
     );
   }
 
   /* ── Not Found ── */
   if (!booking) {
     return (
-      <div className="min-h-screen bg-[#fafbfc] flex flex-col">
+      <NightShell ambient={0.55}>
         <LandingHeader />
-        <div className="flex-1">
-          <div className="relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-600 via-green-600 to-teal-700" />
-            <div
-              className="absolute inset-0 opacity-10"
-              style={{
-                backgroundImage:
-                  'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
-                backgroundSize: '24px 24px',
-              }}
-            />
-            <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-24 text-center">
-              <h1 className="text-3xl font-extrabold text-white">
-                Booking Not Found
-              </h1>
-              <p className="text-emerald-200 mt-3">
-                We couldn&apos;t find the booking you&apos;re looking for.
-              </p>
-            </div>
+        <main className="mx-auto max-w-2xl px-4 pb-24 pt-16 sm:px-6">
+          <Overline tone="lime">Match ticket</Overline>
+          <h1 className="nm-display-l mt-3 text-chalk-100">Ticket not found</h1>
+          <div className={`${nightCard} mt-10 p-8`}>
+            <p className="nm-overline text-chalk-400">
+              <StatusDot tone="red" />
+              <span className="ml-2">No booking on record</span>
+            </p>
+            <p className="mt-4 text-sm leading-relaxed text-chalk-400">
+              The booking ID may be incorrect or the booking may have been
+              removed. Check the reference on your confirmation email.
+            </p>
+            <button
+              onClick={() => router.push('/dashboard/player/bookings')}
+              className={`${nightGhostBtn} mt-8 w-full`}
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to bookings
+            </button>
           </div>
-          <div className="max-w-md mx-auto -mt-10 relative z-10 px-4 pb-12">
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-xl shadow-gray-200/50 p-8 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center mx-auto mb-5">
-                <AlertCircle className="h-8 w-8 text-red-400" />
-              </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2">
-                No Booking Found
-              </h3>
-              <p className="text-sm text-gray-500 mb-6">
-                The booking ID may be incorrect or the booking may have been
-                removed.
-              </p>
-              <Button
-                onClick={() => router.push('/dashboard/player/bookings')}
-                className="rounded-xl h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-lg shadow-emerald-200 transition-all w-full"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Bookings
-              </Button>
-            </div>
-          </div>
-        </div>
+        </main>
         <NightFooter />
-      </div>
+      </NightShell>
     );
   }
 
   const receiptId = params.bookingId.slice(0, 8).toUpperCase();
+  const statusTone: 'lime' | 'red' | 'chalk' =
+    booking.status === 'confirmed'
+      ? 'lime'
+      : booking.status === 'cancelled'
+      ? 'red'
+      : 'chalk';
+  const totalPaid =
+    booking.totalAmount -
+    (booking.promoDiscountAmount || 0) -
+    (booking.dynamicDiscountAmount || 0) -
+    (booking.loyaltyDiscountAmount || 0);
+  const turfName = booking.turfId?.name || booking.turfName || 'OutFyld Turf';
 
   return (
-    <div className="min-h-screen bg-[#fafbfc] flex flex-col">
+    <NightShell ambient={0.55}>
       <LandingHeader />
-      <div className="flex-1 pb-16">
-        {/* ─────────── HERO BANNER ─────────── */}
-        <div className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-600 via-green-600 to-teal-700" />
-        <div
-          className="absolute inset-0 opacity-10"
-          style={{
-            backgroundImage:
-              'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
-            backgroundSize: '24px 24px',
-          }}
-        />
-        <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3 blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-72 h-72 bg-emerald-400/10 rounded-full translate-y-1/2 -translate-x-1/4 blur-3xl" />
-
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-24 sm:pb-28">
-          {/* Back Button */}
-          <Button
-            variant="ghost"
+      <main className="mx-auto max-w-7xl px-4 pb-24 pt-10 sm:px-6 lg:px-8">
+        {/* ─────────── MASTHEAD ─────────── */}
+        <Reveal>
+          <button
             onClick={() => router.push('/dashboard/player/bookings')}
-            className="text-white/80 hover:text-white hover:bg-white/10 rounded-xl mb-6 -ml-2 font-medium text-sm"
+            className="nm-overline mb-8 inline-flex items-center gap-2 text-chalk-400 transition-colors duration-200 ease-night hover:text-flood-500"
           >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to My Bookings
-          </Button>
+            <ArrowLeft className="h-4 w-4" />
+            My bookings
+          </button>
 
-          <div className="text-center">
-            {isSuccess ? (
-              <>
-                <div className="relative mx-auto w-20 h-20 mb-5">
-                  <div className="w-20 h-20 rounded-2xl bg-white/15 backdrop-blur-sm flex items-center justify-center border border-white/20">
-                    <CheckCircle2 className="h-10 w-10 text-white" />
-                  </div>
-                  <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-300/60 animate-pulse" />
-                  <div className="absolute -bottom-1 -left-1 w-3 h-3 rounded-full bg-white/30" />
-                </div>
-                <Badge className="bg-white/15 text-white border-white/20 hover:bg-white/20 text-[10px] mb-4">
-                  <CheckCircle2 className="h-3 w-3 mr-1" />
-                  Payment Successful
-                </Badge>
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight">
-                  Booking Confirmed!
-                </h1>
-                <p className="text-emerald-200 text-base sm:text-lg mt-4 max-w-2xl mx-auto">
-                  Your payment has been processed successfully. A confirmation
-                  email with your receipt has been sent to your registered email.
-                </p>
-              </>
-            ) : (
-              <>
-                <Badge className="bg-white/15 text-white border-white/20 hover:bg-white/20 text-[10px] mb-4">
-                  <Ticket className="h-3 w-3 mr-1" />
-                  Booking Details
-                </Badge>
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight">
-                  Booking #{receiptId}
-                </h1>
-                <p className="text-emerald-200 text-base sm:text-lg mt-4 max-w-2xl mx-auto">
-                  View your complete booking details, session information, and
-                  payment summary below.
-                </p>
-              </>
+          {isSuccess && (
+            <div className="mb-8 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-[4px] border border-flood-500/50 bg-flood-500/[0.06] px-5 py-4">
+              <span className="nm-overline inline-flex items-center gap-2 text-flood-500">
+                <StatusDot tone="lime" />
+                Payment successful — ticket issued
+              </span>
+              <span className="text-sm text-chalk-400">
+                A confirmation email with your receipt is on its way.
+              </span>
+            </div>
+          )}
+
+          <Overline tone="lime">
+            Match ticket · <Mono>#{receiptId}</Mono>
+          </Overline>
+          <h1 className="nm-display-l mt-3 max-w-4xl text-chalk-100">{turfName}</h1>
+          <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2">
+            <span className="nm-overline inline-flex items-center gap-2 text-chalk-400">
+              <StatusDot tone={statusTone} />
+              {booking.status}
+            </span>
+            {booking.turfId?.location?.city && (
+              <span className="flex items-center gap-1.5 text-sm text-chalk-400">
+                <MapPin className="h-3.5 w-3.5" />
+                {booking.turfId.location.city}
+              </span>
             )}
           </div>
-        </div>
-      </div>
+        </Reveal>
 
-      {/* ─────────── CONTENT ─────────── */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-12 relative z-10 pb-12">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* ── LEFT: Main Details ── */}
-          <div className="lg:col-span-2 space-y-5">
-            {/* Booking Status Bar */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-xl shadow-gray-200/50 overflow-hidden">
-              <div className="px-6 py-5 border-b border-gray-50 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center">
-                    <Receipt className="h-4 w-4 text-emerald-600" />
-                  </div>
+        {/* ─────────── CONTENT ─────────── */}
+        <div className="mt-12 grid grid-cols-1 gap-8 lg:grid-cols-3">
+          {/* ── LEFT: THE PRINTED TICKET ── */}
+          <div className="space-y-6 lg:col-span-2">
+            <Reveal>
+              <div className={`${nightCard} overflow-hidden bg-pitch-700/95`}>
+                {/* ticket masthead */}
+                <div className="flex flex-wrap items-start justify-between gap-4 px-6 pb-5 pt-6">
                   <div>
-                    <h3 className="font-semibold text-gray-900 text-[15px]">
-                      Booking Overview
-                    </h3>
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      Receipt #{receiptId}
+                    <p className="nm-overline mb-2 text-flood-500">Fixture details</p>
+                    <h2 className="line-clamp-2 font-display text-2xl uppercase leading-none tracking-tight text-chalk-100">
+                      {turfName}
+                    </h2>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-chalk-400">
+                      Admit
                     </p>
+                    <Mono className="text-2xl text-chalk-100">
+                      {booking.slotCount > 1 ? `${booking.slotCount}H` : '1H'}
+                    </Mono>
                   </div>
                 </div>
-                <Badge
-                  className={`${
-                    booking.status === 'confirmed'
-                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
-                      : booking.status === 'cancelled'
-                      ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'
-                      : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
-                  } flex gap-1.5 items-center py-1 px-3 rounded-lg`}
-                >
-                  {booking.status === 'confirmed' ? (
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                  ) : (
-                    <Clock className="w-3.5 h-3.5" />
-                  )}
-                  <span className="uppercase tracking-wider font-semibold text-[10px]">
-                    {booking.status}
-                  </span>
-                </Badge>
-              </div>
 
-              <div className="p-6">
-                {/* Booking ID Copy */}
-                <div className="flex items-center gap-3 bg-gray-50 rounded-xl p-3 mb-6">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wider">
+                {/* booking id strip */}
+                <div className="mx-6 mb-5 flex items-center gap-3 rounded-[3px] border border-pitchline/70 bg-pitch-800/60 p-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-chalk-400">
                       Booking ID
                     </p>
-                    <p className="text-sm font-mono text-gray-700 truncate mt-0.5">
+                    <Mono className="mt-0.5 block truncate text-sm text-chalk-100">
                       {params.bookingId}
-                    </p>
+                    </Mono>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
+                  <button
+                    type="button"
                     onClick={handleCopyBookingId}
-                    className="rounded-lg h-9 px-3 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 transition-all"
+                    aria-label="Copy booking ID"
+                    className="shrink-0 rounded-[3px] border border-chalk-400/30 p-2 text-chalk-400 transition-[border-color,color] duration-200 ease-night hover:border-flood-500 hover:text-flood-500"
                   >
                     {copied ? (
-                      <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                      <CheckCircle2 className="h-4 w-4 text-flood-500" />
                     ) : (
                       <Copy className="h-4 w-4" />
                     )}
-                  </Button>
+                  </button>
                 </div>
 
-                {/* Turf + Session Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <InfoRow
+                {/* fixture grid */}
+                <div className="grid grid-cols-1 gap-x-8 px-6 pb-6 sm:grid-cols-2 sm:gap-y-4">
+                  <TicketRow
                     icon={<MapPin className="h-4 w-4" />}
-                    iconBg="bg-teal-50"
-                    iconColor="text-teal-600"
-                    label="Turf"
-                    value={
-                      booking.turfId?.name ||
-                      booking.turfName ||
-                      'OutFyld Turf'
-                    }
+                    label="Ground"
+                    value={turfName}
                     subtext={
                       booking.turfId?.location
                         ? `${booking.turfId.location.address || ''}, ${
@@ -374,375 +301,282 @@ export default function BookingDetailsPage(
                         : undefined
                     }
                   />
-                  <InfoRow
+                  <TicketRow
                     icon={<Calendar className="h-4 w-4" />}
-                    iconBg="bg-emerald-50"
-                    iconColor="text-emerald-600"
-                    label="Date"
+                    label="Matchday"
                     value={booking.slot.date}
                     subtext={booking.slot.day}
                   />
-                  <InfoRow
+                  <TicketRow
                     icon={<Clock className="h-4 w-4" />}
-                    iconBg="bg-green-50"
-                    iconColor="text-green-600"
-                    label={booking.slotCount > 1 ? "Time Slots" : "Time Slot"}
-                    value={booking.slotCount > 1 
-                      ? `${booking.slotCount} slots booked` 
-                      : `${booking.slot.startTime} – ${booking.slot.endTime}`}
-                    subtext={booking.slotCount > 1 
-                      ? `Total Duration: ${booking.slotCount} Hours` 
-                      : "Duration: 1 Hour"}
+                    label={booking.slotCount > 1 ? 'Kick-off slots' : 'Kick-off'}
+                    value={
+                      booking.slotCount > 1
+                        ? `${booking.slotCount} slots booked`
+                        : `${booking.slot.startTime} – ${booking.slot.endTime}`
+                    }
+                    subtext={
+                      booking.slotCount > 1
+                        ? `Total duration: ${booking.slotCount} hours`
+                        : 'Duration: 1 hour'
+                    }
                   />
-                  <InfoRow
-                    icon={<Activity className="h-4 w-4" />}
-                    iconBg="bg-cyan-50"
-                    iconColor="text-cyan-600"
-                    label="Booked On"
-                    value={new Date(booking.createdAt).toLocaleDateString(
-                      'en-IN',
-                      {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric',
-                      }
+                  <TicketRow
+                    icon={<CreditCard className="h-4 w-4" />}
+                    label="Booked on"
+                    value={new Date(booking.createdAt).toLocaleDateString('en-IN', {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric',
+                    })}
+                    subtext={new Date(booking.createdAt).toLocaleTimeString('en-IN', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  />
+                </div>
+
+                {/* payment ledger */}
+                <div className="border-t border-pitchline/60 px-6 py-6">
+                  <p className="nm-overline mb-4 text-chalk-400">Payment summary</p>
+                  <div className="space-y-3">
+                    <PaymentLine label="Base amount" value={`₹${booking.totalAmount}`} />
+                    {booking.promoDiscountAmount > 0 && (
+                      <PaymentLine
+                        label={`Promo (${booking.promoCode})`}
+                        value={`−₹${booking.promoDiscountAmount}`}
+                        discount
+                      />
                     )}
-                    subtext={new Date(booking.createdAt).toLocaleTimeString(
-                      'en-IN',
-                      {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      }
+                    {booking.dynamicDiscountAmount > 0 && (
+                      <PaymentLine
+                        label="Special discount"
+                        value={`−₹${booking.dynamicDiscountAmount}`}
+                        discount
+                      />
                     )}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Payment Summary Card */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-              <div className="px-6 py-5 border-b border-gray-50 flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center">
-                  <CreditCard className="h-4 w-4 text-green-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 text-[15px]">
-                    Payment Summary
-                  </h3>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    Transaction details &amp; breakdown
-                  </p>
-                </div>
-              </div>
-
-              <div className="p-6 space-y-4">
-                <div className="space-y-3">
-                  <PaymentLine
-                    label="Base Amount"
-                    value={`₹${booking.totalAmount}`}
-                  />
-                  {booking.promoDiscountAmount > 0 && (
-                    <PaymentLine
-                      label={`Promo Discount (${booking.promoCode})`}
-                      value={`-₹${booking.promoDiscountAmount}`}
-                      discount
-                    />
-                  )}
-                  {booking.dynamicDiscountAmount > 0 && (
-                    <PaymentLine
-                      label="Special Discount"
-                      value={`-₹${booking.dynamicDiscountAmount}`}
-                      discount
-                    />
-                  )}
-                  {booking.loyaltyDiscountAmount > 0 && (
-                    <PaymentLine
-                      label="Loyalty Points Used"
-                      value={`-₹${booking.loyaltyDiscountAmount}`}
-                      discount
-                    />
-                  )}
-                  <PaymentLine
-                    label="Total Paid"
-                    value={`₹${
-                      booking.totalAmount - 
-                      (booking.promoDiscountAmount || 0) - 
-                      (booking.dynamicDiscountAmount || 0) - 
-                      (booking.loyaltyDiscountAmount || 0)
-                    }`}
-                    bold
-                  />
-                </div>
-
-                <div className="bg-gray-50 rounded-xl p-4 space-y-2.5 mt-4">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-400 text-xs font-medium uppercase tracking-wider">
-                      Payment ID
-                    </span>
-                    <span className="font-mono text-gray-700 text-xs">
-                      {booking.razorpayPaymentId || 'N/A'}
-                    </span>
+                    {booking.loyaltyDiscountAmount > 0 && (
+                      <PaymentLine
+                        label="Loyalty points used"
+                        value={`−₹${booking.loyaltyDiscountAmount}`}
+                        discount
+                      />
+                    )}
+                    <PaymentLine label="Total paid" value={`₹${totalPaid}`} bold />
                   </div>
-                  <Separator className="bg-gray-200/60" />
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-400 text-xs font-medium uppercase tracking-wider">
-                      Method
-                    </span>
-                    <span className="text-gray-700 text-xs font-medium capitalize">
-                      Razorpay
-                    </span>
-                  </div>
-                  <Separator className="bg-gray-200/60" />
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-400 text-xs font-medium uppercase tracking-wider">
-                      Paid At
-                    </span>
-                    <span className="text-gray-700 text-xs">
-                      {new Date(booking.createdAt).toLocaleString('en-IN')}
-                    </span>
+
+                  <div className="mt-5 space-y-2.5 rounded-[3px] border border-pitchline/70 bg-pitch-800/60 p-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-chalk-400">
+                        Payment ID
+                      </span>
+                      <Mono className="truncate text-xs text-chalk-100">
+                        {booking.razorpayPaymentId || 'N/A'}
+                      </Mono>
+                    </div>
+                    <div className="border-t border-pitchline/50" />
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-chalk-400">
+                        Method
+                      </span>
+                      <span className="text-xs capitalize text-chalk-100">Razorpay</span>
+                    </div>
+                    <div className="border-t border-pitchline/50" />
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-chalk-400">
+                        Paid at
+                      </span>
+                      <Mono className="text-xs text-chalk-100">
+                        {new Date(booking.createdAt).toLocaleString('en-IN')}
+                      </Mono>
+                    </div>
                   </div>
                 </div>
 
-                {/* Download Button */}
-                <Button
-                  onClick={handleDownloadReceipt}
-                  className="w-full rounded-xl h-11 font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-200 hover:shadow-xl hover:shadow-emerald-300 transition-all duration-200 mt-2"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Download PDF Receipt
-                </Button>
-              </div>
-            </div>
-          </div>
+                {/* perforation — punched notches + dashed tear */}
+                <div className="relative">
+                  <span className="absolute left-[-9px] top-1/2 h-[18px] w-[18px] -translate-y-1/2 rounded-full bg-pitch-900" />
+                  <span className="absolute right-[-9px] top-1/2 h-[18px] w-[18px] -translate-y-1/2 rounded-full bg-pitch-900" />
+                  <div className="mx-4 border-t border-dashed border-pitchline" />
+                </div>
 
-          {/* ── RIGHT: Sidebar ── */}
-          <div className="space-y-5">
-            {/* Status Card */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-              <div className="px-6 py-5 border-b border-gray-50">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center">
-                    <Ticket className="h-4 w-4 text-emerald-600" />
-                  </div>
+                {/* stub footer — barcode, total, the ONE lime action */}
+                <div className="flex flex-wrap items-end justify-between gap-5 px-6 py-5">
                   <div>
-                    <h3 className="font-semibold text-gray-900 text-[15px]">
-                      Booking Status
-                    </h3>
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      Current state of your booking
+                    <div
+                      aria-hidden
+                      className="h-8 w-36 opacity-40"
+                      style={{
+                        backgroundImage:
+                          'repeating-linear-gradient(90deg, rgba(243,247,241,0.7) 0 2px, transparent 2px 5px, rgba(243,247,241,0.7) 5px 6px, transparent 6px 11px, rgba(243,247,241,0.7) 11px 12px, transparent 12px 15px)',
+                      }}
+                    />
+                    <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.2em] text-chalk-400/70">
+                      OutFyld · {receiptId}
                     </p>
                   </div>
+                  <button onClick={handleDownloadReceipt} className={nightPrimaryBtn}>
+                    <Download className="h-4 w-4" />
+                    Download PDF receipt
+                  </button>
                 </div>
               </div>
+            </Reveal>
+          </div>
 
-              <div className="p-5 space-y-4">
-                {/* Status Steps */}
+          {/* ── RIGHT: TOUCHLINE ── */}
+          <div className="space-y-6">
+            {/* Status timeline */}
+            <Reveal delay={0.08}>
+              <div className={`${nightCard} p-6`}>
+                <p className="nm-overline mb-5 text-chalk-400">Ticket status</p>
                 <div className="space-y-0">
                   {[
                     {
-                      label: 'Payment Received',
+                      label: 'Payment received',
                       done: true,
                       icon: CreditCard,
                     },
                     {
-                      label: 'Booking Confirmed',
+                      label: 'Booking confirmed',
                       done: booking.status === 'confirmed',
                       icon: CheckCircle2,
                     },
                     {
-                      label: 'Email Sent',
+                      label: 'Email sent',
                       done: booking.status === 'confirmed',
                       icon: Mail,
                     },
                   ].map((step, i, arr) => (
                     <div key={i} className="flex items-start gap-3">
                       <div className="flex flex-col items-center">
-                        <div
-                          className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                            step.done
-                              ? 'bg-emerald-50 text-emerald-600'
-                              : 'bg-gray-100 text-gray-400'
-                          }`}
-                        >
-                          <step.icon className="h-3.5 w-3.5" />
-                        </div>
+                        <span className="flex h-6 w-6 items-center justify-center">
+                          <StatusDot tone={step.done ? 'lime' : 'chalk'} />
+                        </span>
                         {i < arr.length - 1 && (
-                          <div
-                            className={`w-0.5 h-6 ${
-                              step.done ? 'bg-emerald-200' : 'bg-gray-200'
+                          <span
+                            className={`h-7 w-px ${
+                              step.done ? 'bg-flood-500/40' : 'bg-pitchline'
                             }`}
                           />
                         )}
                       </div>
-                      <div className="pt-1.5">
-                        <p
-                          className={`text-sm font-medium ${
-                            step.done ? 'text-gray-900' : 'text-gray-400'
-                          }`}
-                        >
-                          {step.label}
-                        </p>
-                      </div>
+                      <p
+                        className={`pt-0.5 font-mono text-[11px] uppercase tracking-[0.14em] ${
+                          step.done ? 'text-chalk-100' : 'text-chalk-400/60'
+                        }`}
+                      >
+                        {step.label}
+                      </p>
                     </div>
                   ))}
                 </div>
               </div>
-            </div>
+            </Reveal>
 
-            {/* Quick Actions */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-              <div className="px-6 py-5 border-b border-gray-50">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-teal-50 flex items-center justify-center">
-                    <Activity className="h-4 w-4 text-teal-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900 text-[15px]">
-                      Quick Actions
-                    </h3>
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      Manage your booking
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-5 space-y-3">
-                <button
-                  onClick={handleDownloadReceipt}
-                  className="flex items-center gap-3 p-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 transition-colors group w-full text-left"
-                >
-                  <div className="w-9 h-9 rounded-lg bg-emerald-600 flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
-                    <Download className="h-4 w-4" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-emerald-800">
-                      Download Receipt
-                    </p>
-                    <p className="text-[11px] text-emerald-600">
-                      PDF format
-                    </p>
-                  </div>
-                  <ArrowRight className="h-4 w-4 text-emerald-400 group-hover:translate-x-1 transition-transform" />
-                </button>
-
-                <button
-                  onClick={handleCopyBookingId}
-                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors group w-full text-left"
-                >
-                  <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">
-                    <Copy className="h-4 w-4" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900">
-                      {copied ? 'Copied!' : 'Copy Booking ID'}
-                    </p>
-                    <p className="text-[11px] text-gray-400">
-                      Share with support
-                    </p>
-                  </div>
-                  <ArrowRight className="h-4 w-4 text-gray-300 group-hover:text-emerald-400 group-hover:translate-x-1 transition-all" />
-                </button>
-
-                <Link
-                  href="/dashboard/player/bookings"
-                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors group w-full"
-                >
-                  <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">
-                    <Calendar className="h-4 w-4" />
-                  </div>
-                  <div className="flex-1 text-left">
-                    <p className="text-sm font-medium text-gray-900">
-                      All Bookings
-                    </p>
-                    <p className="text-[11px] text-gray-400">
-                      View booking history
-                    </p>
-                  </div>
-                  <ArrowRight className="h-4 w-4 text-gray-300 group-hover:text-emerald-400 group-hover:translate-x-1 transition-all" />
-                </Link>
-              </div>
-            </div>
-
-            {/* Need Help CTA */}
-            <div className="bg-gradient-to-br from-emerald-600 to-teal-700 rounded-2xl p-5 text-white relative overflow-hidden">
-              <div
-                className="absolute inset-0 opacity-10"
-                style={{
-                  backgroundImage:
-                    'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
-                  backgroundSize: '16px 16px',
-                }}
-              />
-              <div className="relative">
-                <div className="flex items-center gap-2 mb-3">
-                  <Sparkles className="h-5 w-5 text-emerald-200" />
-                  <span className="text-sm font-semibold">
-                    Need help with this booking?
-                  </span>
-                </div>
-                <p className="text-emerald-100 text-xs leading-relaxed mb-4">
-                  Contact our support team for any queries about your booking,
-                  refunds, or rescheduling.
-                </p>
+            {/* Quick actions */}
+            <Reveal delay={0.14}>
+              <div className={`${nightCard} p-6`}>
+                <p className="nm-overline mb-4 text-chalk-400">Touchline actions</p>
                 <div className="space-y-2">
-                  <Link href="/contact">
-                    <Button
-                      size="sm"
-                      className="w-full bg-white/20 hover:bg-white/30 text-white rounded-xl h-9 text-xs font-semibold backdrop-blur-sm border border-white/10"
-                    >
-                      <Phone className="h-3.5 w-3.5 mr-1.5" />
-                      Contact Support
-                    </Button>
+                  <button
+                    onClick={handleDownloadReceipt}
+                    className="group flex w-full items-center gap-3 rounded-[3px] border border-pitchline/70 bg-pitch-800/50 px-4 py-3 text-left transition-[border-color] duration-200 ease-night hover:border-flood-500/50"
+                  >
+                    <Download className="h-4 w-4 shrink-0 text-flood-500" />
+                    <span className="flex-1">
+                      <span className="block text-sm text-chalk-100">Download receipt</span>
+                      <span className="block font-mono text-[10px] uppercase tracking-[0.12em] text-chalk-400">
+                        PDF format
+                      </span>
+                    </span>
+                    <ArrowRight className="h-4 w-4 text-chalk-400 transition-transform duration-200 ease-night group-hover:translate-x-1 group-hover:text-flood-500" />
+                  </button>
+
+                  <button
+                    onClick={handleCopyBookingId}
+                    className="group flex w-full items-center gap-3 rounded-[3px] border border-pitchline/70 bg-pitch-800/50 px-4 py-3 text-left transition-[border-color] duration-200 ease-night hover:border-flood-500/50"
+                  >
+                    <Copy className="h-4 w-4 shrink-0 text-flood-500" />
+                    <span className="flex-1">
+                      <span className="block text-sm text-chalk-100">
+                        {copied ? 'Copied!' : 'Copy booking ID'}
+                      </span>
+                      <span className="block font-mono text-[10px] uppercase tracking-[0.12em] text-chalk-400">
+                        Share with support
+                      </span>
+                    </span>
+                    <ArrowRight className="h-4 w-4 text-chalk-400 transition-transform duration-200 ease-night group-hover:translate-x-1 group-hover:text-flood-500" />
+                  </button>
+
+                  <Link
+                    href="/dashboard/player/bookings"
+                    className="group flex w-full items-center gap-3 rounded-[3px] border border-pitchline/70 bg-pitch-800/50 px-4 py-3 text-left transition-[border-color] duration-200 ease-night hover:border-flood-500/50"
+                  >
+                    <Calendar className="h-4 w-4 shrink-0 text-flood-500" />
+                    <span className="flex-1">
+                      <span className="block text-sm text-chalk-100">All bookings</span>
+                      <span className="block font-mono text-[10px] uppercase tracking-[0.12em] text-chalk-400">
+                        View booking history
+                      </span>
+                    </span>
+                    <ArrowRight className="h-4 w-4 text-chalk-400 transition-transform duration-200 ease-night group-hover:translate-x-1 group-hover:text-flood-500" />
                   </Link>
                 </div>
               </div>
-            </div>
+            </Reveal>
+
+            {/* Support */}
+            <Reveal delay={0.2}>
+              <div className={`${nightCard} p-6`}>
+                <p className="nm-overline mb-3 text-flood-500">Need a steward?</p>
+                <p className="text-sm leading-relaxed text-chalk-400">
+                  Contact our support team for any queries about your booking,
+                  refunds, or rescheduling.
+                </p>
+                <Link href="/contact" className={`${nightGhostBtn} mt-5 w-full`}>
+                  <Phone className="h-3.5 w-3.5" />
+                  Contact support
+                </Link>
+              </div>
+            </Reveal>
 
             {/* Turf Map (if location exists) */}
             {booking.turfId?.location?.city && (
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                <div className="px-6 py-5 border-b border-gray-50">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-teal-50 flex items-center justify-center">
-                      <MapPin className="h-4 w-4 text-teal-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900 text-[15px]">
-                        Turf Location
-                      </h3>
-                      <p className="text-xs text-gray-400 mt-0.5">
-                        {booking.turfId?.location?.address || ''},&nbsp;
-                        {booking.turfId?.location?.city || ''}
-                      </p>
+              <Reveal delay={0.26}>
+                <div className={`${nightCard} overflow-hidden`}>
+                  <div className="border-b border-pitchline/60 px-6 py-4">
+                    <p className="nm-overline text-chalk-400">Find the ground</p>
+                    <p className="mt-1 truncate text-xs text-chalk-400/80">
+                      {booking.turfId?.location?.address || ''},{' '}
+                      {booking.turfId?.location?.city || ''}
+                    </p>
+                  </div>
+                  <div className="p-3">
+                    <div className="h-44 w-full overflow-hidden rounded-[3px] border border-pitchline/60">
+                      <iframe
+                        src={`https://maps.google.com/maps?q=${encodeURIComponent(
+                          (booking.turfId?.location?.address || '') +
+                            ' ' +
+                            (booking.turfId?.location?.city || '')
+                        )}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                        width="100%"
+                        height="100%"
+                        style={{ border: 0, filter: 'invert(0.9) hue-rotate(180deg) saturate(0.4)' }}
+                        allowFullScreen
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                        title="Turf location map"
+                      />
                     </div>
                   </div>
                 </div>
-                <div className="p-3">
-                  <div className="w-full h-44 bg-gray-100 rounded-xl overflow-hidden">
-                    <iframe
-                      src={`https://maps.google.com/maps?q=${encodeURIComponent(
-                        (booking.turfId?.location?.address || '') +
-                          ' ' +
-                          (booking.turfId?.location?.city || '')
-                      )}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
-                      width="100%"
-                      height="100%"
-                      style={{ border: 0 }}
-                      allowFullScreen
-                      loading="lazy"
-                      referrerPolicy="no-referrer-when-downgrade"
-                      className="rounded-xl"
-                    />
-                  </div>
-                </div>
-              </div>
+              </Reveal>
             )}
-            </div>
           </div>
         </div>
-      </div>
+      </main>
       <NightFooter />
-    </div>
+    </NightShell>
   );
 }
