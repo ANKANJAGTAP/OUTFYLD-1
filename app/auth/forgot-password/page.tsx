@@ -2,23 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Mail,
-  ArrowLeft,
-  CheckCircle2,
-  AlertCircle,
-  MapPin,
-  Sparkles,
-  ChevronRight,
-} from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import Image from "next/image";
+import { Mail, ArrowLeft, CheckCircle2, AlertCircle, ChevronRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import Image from 'next/image';
+import { NightShell } from "@/components/night/NightShell";
+import { NightInput } from "@/components/night/ui";
 
+const label = "mb-1.5 block font-mono text-[10px] uppercase tracking-[0.16em] text-chalk-400";
 
 export default function ForgotPasswordPage() {
   const { resetPassword, loading } = useAuth();
@@ -51,176 +41,127 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f0f4f2] flex items-center justify-center p-6 perspective-1000">
-      {/* 3D Background Elements */}
-      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-green-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob" />
-        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000" />
-      </div>
-
-      <div className="max-w-md w-full relative z-10">
-        {/* Floating 3D Logo */}
-        <div className="text-center mb-8 transform-style-3d hover:rotate-x-12 transition-transform duration-500">
-          <Link href="/" className="inline-flex flex-col items-center group">
-            <div className="mb-3 flex justify-center">
-              <Image
-                src="/images/logo.png"
-                alt="OutFyld Logo"
-                width={80}
-                height={80}
-                className="object-contain drop-shadow-lg"
-                priority
-              />
-            </div>
-
-            <h1 className="text-2xl font-black text-gray-900 tracking-tight">
-              <span className="text-green-600">OutFyld</span>
-            </h1>
+    <NightShell className="flex items-center justify-center p-6">
+      <div className="relative z-[2] w-full max-w-md py-10">
+        {/* wordmark */}
+        <div className="mb-8 text-center">
+          <Link href="/" className="inline-flex flex-col items-center">
+            <Image
+              src="/images/logo.png"
+              alt="OutFyld Logo"
+              width={64}
+              height={64}
+              className="mb-2 object-contain brightness-0 invert"
+              priority
+            />
+            <span className="font-display text-2xl uppercase tracking-tight text-chalk-100">
+              OutFyld
+            </span>
           </Link>
         </div>
 
-        <div className="relative group">
-          {/* Decorative Back Layer */}
-          <div className="absolute inset-0 bg-green-600/10 rounded-[2.5rem] transform rotate-2 scale-105 transition-transform group-hover:rotate-1" />
+        {/* THE TURNSTILE */}
+        <div className="rounded-[4px] border border-pitchline bg-pitch-700/90 p-8 backdrop-blur-sm md:p-10">
+          {submitted ? (
+            <>
+              <p className="nm-overline mb-2 text-flood-500">The turnstile</p>
+              <h1 className="font-display text-4xl uppercase tracking-tight text-chalk-100">
+                Check your email
+              </h1>
+              <p className="mt-1.5 text-sm text-chalk-400">
+                We&apos;ve sent reset instructions to{" "}
+                <span className="font-mono text-chalk-100">{email}</span>.
+              </p>
 
-          <Card className="relative bg-white/95 backdrop-blur-xl border-white/20 shadow-2xl rounded-[2.5rem] overflow-hidden">
-            <CardContent className="p-6 md:p-8">
-              {submitted ? (
-                <div className="text-center py-4 space-y-5 animate-in fade-in zoom-in duration-300">
-                  <div className="flex justify-center">
-                    <div className="bg-green-100 rounded-full p-3 shadow-inner">
-                      <CheckCircle2 className="h-10 w-10 text-green-600" />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <h2 className="text-2xl font-bold text-gray-800">
-                      Check your email
-                    </h2>
-                    <p className="text-sm text-gray-500 leading-relaxed px-4">
-                      We've sent reset instructions to{" "}
-                      <span className="font-bold text-gray-800">{email}</span>.
-                    </p>
-                  </div>
+              <div className="mt-6 flex items-start gap-2 rounded-[3px] border border-flood-500/50 bg-flood-500/[0.07] px-3.5 py-3 text-sm text-chalk-100">
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-flood-500" />
+                Reset link on its way. It can take a minute to land.
+              </div>
 
-                  <Button
-                    asChild
-                    className="w-full h-11 bg-green-600 hover:bg-green-700 rounded-xl shadow-lg shadow-green-100 font-bold transition-all"
-                  >
-                    <Link href="/auth/login">Back to Login</Link>
-                  </Button>
+              <Link
+                href="/auth/login"
+                className="nm-overline group mt-6 flex h-12 w-full items-center justify-center rounded-[4px] bg-flood-500 text-pitch-900 shadow-flood transition-[transform,box-shadow,background-color] duration-200 ease-night hover:bg-flood-600 active:translate-y-[2px] active:shadow-none"
+              >
+                Back to login
+                <ChevronRight className="ml-1 h-4 w-4 transition-transform duration-200 ease-night group-hover:translate-x-1" />
+              </Link>
 
-                  <p className="text-xs text-gray-400">
-                    Didn't receive it? Check your spam folder or{" "}
-                    <button
-                      onClick={() => setSubmitted(false)}
-                      className="text-green-600 font-bold underline"
-                    >
-                      try again
-                    </button>
-                    .
-                  </p>
+              <p className="mt-7 border-t border-pitchline/60 pt-6 text-center text-sm text-chalk-400">
+                Didn&apos;t receive it? Check your spam folder or{" "}
+                <button
+                  onClick={() => setSubmitted(false)}
+                  className="font-medium text-flood-500 transition-colors hover:text-flood-600"
+                >
+                  try again
+                </button>
+                .
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="nm-overline mb-2 text-flood-500">The turnstile</p>
+              <h1 className="font-display text-4xl uppercase tracking-tight text-chalk-100">
+                Reset password
+              </h1>
+              <p className="mt-1.5 text-sm text-chalk-400">
+                We&apos;ll help you get back on the pitch.
+              </p>
+
+              {error && (
+                <div className="mt-5 flex items-start gap-2 rounded-[3px] border border-red-900/60 bg-red-950/30 px-3.5 py-3 text-sm text-red-200">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                  {error}
                 </div>
-              ) : (
-                <>
-                  <div className="mb-6">
-                    <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                      Reset Password{" "}
-                      <Sparkles className="h-5 w-5 text-green-500" />
-                    </h2>
-                    <p className="text-gray-500 text-sm mt-1">
-                      We'll help you get back in
-                    </p>
-                  </div>
-
-                  {error && (
-                    <Alert
-                      variant="destructive"
-                      className="mb-4 rounded-xl border-red-100 bg-red-50"
-                    >
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                  )}
-
-                  <form onSubmit={handleSubmit} className="space-y-5">
-                    <div className="space-y-2 group/input">
-                      <Label className="text-xs font-bold text-gray-500 ml-1 tracking-tight">
-                        EMAIL ADDRESS
-                      </Label>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within/input:text-green-500 transition-colors" />
-                        <Input
-                          id="email"
-                          type="email"
-                          placeholder="name@example.com"
-                          className="pl-10 h-12 rounded-xl bg-gray-50/50 border-gray-100 focus:bg-white transition-all shadow-inner"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <Button
-                      className="w-full h-11 bg-green-600 hover:bg-green-700 rounded-xl shadow-lg shadow-green-100 transition-all text-white font-bold group"
-                      type="submit"
-                      disabled={loading}
-                    >
-                      {loading ? (
-                        "Sending..."
-                      ) : (
-                        <span className="flex items-center justify-center">
-                          Send Reset Link{" "}
-                          <ChevronRight className="ml-1 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                        </span>
-                      )}
-                    </Button>
-
-                    <div className="mt-4 text-center">
-                      <Link
-                        href="/auth/login"
-                        className="inline-flex items-center text-sm font-bold text-gray-400 hover:text-green-600 transition-colors"
-                      >
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        Back to Login
-                      </Link>
-                    </div>
-                  </form>
-                </>
               )}
-            </CardContent>
-          </Card>
+
+              <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+                <div>
+                  <label className={label} htmlFor="email">
+                    Email address
+                  </label>
+                  <div className="relative">
+                    <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-chalk-400/50" />
+                    <NightInput
+                      id="email"
+                      type="email"
+                      placeholder="name@example.com"
+                      className="pl-10"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="nm-overline group flex h-12 w-full items-center justify-center rounded-[4px] bg-flood-500 text-pitch-900 shadow-flood transition-[transform,box-shadow,background-color] duration-200 ease-night hover:bg-flood-600 active:translate-y-[2px] active:shadow-none disabled:pointer-events-none disabled:opacity-40"
+                >
+                  {loading ? (
+                    "Sending…"
+                  ) : (
+                    <span className="flex items-center justify-center">
+                      Send reset link
+                      <ChevronRight className="ml-1 h-4 w-4 transition-transform duration-200 ease-night group-hover:translate-x-1" />
+                    </span>
+                  )}
+                </button>
+              </form>
+
+              <p className="mt-7 border-t border-pitchline/60 pt-6 text-center text-sm text-chalk-400">
+                <Link
+                  href="/auth/login"
+                  className="inline-flex items-center font-medium text-flood-500 transition-colors hover:text-flood-600"
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to login
+                </Link>
+              </p>
+            </>
+          )}
         </div>
       </div>
-
-      <style jsx global>{`
-        .perspective-1000 {
-          perspective: 1000px;
-        }
-        .transform-style-3d {
-          transform-style: preserve-3d;
-        }
-        @keyframes blob {
-          0% {
-            transform: translate(0px, 0px) scale(1);
-          }
-          33% {
-            transform: translate(30px, -50px) scale(1.1);
-          }
-          66% {
-            transform: translate(-20px, 20px) scale(0.9);
-          }
-          100% {
-            transform: translate(0px, 0px) scale(1);
-          }
-        }
-        .animate-blob {
-          animation: blob 8s infinite;
-        }
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-      `}</style>
-    </div>
+    </NightShell>
   );
 }

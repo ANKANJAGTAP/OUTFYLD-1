@@ -4,13 +4,14 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { verifyPasswordResetCode, confirmPasswordReset } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Lock, MapPin, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { Lock, CheckCircle2, AlertCircle, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
+import { NightShell } from '@/components/night/NightShell';
+import { NightLoader } from '@/components/night/NightLoader';
+import { NightInput, nightGhostBtn, Mono } from '@/components/night/ui';
+
+const label = 'mb-1.5 block font-mono text-[10px] uppercase tracking-[0.16em] text-chalk-400';
 
 function ActionForm() {
   const router = useRouter();
@@ -79,67 +80,65 @@ function ActionForm() {
 
   if (verifying) {
     return (
-      <div className="text-center py-10 space-y-4">
-        <Loader2 className="h-10 w-10 text-green-500 animate-spin mx-auto" />
-        <h3 className="text-xl font-medium text-gray-700">Verifying secure link...</h3>
+      <div className="flex justify-center py-10">
+        <NightLoader label="Verifying secure link…" />
       </div>
     );
   }
 
   if (success) {
     return (
-      <div className="text-center space-y-6 py-6">
-        <div className="flex justify-center">
-          <CheckCircle2 className="h-16 w-16 text-green-500" />
+      <div className="space-y-6 py-4">
+        <div className="flex items-start gap-2 rounded-[3px] border border-flood-500/50 bg-flood-500/[0.07] px-3.5 py-3 text-sm text-chalk-100">
+          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-flood-500" />
+          <span>
+            <span className="mb-1 block font-mono text-[10px] uppercase tracking-[0.16em] text-flood-500">
+              Password changed
+            </span>
+            Your password has been successfully reset. You will be redirected to the login page
+            momentarily.
+          </span>
         </div>
-        <Alert className="bg-green-50 border-green-200">
-          <AlertTitle className="text-green-800 text-lg">Password Changed!</AlertTitle>
-          <AlertDescription className="text-green-700 mt-2">
-            Your password has been successfully reset. You will be redirected to the login page momentarily.
-          </AlertDescription>
-        </Alert>
-        <div className="pt-4">
-          <Button asChild className="w-full bg-green-500 hover:bg-green-600">
-            <Link href="/auth/login">
-              Return to Login
-            </Link>
-          </Button>
-        </div>
+        <Link
+          href="/auth/login"
+          className="nm-overline group flex h-12 w-full items-center justify-center rounded-[4px] bg-flood-500 text-pitch-900 shadow-flood transition-[transform,box-shadow,background-color] duration-200 ease-night hover:bg-flood-600 active:translate-y-[2px] active:shadow-none"
+        >
+          Return to login
+          <ChevronRight className="ml-1 h-4 w-4 transition-transform duration-200 ease-night group-hover:translate-x-1" />
+        </Link>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="text-center space-y-6 py-6">
-        <Alert variant="destructive">
-          <AlertCircle className="h-5 w-5" />
-          <AlertDescription className="text-left py-2">{error}</AlertDescription>
-        </Alert>
-        <Button asChild className="w-full bg-gray-100 text-gray-900 border border-gray-300 hover:bg-gray-200">
-          <Link href="/auth/forgot-password">
-            Request New Reset Link
-          </Link>
-        </Button>
+      <div className="space-y-6 py-4">
+        <div className="flex items-start gap-2 rounded-[3px] border border-red-900/60 bg-red-950/30 px-3.5 py-3 text-sm text-red-200">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          {error}
+        </div>
+        <Link href="/auth/forgot-password" className={`${nightGhostBtn} h-12 w-full`}>
+          Request new reset link
+        </Link>
       </div>
     );
   }
 
   return (
     <>
-      <div className="text-center mb-6">
-        <p className="text-sm font-medium text-gray-500 mb-2">Resetting password for:</p>
-        <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-50 text-blue-700 font-medium text-sm">
-          {email}
-        </span>
+      <div className="mb-6 border-t border-pitchline/60 pt-5">
+        <p className="nm-overline mb-1.5 text-chalk-400">Resetting password for</p>
+        <Mono className="text-sm text-chalk-100">{email}</Mono>
       </div>
-      
+
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="new-password">New Password</Label>
+        <div>
+          <label className={label} htmlFor="new-password">
+            New password
+          </label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
+            <Lock className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-chalk-400/50" />
+            <NightInput
               id="new-password"
               type="password"
               placeholder="Enter new password"
@@ -151,12 +150,14 @@ function ActionForm() {
             />
           </div>
         </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="confirm-password">Confirm New Password</Label>
+
+        <div>
+          <label className={label} htmlFor="confirm-password">
+            Confirm new password
+          </label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
+            <Lock className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-chalk-400/50" />
+            <NightInput
               id="confirm-password"
               type="password"
               placeholder="Confirm new password"
@@ -169,19 +170,20 @@ function ActionForm() {
           </div>
         </div>
 
-        <Button 
-          className="w-full bg-green-500 hover:bg-green-600 mt-2" 
-          size="lg"
+        <button
           type="submit"
           disabled={loading}
+          className="nm-overline group flex h-12 w-full items-center justify-center rounded-[4px] bg-flood-500 text-pitch-900 shadow-flood transition-[transform,box-shadow,background-color] duration-200 ease-night hover:bg-flood-600 active:translate-y-[2px] active:shadow-none disabled:pointer-events-none disabled:opacity-40"
         >
           {loading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Updating Password...
-            </>
-          ) : 'Save New Password'}
-        </Button>
+            'Updating password…'
+          ) : (
+            <span className="flex items-center justify-center">
+              Save new password
+              <ChevronRight className="ml-1 h-4 w-4 transition-transform duration-200 ease-night group-hover:translate-x-1" />
+            </span>
+          )}
+        </button>
       </form>
     </>
   );
@@ -189,36 +191,46 @@ function ActionForm() {
 
 export default function AuthActionPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
-      <div className="max-w-md w-full">
-        <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center mb-4">
-            <div className="bg-green-500 rounded-lg p-2 mr-3">
-              <MapPin className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-green-600">OutFyld</h1>
-            </div>
+    <NightShell className="flex items-center justify-center p-6">
+      <div className="relative z-[2] w-full max-w-md py-10">
+        {/* wordmark */}
+        <div className="mb-8 text-center">
+          <Link href="/" className="inline-flex flex-col items-center">
+            <Image
+              src="/images/logo.png"
+              alt="OutFyld Logo"
+              width={64}
+              height={64}
+              className="mb-2 object-contain brightness-0 invert"
+              priority
+            />
+            <span className="font-display text-2xl uppercase tracking-tight text-chalk-100">
+              OutFyld
+            </span>
           </Link>
-          <h2 className="text-3xl font-bold text-gray-900">Create New Password</h2>
         </div>
 
-        <Card className="bg-white/95 backdrop-blur-sm shadow-xl">
-          <CardHeader>
-            <CardTitle className="text-center">Secure Your Account</CardTitle>
-            <CardDescription className="text-center">Enter your new strong password below</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Suspense fallback={
-              <div className="flex justify-center p-8">
-                <Loader2 className="h-8 w-8 text-green-500 animate-spin" />
+        {/* THE TURNSTILE */}
+        <div className="rounded-[4px] border border-pitchline bg-pitch-700/90 p-8 backdrop-blur-sm md:p-10">
+          <p className="nm-overline mb-2 text-flood-500">The turnstile</p>
+          <h1 className="font-display text-4xl uppercase tracking-tight text-chalk-100">
+            New password
+          </h1>
+          <p className="mb-6 mt-1.5 text-sm text-chalk-400">
+            Secure your account with a new strong password.
+          </p>
+
+          <Suspense
+            fallback={
+              <div className="flex justify-center py-10">
+                <NightLoader label="Warming up…" />
               </div>
-            }>
-              <ActionForm />
-            </Suspense>
-          </CardContent>
-        </Card>
+            }
+          >
+            <ActionForm />
+          </Suspense>
+        </div>
       </div>
-    </div>
+    </NightShell>
   );
 }
