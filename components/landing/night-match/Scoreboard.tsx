@@ -26,7 +26,15 @@ export function Scoreboard({ stats }: { stats: PlatformStats }) {
         </Reveal>
 
         <Reveal delay={0.08}>
-          <ScoreboardSetPiece stats={stats}>
+          <ScoreboardSetPiece
+            cells={[
+              { label: 'TURFS FLOODLIT', value: stats.turfs },
+              { label: 'CITIES IN PLAY', value: stats.cities },
+              { label: 'GAMES BOOKED', value: stats.bookings },
+              { label: 'AVG RATING /5', value: stats.rating, decimals: 1 },
+            ]}
+            srText={`${stats.turfs} turfs floodlit and bookable. ${stats.cities} cities in play. ${stats.bookings.toLocaleString('en-IN')} games booked. Average player rating ${stats.rating.toFixed(1)} out of 5.`}
+          >
           <div className="grid grid-cols-2 gap-x-6 gap-y-14 lg:grid-cols-12 lg:gap-y-0">
           {/* Lead stat — oversized, lime */}
           <div className="col-span-2 lg:col-span-4">

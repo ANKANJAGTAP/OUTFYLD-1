@@ -7,6 +7,8 @@ import { LandingHeader } from '@/components/landing/LandingHeader';
 import { NightShell } from '@/components/night/NightShell';
 import { CountUp } from '@/components/landing/night-match/CountUp';
 import { Mono, StatusDot } from '@/components/night/ui';
+import { NightLoader } from '@/components/night/NightLoader';
+import { ScoreboardSetPiece } from '@/components/landing/night-match/ScoreboardSetPiece';
 import {
   MapPin, Clock, User, Search, History, Trophy, ChevronRight,
   Loader2, MessageSquare, ArrowRight, Heart,
@@ -82,7 +84,7 @@ export function FixtureRow({ booking }: { booking: BookingItem }) {
             <MapPin className="h-3 w-3" />
             <span className="max-w-40 truncate normal-case tracking-normal">{booking.location}</span>
           </span>
-          {booking.amount > 0 && <Mono className="text-chalk-100">₹{booking.amount.toLocaleString('en-IN')}</Mono>}
+          {booking.amount > 0 && <Mono className="text-chalk-100">₹{Math.round(booking.amount).toLocaleString('en-IN')}</Mono>}
         </div>
       </div>
 
@@ -248,12 +250,7 @@ function PlayerDashboard() {
       <NightShell ambient={0.6}>
         <LandingHeader />
         <div className="flex items-center justify-center py-32">
-          <div className="text-center">
-            <Loader2 className="mx-auto mb-4 h-7 w-7 animate-spin text-flood-500" />
-            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-chalk-400">
-              Walking the tunnel…
-            </p>
-          </div>
+          <NightLoader label="Walking the tunnel…" />
         </div>
       </NightShell>
     );
@@ -298,25 +295,40 @@ function PlayerDashboard() {
         </div>
       </section>
 
-      {/* ── SEASON STATS — one strip, hairline separators, scoreboard digits ── */}
+      {/* ── SEASON STATS — 3D stadium scoreboard on desktop; flat strip on
+             mobile / reduced-motion / WebGL failure ── */}
       <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-3 gap-y-8 rounded-[4px] border border-pitchline bg-pitch-700/80 px-6 py-7 lg:grid-cols-6 lg:divide-x lg:divide-pitchline/60">
-          {seasonStats.map((s, i) => (
-            <div key={s.label} className={i > 0 ? 'lg:pl-7' : ''}>
-              <div className="font-mono text-2xl tabular-nums tracking-tight text-chalk-100 sm:text-3xl">
-                {s.prefix || ''}
-                {counted ? (
-                  s.value.toLocaleString('en-IN')
-                ) : (
-                  <CountUp value={s.value} />
-                )}
+        <ScoreboardSetPiece
+          cells={[
+            { label: 'TOTAL BOOKINGS', value: stats.totalBookings },
+            { label: 'LOYALTY POINTS', value: stats.loyaltyPoints },
+            { label: 'UPCOMING GAMES', value: stats.upcomingGames },
+            {
+              label: 'SPENT (RS)',
+              value: stats.totalSpent,
+              decimals: stats.totalSpent % 1 ? 1 : 0,
+            },
+          ]}
+          srText={`${stats.totalBookings} total bookings. ${stats.loyaltyPoints.toLocaleString('en-IN')} loyalty points. ${stats.upcomingGames} upcoming games. ₹${stats.totalSpent.toLocaleString('en-IN')} spent.`}
+        >
+          <div className="grid grid-cols-3 gap-y-8 rounded-[4px] border border-pitchline bg-pitch-700/80 px-6 py-7 lg:grid-cols-6 lg:divide-x lg:divide-pitchline/60">
+            {seasonStats.map((s, i) => (
+              <div key={s.label} className={i > 0 ? 'lg:pl-7' : ''}>
+                <div className="font-mono text-2xl tabular-nums tracking-tight text-chalk-100 sm:text-3xl">
+                  {s.prefix || ''}
+                  {counted ? (
+                    s.value.toLocaleString('en-IN')
+                  ) : (
+                    <CountUp value={s.value} />
+                  )}
+                </div>
+                <p className="mt-1.5 font-mono text-[9px] uppercase tracking-[0.16em] text-chalk-400">
+                  {s.label}
+                </p>
               </div>
-              <p className="mt-1.5 font-mono text-[9px] uppercase tracking-[0.16em] text-chalk-400">
-                {s.label}
-              </p>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </ScoreboardSetPiece>
       </section>
 
       {/* ── main grid ── */}

@@ -4,7 +4,8 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
+import { NightLoader } from '@/components/night/NightLoader';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -73,16 +74,11 @@ export default function ProtectedRoute({
     isEmailVerified
   ]);
 
-  // Show loading spinner while checking authentication
+  // Show the bouncing-ball loader while checking authentication
   if (initialLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-pitch-900">
-        <Card className="w-96 border-pitchline bg-pitch-700 text-chalk-100">
-          <CardContent className="flex flex-col items-center justify-center p-8">
-            <Loader2 className="h-8 w-8 animate-spin text-flood-500 mb-4" />
-            <p className="text-chalk-400">Loading...</p>
-          </CardContent>
-        </Card>
+        <NightLoader label="Checking your pass…" />
       </div>
     );
   }

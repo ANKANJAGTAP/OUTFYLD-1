@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic';
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import { NightFooter } from '@/components/landing/night-match/NightFooter';
 import { NightShell } from '@/components/night/NightShell';
-import { Loader2 } from 'lucide-react';
+import { NightLoader } from '@/components/night/NightLoader';
 
 // Dynamic import — TurfDetailsPage bundles @react-google-maps/api (7.4MB)
 // Lazy loading it saves ~80-100kB from the initial page bundle
@@ -15,7 +15,7 @@ const TurfDetailsPage = dynamic(
     ssr: false,
     loading: () => (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-flood-500" />
+        <NightLoader label="Preparing the ground…" />
       </div>
     ),
   }

@@ -3,13 +3,20 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import type { PlatformStats } from '@/lib/turfs';
+
+/** One cell on the stadium screen: big seven-seg value + mono label. */
+export interface ScoreCell {
+  label: string;
+  value: number;
+  decimals?: number;
+}
 
 /**
  * Scoreboard3D — an information-bearing set piece, not a prop.
- * A slightly-tilted stadium scoreboard panel whose screen face renders the
- * REAL platform stats as glowing lime seven-segment digits, drawn onto a
- * CanvasTexture (crisp at 2x). Behaviour:
+ * A slightly-tilted stadium scoreboard panel whose screen face renders any
+ * four REAL stats (platform totals on the homepage, the player's season on
+ * the dashboard) as glowing lime seven-segment digits on a CanvasTexture.
+ * Behaviour:
  *  - powers on with the floodlight-buzz language when scrolled in (once),
  *    digits roll up once, then HOLD (the sanctioned odometer exception)
  *  - idle: faint screen flicker + scanline shimmer
@@ -108,10 +115,14 @@ function drawValue(
 const W = 1536;
 const H = 768;
 
-function drawScreen(
-  canvas: HTMLCanvasElement,
-  v: { turfs: number; cities: number; bookings: number; rating: number }
-) {
+const CELL_POS = [
+  { x: 110, y: 105 },
+  { x: 880, y: 105 },
+  { x: 110, y: 455 },
+  { x: 880, y: 455 },
+];
+
+function drawScreen(canvas: HTMLCanvasElement, cellTexts: { label: string; text: string }[]) {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
   ctx.clearRect(0, 0, W, H);
@@ -120,16 +131,11 @@ function drawScreen(
   ctx.fillStyle = '#07100c';
   ctx.fillRect(0, 0, W, H);
 
-  const cells: { label: string; value: string; suffix?: string; x: number; y: number }[] = [
-    { label: 'TURFS FLOODLIT', value: String(v.turfs), x: 110, y: 105 },
-    { label: 'CITIES IN PLAY', value: String(v.cities), x: 880, y: 105 },
-    { label: 'GAMES BOOKED', value: String(v.bookings), x: 110, y: 455 },
-    { label: 'AVG RATING /5', value: v.rating.toFixed(1), x: 880, y: 455 },
-  ];
+  const cells = cellTexts.slice(0, 4).map((c, i) => ({ ...c, ...CELL_POS[i] }));
 
   const dh = 160; // digit height
   for (const c of cells) {
-    drawValue(ctx, c.value, c.x, c.y, dh, LIME, 0.95);
+    drawValue(ctx, c.text, c.x, c.y, dh, LIME, 0.95);
     ctx.shadowBlur = 0;
     ctx.fillStyle = CHALK;
     ctx.font = '600 30px ui-monospace, SFMono-Regular, Menlo, monospace';
@@ -158,13 +164,22 @@ function drawScreen(
   ctx.fillRect(0, 0, W, H * 0.5);
 }
 
+/** Format a cell's value at a given roll progress (eased 0..1). */
+function cellText(cell: ScoreCell, eased: number): { label: string; text: string } {
+  const v = cell.value * eased;
+  return {
+    label: cell.label,
+    text: cell.decimals ? v.toFixed(cell.decimals) : String(Math.round(v)),
+  };
+}
+
 function Panel({
-  stats,
+  cells,
   pointer,
   scrub,
   power,
 }: {
-  stats: PlatformStats;
+  cells: ScoreCell[];
   pointer: React.MutableRefObject<{ x: number; y: number }>;
   scrub: React.MutableRefObject<number>;
   power: React.MutableRefObject<{ started: boolean; t0: number; done: boolean }>;
@@ -176,12 +191,13 @@ function Panel({
     const c = document.createElement('canvas');
     c.width = W;
     c.height = H;
-    drawScreen(c, { turfs: 0, cities: 0, bookings: 0, rating: 0 }); // dark until power-on
+    drawScreen(c, cells.map((cell) => cellText(cell, 0))); // dark until power-on
     const tx = new THREE.CanvasTexture(c);
     tx.colorSpace = THREE.SRGBColorSpace;
     tx.anisotropy = 4;
     tx.wrapS = tx.wrapT = THREE.RepeatWrapping;
     return { canvas: c, texture: tx };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useFrame(({ clock }) => {
@@ -205,18 +221,13 @@ function Panel({
     if (el < 1) {
       // digits roll up once (eased), buzz on the same floodlight curve
       const eased = 1 - Math.pow(1 - Math.min(el, 1), 4);
-      drawScreen(canvas, {
-        turfs: Math.round(stats.turfs * eased),
-        cities: Math.round(stats.cities * eased),
-        bookings: Math.round(stats.bookings * eased),
-        rating: stats.rating * eased,
-      });
+      drawScreen(canvas, cells.map((cell) => cellText(cell, eased)));
       texture.needsUpdate = true;
       m.emissiveIntensity =
         el < 0.1 ? 4 * el : el < 0.16 ? 0.12 : 0.12 + (el - 0.16) * (1.08 / 0.84);
     } else {
       if (!p.done) {
-        drawScreen(canvas, stats); // final values — hold
+        drawScreen(canvas, cells.map((cell) => cellText(cell, 1))); // final values — hold
         texture.needsUpdate = true;
         p.done = true;
       }
@@ -271,10 +282,10 @@ function Panel({
 }
 
 export default function Scoreboard3D({
-  stats,
+  cells,
   onReady,
 }: {
-  stats: PlatformStats;
+  cells: ScoreCell[];
   onReady?: () => void;
 }) {
   const wrap = useRef<HTMLDivElement>(null);
@@ -362,7 +373,7 @@ export default function Scoreboard3D({
         {/* floodlight key from top-front + lime rim from behind-left */}
         <spotLight position={[2.5, 4, 4]} angle={0.7} penumbra={1} intensity={60} color={'#e8f2d8'} />
         <directionalLight position={[-4, -1, -3]} intensity={1.1} color={LIME} />
-        <PanelClock stats={stats} pointer={pointer} scrub={scrub} power={power} />
+        <PanelClock cells={cells} pointer={pointer} scrub={scrub} power={power} />
       </Canvas>
     </div>
   );
@@ -370,7 +381,7 @@ export default function Scoreboard3D({
 
 /** Bridges wall-clock power-on trigger into the R3F clock domain. */
 function PanelClock(props: {
-  stats: PlatformStats;
+  cells: ScoreCell[];
   pointer: React.MutableRefObject<{ x: number; y: number }>;
   scrub: React.MutableRefObject<number>;
   power: React.MutableRefObject<{ started: boolean; t0: number; done: boolean }>;

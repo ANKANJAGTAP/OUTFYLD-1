@@ -147,6 +147,69 @@ body::-webkit-scrollbar {
   animation: nm-scanline 1.6s linear infinite;
   border-radius: 4px;
 }
+/* ── NightLoader — football bouncing with squash & stretch ── */
+@keyframes nm-ball-bounce {
+  0% {
+    transform: translate(-50%, 0) scale(1, 1);
+    animation-timing-function: cubic-bezier(0.5, 0, 1, 0.6);
+  }
+  44% {
+    transform: translate(-50%, 46px) scale(1, 1);
+  }
+  52% {
+    transform: translate(-50%, 50px) scale(1.22, 0.72);
+    animation-timing-function: cubic-bezier(0, 0.4, 0.5, 1);
+  }
+  60% {
+    transform: translate(-50%, 46px) scale(0.94, 1.08);
+  }
+  100% {
+    transform: translate(-50%, 0) scale(1, 1);
+  }
+}
+@keyframes nm-ball-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes nm-ball-shadow {
+  0%, 100% {
+    transform: translateX(-50%) scaleX(0.45);
+    opacity: 0.15;
+  }
+  50% {
+    transform: translateX(-50%) scaleX(1);
+    opacity: 0.5;
+  }
+}
+.nm-ball {
+  animation: nm-ball-bounce 0.75s infinite;
+  will-change: transform;
+}
+.nm-ball-face {
+  border-radius: 9999px;
+  /* chalk football: sphere shading + dark panel patches */
+  background:
+    radial-gradient(circle at 50% 46%, #10231b 0 15%, transparent 16%),
+    radial-gradient(circle at 16% 34%, #10231b 0 9%, transparent 10%),
+    radial-gradient(circle at 84% 34%, #10231b 0 9%, transparent 10%),
+    radial-gradient(circle at 28% 82%, #10231b 0 9%, transparent 10%),
+    radial-gradient(circle at 72% 82%, #10231b 0 9%, transparent 10%),
+    radial-gradient(circle at 32% 26%, #ffffff 0%, #e5eae2 40%, #aab4ab 78%, #78827a 100%);
+  animation: nm-ball-spin 1.6s linear infinite;
+  box-shadow: 0 0 24px -6px rgba(200, 241, 53, 0.25);
+}
+.nm-ball-shadow {
+  animation: nm-ball-shadow 0.75s infinite;
+  filter: blur(2px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .nm-ball,
+  .nm-ball-face,
+  .nm-ball-shadow {
+    animation: none;
+  }
+}
+
 /* trophy room — slow lime rim-glow loop on the redeem card */
 @keyframes nm-rim-pulse {
   0%, 100% {

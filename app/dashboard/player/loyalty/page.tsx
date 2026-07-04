@@ -6,6 +6,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import { NightShell } from '@/components/night/NightShell';
 import { CountUp } from '@/components/landing/night-match/CountUp';
+import { NightLoader } from '@/components/night/NightLoader';
 import {
   Gift, Calendar, Info, Loader2, ArrowRight, MessageSquare, Star,
 } from 'lucide-react';
@@ -129,12 +130,7 @@ function PlayerLoyaltyContent() {
       <NightShell ambient={0.6}>
         <LandingHeader />
         <div className="flex items-center justify-center py-32">
-          <div className="text-center">
-            <Loader2 className="mx-auto mb-4 h-7 w-7 animate-spin text-flood-500" />
-            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-chalk-400">
-              Opening the trophy room…
-            </p>
-          </div>
+          <NightLoader label="Opening the trophy room…" />
         </div>
       </NightShell>
     );

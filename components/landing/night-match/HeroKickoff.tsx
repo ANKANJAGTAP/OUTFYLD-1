@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
 
 // R3F scene is desktop + motion-only, code-split, never SSR'd (keeps LCP = poster).
 const KickoffScene = dynamic(() => import('./KickoffScene'), { ssr: false });
@@ -13,6 +14,14 @@ import { deferIdle } from './deferIdle';
 
 export function HeroKickoff() {
   const root = useRef<HTMLElement>(null);
+  const { user, firebaseUser } = useAuth();
+  const isLoggedIn = !!(firebaseUser && user);
+  const dashboardHref =
+    user?.role === 'owner'
+      ? '/owner/dashboard'
+      : user?.role === 'admin'
+        ? '/admin/dashboard'
+        : '/dashboard/player';
   const [mount3D, setMount3D] = useState(false);
   const [sceneReady, setSceneReady] = useState(false);
   const [frameloop, setFrameloop] = useState<'always' | 'never'>('always');
@@ -131,11 +140,12 @@ export function HeroKickoff() {
           >
             Find a pitch
           </Link>
+          {/* logged-in players get their dashboard, not another signup prompt */}
           <Link
-            href="/auth/register"
+            href={isLoggedIn ? dashboardHref : '/auth/register'}
             className="nm-overline border border-chalk-400/30 px-8 py-4 text-chalk-100 backdrop-blur-sm transition-colors duration-300 ease-night hover:border-flood-500 hover:text-flood-500"
           >
-            Sign up free
+            {isLoggedIn ? 'Open dashboard' : 'Sign up free'}
           </Link>
         </div>
       </div>

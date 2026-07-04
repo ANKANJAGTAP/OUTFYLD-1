@@ -31,6 +31,7 @@ import { WeekCalendar } from '@/components/booking/WeekCalendar';
 import TurfImageGallery from '@/components/booking/TurfImageGallery';
 import { useAuth } from '@/contexts/AuthContext';
 import { OdometerText } from '@/components/night/OdometerText';
+import { NightLoader } from '@/components/night/NightLoader';
 
 // Google Maps night styling — proper styled map (not a CSS filter hack),
 // tuned toward the pitch palette. Lime marker is drawn as a symbol.
@@ -551,12 +552,7 @@ const TurfDetailsPage = memo(function TurfDetailsPage({ turfId }: TurfDetailsPag
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="mx-auto mb-4 h-8 w-8 animate-spin text-flood-500" />
-          <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-chalk-400">
-            Loading the ground…
-          </p>
-        </div>
+        <NightLoader label="Preparing the ground…" />
       </div>
     );
   }

@@ -30,6 +30,19 @@ function releaseNight() {
   }, 120);
 }
 
+/**
+ * NightClass — applies ONLY the `html.night` theme scope, no shell markup.
+ * For pages that already build their own dark layout (the homepage) but
+ * still need portals — account dropdown, toasts, dialogs — themed dark.
+ */
+export function NightClass() {
+  useEffect(() => {
+    acquireNight();
+    return releaseNight;
+  }, []);
+  return null;
+}
+
 export function NightShell({
   children,
   ambient = 1,

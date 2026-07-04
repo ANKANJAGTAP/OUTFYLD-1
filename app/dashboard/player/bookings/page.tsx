@@ -7,6 +7,7 @@ import { LandingHeader } from '@/components/landing/LandingHeader';
 import { NightShell } from '@/components/night/NightShell';
 import { SquadSelector } from '@/components/night/SquadSelector';
 import { Mono, StatusDot, SweepButton } from '@/components/night/ui';
+import { NightLoader } from '@/components/night/NightLoader';
 import {
   MapPin, Clock, Loader2, MessageSquare, RotateCcw, ChevronDown, ArrowRight,
 } from 'lucide-react';
@@ -115,7 +116,7 @@ export function RecordRow({
               </span>
             </span>
             {booking.amount > 0 && (
-              <Mono className="text-chalk-100">₹{booking.amount.toLocaleString('en-IN')}</Mono>
+              <Mono className="text-chalk-100">₹{Math.round(booking.amount).toLocaleString('en-IN')}</Mono>
             )}
           </div>
         </div>
@@ -153,7 +154,7 @@ export function RecordRow({
                   <span className="text-right uppercase text-chalk-100">{status.label}</span>
                   <span className="uppercase tracking-[0.1em] text-chalk-400">Paid</span>
                   <span className="text-right text-flood-500">
-                    ₹{booking.amount.toLocaleString('en-IN')}
+                    ₹{Math.round(booking.amount).toLocaleString('en-IN')}
                   </span>
                 </div>
               </div>
@@ -333,12 +334,7 @@ function PlayerBookings() {
       <NightShell ambient={0.6}>
         <LandingHeader />
         <div className="flex items-center justify-center py-32">
-          <div className="text-center">
-            <Loader2 className="mx-auto mb-4 h-7 w-7 animate-spin text-flood-500" />
-            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-chalk-400">
-              Pulling the season record…
-            </p>
-          </div>
+          <NightLoader label="Pulling the season record…" />
         </div>
       </NightShell>
     );
