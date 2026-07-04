@@ -3,11 +3,15 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Check, Loader2, IndianRupee, Clock, Sparkles, Shield, AlertCircle } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { NightShell } from '@/components/night/NightShell';
+import { NightLoader } from '@/components/night/NightLoader';
+import { CountUp } from '@/components/landing/night-match/CountUp';
+import { Reveal } from '@/components/landing/night-match/Reveal';
+import { PitchDivider } from '@/components/landing/night-match/PitchDivider';
+import {
+  Mono, Overline, StatusDot, nightCard, nightPrimaryBtn, nightGhostBtn,
+} from '@/components/night/ui';
+import { Check, Loader2, Sparkles, Shield, AlertCircle } from 'lucide-react';
 import Script from 'next/script';
 
 // Plan types
@@ -171,9 +175,9 @@ export default function SubscriptionPage() {
             try {
               const subResponse = await fetch(`/api/owner/subscription?uid=${user.uid}`);
               const subData = await subResponse.json();
-              
+
               if (subData.success && !subData.subscription.bankDetailsVerified) {
-                setSuccess('🎉 Subscription activated successfully! Redirecting to add your bank details...');
+                setSuccess('Subscription activated successfully! Redirecting to add your bank details...');
                 setTimeout(() => {
                   router.push('/owner/bank-details');
                 }, 2000);
@@ -183,7 +187,7 @@ export default function SubscriptionPage() {
               console.error('Error fetching latest bank details status:', err);
             }
 
-            setSuccess('🎉 Subscription activated successfully! Redirecting to dashboard...');
+            setSuccess('Subscription activated successfully! Redirecting to dashboard...');
             setTimeout(() => {
               router.push('/owner/dashboard');
             }, 2000);
@@ -197,7 +201,7 @@ export default function SubscriptionPage() {
           plan: planKey,
         },
         theme: {
-          color: '#16a34a', // green-600
+          color: '#C8F135', // flood-500
         },
         modal: {
           ondismiss: function () {
@@ -220,9 +224,11 @@ export default function SubscriptionPage() {
 
   if (initialLoading || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-green-600" />
-      </div>
+      <NightShell ambient={0.45}>
+        <div className="flex min-h-screen items-center justify-center">
+          <NightLoader label="Checking your season pass…" />
+        </div>
+      </NightShell>
     );
   }
 
@@ -232,268 +238,317 @@ export default function SubscriptionPage() {
     const daysLeft = Math.ceil((endDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-green-50 py-6 md:py-12 px-4">
+      <NightShell ambient={0.45}>
         <Script
           src="https://checkout.razorpay.com/v1/checkout.js"
           onLoad={() => setRazorpayLoaded(true)}
         />
-        <div className="max-w-2xl mx-auto">
-          <div className="mb-4">
-            <Button onClick={() => router.push('/owner/dashboard')} variant="outline" size="sm">
-              ← Back to Dashboard
-            </Button>
-          </div>
-          <Card className="shadow-lg border-green-200">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-xl md:text-2xl">Active Subscription</CardTitle>
-                <Badge className="bg-green-600 text-white">Active</Badge>
+        <main className="mx-auto max-w-2xl px-4 pb-16 pt-10 sm:px-6 sm:pt-14">
+          <button
+            onClick={() => router.push('/owner/dashboard')}
+            className="font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-400 transition-colors duration-200 ease-night hover:text-flood-500"
+          >
+            ← Back to Dashboard
+          </button>
+
+          <Reveal>
+            <div className="mt-6">
+              <p className="nm-overline mb-3 text-flood-500">Season pass</p>
+              <h1 className="font-display text-4xl uppercase leading-none tracking-tight text-chalk-100 sm:text-5xl">
+                Active subscription
+              </h1>
+            </div>
+          </Reveal>
+
+          <Reveal delay={0.08}>
+            <div className={`${nightCard} mt-8 overflow-hidden`}>
+              <div className="flex items-center justify-between border-b border-pitchline/60 px-6 py-4">
+                <Overline>Your subscription details</Overline>
+                <span className="flex items-center gap-2 font-mono text-[9px] uppercase tracking-[0.16em] text-flood-500">
+                  <StatusDot tone="lime" />
+                  Active
+                </span>
               </div>
-              <CardDescription>Your subscription details</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <div className="grid grid-cols-2 gap-4">
+
+              <div className="space-y-5 p-6">
+                <div className="grid grid-cols-2 gap-x-6 gap-y-5">
                   <div>
-                    <p className="text-sm text-gray-600">Plan</p>
-                    <p className="font-semibold text-lg capitalize">
+                    <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-chalk-400">Plan</p>
+                    <p className="mt-1 font-display text-xl uppercase tracking-tight text-chalk-100">
                       {existingSubscription.subscriptionPlan === 'starter' ? 'Starter' :
                        existingSubscription.subscriptionPlan === 'pro' ? 'Pro' :
                        existingSubscription.subscriptionPlan}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Amount Paid</p>
-                    <p className="font-semibold text-lg">₹{existingSubscription.subscriptionAmount}</p>
+                    <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-chalk-400">Amount Paid</p>
+                    <p className="mt-1 font-mono text-xl tabular-nums tracking-tight text-chalk-100">
+                      ₹<CountUp value={existingSubscription.subscriptionAmount} />
+                    </p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Valid Until</p>
-                    <p className="font-semibold">{endDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                    <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-chalk-400">Valid Until</p>
+                    <p className="mt-1 font-mono text-sm tabular-nums text-chalk-100">
+                      {endDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    </p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Days Remaining</p>
-                    <p className={`font-semibold ${daysLeft < 30 ? 'text-orange-600' : 'text-green-600'}`}>
-                      {daysLeft} days
+                    <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-chalk-400">Days Remaining</p>
+                    <p className={`mt-1 font-mono text-xl tabular-nums tracking-tight ${daysLeft < 30 ? 'text-red-400' : 'text-flood-500'}`}>
+                      <CountUp value={daysLeft} /> <span className="text-xs uppercase tracking-[0.12em]">days</span>
                     </p>
                   </div>
                 </div>
+
+                {existingSubscription.subscriptionPlan === 'starter' && (
+                  <div className="rounded-[4px] border border-flood-500/40 p-4">
+                    <p className="nm-overline flex items-center gap-2 text-flood-500">
+                      <Sparkles className="h-4 w-4" />
+                      Upgrade to Pro
+                    </p>
+                    <p className="mt-2 text-sm leading-relaxed text-chalk-400">
+                      List up to 3 turfs, get priority listing, advanced analytics, and more.
+                    </p>
+                    <button
+                      className={`${nightPrimaryBtn} mt-4`}
+                      onClick={() => handleSelectPlan('pro')}
+                      disabled={submitting}
+                    >
+                      {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                      Upgrade to Pro — ₹2,000/year
+                    </button>
+                  </div>
+                )}
+
+                {!existingSubscription.bankDetailsVerified && (
+                  <div className="flex items-start gap-3 rounded-[4px] border border-chalk-400/30 p-4">
+                    <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-chalk-400" />
+                    <p className="text-sm leading-relaxed text-chalk-400">
+                      <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-100">Bank details needed.</span>{' '}
+                      Add your bank details to receive booking payments directly.{' '}
+                      <button
+                        className="font-mono text-[11px] uppercase tracking-[0.12em] text-flood-500 underline underline-offset-4 transition-colors hover:text-flood-600"
+                        onClick={() => router.push('/owner/bank-details')}
+                      >
+                        Add Bank Details →
+                      </button>
+                    </p>
+                  </div>
+                )}
               </div>
 
-              {existingSubscription.subscriptionPlan === 'starter' && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <p className="text-sm text-blue-800">
-                    <Sparkles className="h-4 w-4 inline mr-1" />
-                    <strong>Upgrade to Pro</strong> to list up to 3 turfs, get priority listing, advanced analytics, and more!
-                  </p>
-                  <Button
-                    className="mt-3 bg-blue-600 hover:bg-blue-700"
-                    onClick={() => handleSelectPlan('pro')}
-                    disabled={submitting}
-                  >
-                    {submitting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-                    Upgrade to Pro — ₹2,000/year
-                  </Button>
-                </div>
-              )}
-
-              {!existingSubscription.bankDetailsVerified && (
-                <Alert className="bg-yellow-50 border-yellow-200">
-                  <AlertCircle className="h-4 w-4 text-yellow-600" />
-                  <AlertDescription className="text-yellow-800">
-                    <strong>Bank details needed!</strong> Add your bank details to receive booking payments directly.{' '}
-                    <Button
-                      variant="link"
-                      className="p-0 h-auto text-yellow-900 underline"
-                      onClick={() => router.push('/owner/bank-details')}
-                    >
-                      Add Bank Details →
-                    </Button>
-                  </AlertDescription>
-                </Alert>
-              )}
-            </CardContent>
-            <CardFooter>
-              <Button onClick={() => router.push('/owner/dashboard')} variant="outline" className="w-full sm:w-auto">
-                Go to Dashboard
-              </Button>
-            </CardFooter>
-          </Card>
-        </div>
-      </div>
+              <div className="border-t border-pitchline/60 px-6 py-4">
+                <button
+                  onClick={() => router.push('/owner/dashboard')}
+                  className={`${nightGhostBtn} w-full px-5 py-3 sm:w-auto`}
+                >
+                  Go to Dashboard
+                </button>
+              </div>
+            </div>
+          </Reveal>
+        </main>
+      </NightShell>
     );
   }
 
   // Show expired subscription
   if (existingSubscription && existingSubscription.subscriptionStatus === 'expired') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-red-50 py-6 md:py-12 px-4">
+      <NightShell ambient={0.45}>
         <Script
           src="https://checkout.razorpay.com/v1/checkout.js"
           onLoad={() => setRazorpayLoaded(true)}
         />
-        <div className="max-w-2xl mx-auto">
-          <div className="mb-4">
-            <Button onClick={() => router.push('/owner/dashboard')} variant="outline" size="sm">
-              ← Back to Dashboard
-            </Button>
-          </div>
-          <Card className="shadow-lg border-red-200">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-xl md:text-2xl">Subscription Expired</CardTitle>
-                <Badge variant="destructive">Expired</Badge>
+        <main className="mx-auto max-w-4xl px-4 pb-16 pt-10 sm:px-6 sm:pt-14">
+          <button
+            onClick={() => router.push('/owner/dashboard')}
+            className="font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-400 transition-colors duration-200 ease-night hover:text-flood-500"
+          >
+            ← Back to Dashboard
+          </button>
+
+          <Reveal>
+            <div className="mt-6">
+              <p className="nm-overline mb-3 text-flood-500">Season pass</p>
+              <h1 className="font-display text-4xl uppercase leading-none tracking-tight text-chalk-100 sm:text-5xl">
+                Season expired
+              </h1>
+            </div>
+          </Reveal>
+
+          <Reveal delay={0.08}>
+            <div className={`${nightCard} mt-8 overflow-hidden border-red-700/50`}>
+              <div className="flex items-center justify-between border-b border-pitchline/60 px-6 py-4">
+                <Overline>Subscription expired</Overline>
+                <span className="flex items-center gap-2 font-mono text-[9px] uppercase tracking-[0.16em] text-red-400">
+                  <StatusDot tone="red" />
+                  Expired
+                </span>
               </div>
-              <CardDescription>Your subscription has expired. Renew to keep your arenas visible.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Alert variant="destructive" className="mb-4">
-                <AlertDescription>
-                  Your arenas have been hidden from search. Renew your subscription to make them visible again.
-                </AlertDescription>
-              </Alert>
-            </CardContent>
-          </Card>
+              <div className="p-6">
+                <p className="text-sm text-chalk-400">
+                  Your subscription has expired. Renew to keep your arenas visible.
+                </p>
+                <div className="mt-4 flex items-start gap-3 rounded-[4px] border border-red-700/50 p-4">
+                  <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-400" />
+                  <p className="text-sm leading-relaxed text-red-400">
+                    Your arenas have been hidden from search. Renew your subscription to make them visible again.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </Reveal>
 
           {/* Show plan cards for renewal */}
           {renderPlanCards()}
-        </div>
-      </div>
+        </main>
+      </NightShell>
     );
   }
 
   // Plan selection view (new subscription)
   function renderPlanCards() {
     return (
-      <div className="grid md:grid-cols-2 gap-6 mt-8">
+      <div className="mt-8 grid gap-6 md:grid-cols-2">
         {/* Starter Plan */}
-        <Card className="relative transition-all hover:shadow-lg hover:border-green-300">
-          <CardHeader>
-            <CardTitle className="text-2xl flex items-center gap-2">
-              <Shield className="h-6 w-6 text-green-600" />
+        <Reveal>
+          <div className={`${nightCard} flex h-full flex-col p-6 sm:p-8`}>
+            <Overline className="flex items-center gap-2">
+              <Shield className="h-4 w-4 text-chalk-400" />
+              Starter
+            </Overline>
+            <h3 className="mt-3 font-display text-3xl uppercase tracking-tight text-chalk-100">
               {plans.starter.name}
-            </CardTitle>
-            <CardDescription>Perfect for new turf owners</CardDescription>
-            <div className="flex items-baseline gap-1 mt-4">
-              <span className="text-4xl font-bold">₹{plans.starter.price.toLocaleString()}</span>
-              <span className="text-gray-500">/ {plans.starter.durationMonths} months</span>
+            </h3>
+            <p className="mt-1 text-sm text-chalk-400">Perfect for new turf owners</p>
+            <div className="mt-6 flex items-baseline gap-2">
+              <span className="font-mono text-4xl tabular-nums tracking-tight text-chalk-100">
+                ₹<CountUp value={plans.starter.price} />
+              </span>
+              <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-400">
+                / {plans.starter.durationMonths} months
+              </span>
             </div>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-3">
+            <ul className="mt-6 flex-1 space-y-3 border-t border-pitchline/60 pt-6">
               {plans.starter.features.map((feature, index) => (
-                <li key={index} className="flex items-start gap-2">
-                  <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                  <span className="text-gray-700 text-sm">{feature}</span>
+                <li key={index} className="flex items-start gap-2.5">
+                  <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-chalk-400" />
+                  <span className="text-sm leading-relaxed text-chalk-400">{feature}</span>
                 </li>
               ))}
             </ul>
-          </CardContent>
-          <CardFooter>
-            <Button
-              className="w-full bg-green-600 hover:bg-green-700"
-              size="lg"
+            <button
+              className={`${nightGhostBtn} mt-8 w-full`}
               onClick={() => handleSelectPlan('starter')}
               disabled={submitting || !razorpayLoaded}
             >
-              {submitting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               Get Starter — ₹1,500
-            </Button>
-          </CardFooter>
-        </Card>
-
-        {/* Pro Plan */}
-        <Card className="relative border-2 border-blue-500 transition-all hover:shadow-xl">
-          <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-            <Badge className="bg-blue-600 text-white px-4 py-1 text-sm">
-              <Sparkles className="h-3 w-3 mr-1 inline" />
-              Recommended
-            </Badge>
+            </button>
           </div>
-          <CardHeader>
-            <CardTitle className="text-2xl flex items-center gap-2">
-              <Sparkles className="h-6 w-6 text-blue-600" />
+        </Reveal>
+
+        {/* Pro Plan — the recommended play */}
+        <Reveal delay={0.08}>
+          <div className="relative flex h-full flex-col rounded-[4px] border border-flood-500/50 bg-pitch-700/90 p-6 shadow-flood transition-[border-color,box-shadow] duration-300 ease-night sm:p-8">
+            <span className="absolute -top-3 left-6 border border-flood-500 bg-pitch-900 px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.18em] text-flood-500">
+              Recommended
+            </span>
+            <Overline tone="lime" className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4" />
+              Pro
+            </Overline>
+            <h3 className="mt-3 font-display text-3xl uppercase tracking-tight text-chalk-100">
               {plans.pro.name}
-            </CardTitle>
-            <CardDescription>Maximum bookings & advanced tools</CardDescription>
-            <div className="flex items-baseline gap-1 mt-4">
-              <span className="text-4xl font-bold">₹{plans.pro.price.toLocaleString()}</span>
-              <span className="text-gray-500">/ {plans.pro.durationMonths} months</span>
+            </h3>
+            <p className="mt-1 text-sm text-chalk-400">Maximum bookings &amp; advanced tools</p>
+            <div className="mt-6 flex items-baseline gap-2">
+              <span className="font-mono text-4xl tabular-nums tracking-tight text-chalk-100">
+                ₹<CountUp value={plans.pro.price} />
+              </span>
+              <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-400">
+                / {plans.pro.durationMonths} months
+              </span>
             </div>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-3">
+            <ul className="mt-6 flex-1 space-y-3 border-t border-pitchline/60 pt-6">
               {plans.pro.features.map((feature, index) => (
-                <li key={index} className="flex items-start gap-2">
-                  <Check className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                  <span className="text-gray-700 text-sm">{feature}</span>
+                <li key={index} className="flex items-start gap-2.5">
+                  <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-flood-500" />
+                  <span className="text-sm leading-relaxed text-chalk-100">{feature}</span>
                 </li>
               ))}
             </ul>
-          </CardContent>
-          <CardFooter>
-            <Button
-              className="w-full bg-blue-600 hover:bg-blue-700"
-              size="lg"
+            <button
+              className={`${nightPrimaryBtn} mt-8 w-full`}
               onClick={() => handleSelectPlan('pro')}
               disabled={submitting || !razorpayLoaded}
             >
-              {submitting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               Get Pro — ₹2,000
-            </Button>
-          </CardFooter>
-        </Card>
+            </button>
+          </div>
+        </Reveal>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-6 md:py-12 px-4">
+    <NightShell ambient={0.45}>
       <Script
         src="https://checkout.razorpay.com/v1/checkout.js"
         onLoad={() => setRazorpayLoaded(true)}
       />
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-4 md:mb-6">
-          <Button onClick={() => router.push('/owner/dashboard')} variant="outline" size="sm">
-            ← Back to Dashboard
-          </Button>
-        </div>
+      <main className="mx-auto max-w-6xl px-4 pb-16 pt-10 sm:px-6 sm:pt-14 lg:px-8">
+        <button
+          onClick={() => router.push('/owner/dashboard')}
+          className="font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-400 transition-colors duration-200 ease-night hover:text-flood-500"
+        >
+          ← Back to Dashboard
+        </button>
 
-        <div className="text-center mb-6 md:mb-8">
-          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 md:mb-4">
-            Choose Your Subscription Plan
-          </h1>
-          <p className="text-base md:text-lg lg:text-xl text-gray-600 mb-3 md:mb-4">
-            Select the plan that best fits your business needs
-          </p>
-          <Alert className="max-w-2xl mx-auto bg-blue-50 border-blue-200 text-sm md:text-base">
-            <AlertDescription className="text-blue-800">
-              💡 <strong>Instant Activation:</strong> Your account will be activated immediately after payment. No manual approval needed!
-            </AlertDescription>
-          </Alert>
-        </div>
+        <Reveal>
+          <div className="mt-6 max-w-3xl">
+            <p className="nm-overline mb-3 text-flood-500">Season pass</p>
+            <h1 className="font-display text-4xl uppercase leading-none tracking-tight text-chalk-100 sm:text-5xl lg:text-6xl">
+              Choose your plan
+            </h1>
+            <p className="mt-4 text-sm text-chalk-400 sm:text-base">
+              Select the plan that best fits your business needs.
+            </p>
+            <div className="mt-5 flex items-start gap-3 rounded-[4px] border border-pitchline bg-pitch-800/60 p-4">
+              <Sparkles className="mt-0.5 h-4 w-4 flex-shrink-0 text-flood-500" />
+              <p className="text-sm leading-relaxed text-chalk-400">
+                <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-100">Instant activation.</span>{' '}
+                Your account will be activated immediately after payment. No manual approval needed.
+              </p>
+            </div>
+          </div>
+        </Reveal>
 
         {error && (
-          <Alert variant="destructive" className="mb-6 max-w-2xl mx-auto">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
+          <div className="mt-6 flex items-start gap-3 rounded-[4px] border border-red-700/50 p-4">
+            <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-400" />
+            <p className="text-sm leading-relaxed text-red-400">{error}</p>
+          </div>
         )}
 
         {success && (
-          <Alert className="mb-6 bg-green-50 border-green-200 max-w-2xl mx-auto">
-            <AlertDescription className="text-green-800">{success}</AlertDescription>
-          </Alert>
+          <div className="mt-6 flex items-start gap-3 rounded-[4px] border border-flood-500/40 p-4">
+            <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-flood-500" />
+            <p className="text-sm leading-relaxed text-flood-500">{success}</p>
+          </div>
         )}
+
+        <PitchDivider flag="right" className="mt-2" />
 
         {renderPlanCards()}
 
-        <div className="text-center mt-8 text-sm text-gray-500">
-          <p className="flex items-center justify-center gap-1">
-            <Shield className="h-4 w-4" />
-            Secure payment powered by Razorpay. All transactions are encrypted.
-          </p>
-        </div>
-      </div>
-    </div>
+        <p className="mt-10 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-400">
+          <Shield className="h-4 w-4 text-flood-500" />
+          Secure payment powered by Razorpay. All transactions are encrypted.
+        </p>
+      </main>
+    </NightShell>
   );
 }
