@@ -4,7 +4,7 @@ import React, { useEffect, useState, use } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { LandingHeader } from '@/components/landing/LandingHeader';
-import { Footer } from '@/components/landing/Footer';
+import { NightFooter } from '@/components/landing/night-match/NightFooter';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -159,7 +159,7 @@ export default function BookingDetailsPage(
             </p>
           </div>
         </div>
-        <Footer />
+        <NightFooter />
       </div>
     );
   }
@@ -211,7 +211,7 @@ export default function BookingDetailsPage(
             </div>
           </div>
         </div>
-        <Footer />
+        <NightFooter />
       </div>
     );
   }
@@ -742,7 +742,7 @@ export default function BookingDetailsPage(
           </div>
         </div>
       </div>
-      <Footer />
+      <NightFooter />
     </div>
   );
 }

@@ -3,7 +3,7 @@
 import React, { use } from 'react';
 import dynamic from 'next/dynamic';
 import { LandingHeader } from '@/components/landing/LandingHeader';
-import { Footer } from '@/components/landing/Footer';
+import { NightFooter } from '@/components/landing/night-match/NightFooter';
 import { NightShell } from '@/components/night/NightShell';
 import { Loader2 } from 'lucide-react';
 
@@ -34,7 +34,7 @@ export default function BookPage(props: BookPageProps) {
     <NightShell ambient={0.6}>
       <LandingHeader />
       <TurfDetailsPage turfId={params.id} />
-      <Footer />
+      <NightFooter />
     </NightShell>
   );
 }

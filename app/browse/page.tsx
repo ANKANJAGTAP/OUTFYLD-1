@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { LandingHeader } from "@/components/landing/LandingHeader";
 import { FilterSidebar } from "@/components/browse/FilterSidebar";
 import TurfGrid from "@/components/browse/TurfGrid";
-import { Footer } from "@/components/landing/Footer";
+import { NightFooter } from '@/components/landing/night-match/NightFooter';
 import { NightShell } from "@/components/night/NightShell";
 import { SquadSelector } from "@/components/night/SquadSelector";
 import { OdometerText } from "@/components/night/OdometerText";
@@ -320,7 +320,7 @@ function BrowsePageInner() {
         </div>
       </div>
 
-      <Footer />
+      <NightFooter />
     </NightShell>
   );
 }

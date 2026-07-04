@@ -7,7 +7,7 @@ import {
   TrendingUp, Building, Globe, Plus,
 } from 'lucide-react';
 import { LandingHeader } from '@/components/landing/LandingHeader';
-import { Footer } from '@/components/landing/Footer';
+import { NightFooter } from '@/components/landing/night-match/NightFooter';
 import { NightShell } from '@/components/night/NightShell';
 import { Reveal } from '@/components/landing/night-match/Reveal';
 import { PitchDivider } from '@/components/landing/night-match/PitchDivider';
@@ -381,7 +381,7 @@ export default function AboutPage() {
         </Reveal>
       </section>
 
-      <Footer />
+      <NightFooter />
     </NightShell>
   );
 }

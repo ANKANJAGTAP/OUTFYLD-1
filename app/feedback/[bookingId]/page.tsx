@@ -12,7 +12,7 @@ import {
   Sparkles, AlertCircle,
 } from 'lucide-react';
 import { LandingHeader } from '@/components/landing/LandingHeader';
-import { Footer } from '@/components/landing/Footer';
+import { NightFooter } from '@/components/landing/night-match/NightFooter';
 import Link from 'next/link';
 
 interface FeedbackPageProps {
@@ -147,7 +147,7 @@ export default function FeedbackPage(props: FeedbackPageProps) {
           </div>
         </div>
 
-        <Footer />
+        <NightFooter />
       </div>
     );
   }
@@ -460,7 +460,7 @@ export default function FeedbackPage(props: FeedbackPageProps) {
         </div>
       </div>
 
-      <Footer />
+      <NightFooter />
     </div>
   );
 }
