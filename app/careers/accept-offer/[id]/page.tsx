@@ -2,7 +2,11 @@
 
 import { useParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import { AlertTriangle } from 'lucide-react';
 import AcceptOfferForm from '@/components/careers/AcceptOfferForm';
+import { NightShell } from '@/components/night/NightShell';
+import { NightLoader } from '@/components/night/NightLoader';
+import { nightGhostBtn } from '@/components/night/ui';
 
 export default function AcceptOfferPage() {
   const params = useParams();
@@ -34,36 +38,37 @@ export default function AcceptOfferPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-green-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your offer details...</p>
+      <NightShell ambient={0.5}>
+        <div className="flex min-h-screen items-center justify-center">
+          <NightLoader label="Loading your offer details…" />
         </div>
-      </div>
+      </NightShell>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-xl p-8 max-w-md w-full text-center">
-          <div className="text-6xl mb-4">⚠️</div>
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">Offer Not Found</h1>
-          <p className="text-gray-600 mb-6">{error}</p>
-          <a
-            href="/"
-            className="inline-block bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition"
-          >
-            Return to Home
-          </a>
+      <NightShell ambient={0.5}>
+        <div className="flex min-h-screen items-center justify-center p-4">
+          <div className="w-full max-w-md rounded-[4px] border border-pitchline bg-pitch-700/90 p-8 text-center">
+            <AlertTriangle className="mx-auto mb-5 h-8 w-8 text-flood-500" />
+            <p className="nm-overline mb-3 text-flood-500">Off the books</p>
+            <h1 className="font-display text-3xl uppercase tracking-tight text-chalk-100">
+              Offer not found
+            </h1>
+            <p className="mt-4 text-sm leading-relaxed text-chalk-400">{error}</p>
+            <a href="/" className={`${nightGhostBtn} mt-8`}>
+              Return to home
+            </a>
+          </div>
         </div>
-      </div>
+      </NightShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-purple-50">
+    <NightShell ambient={0.5}>
       <AcceptOfferForm application={application} applicationId={applicationId} />
-    </div>
+    </NightShell>
   );
 }

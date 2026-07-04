@@ -3,6 +3,37 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Check, Mail, Printer } from 'lucide-react';
+import { NightShell } from '@/components/night/NightShell';
+import { LandingHeader } from '@/components/landing/LandingHeader';
+import { NightFooter } from '@/components/landing/night-match/NightFooter';
+import { NightLoader } from '@/components/night/NightLoader';
+import { Reveal } from '@/components/landing/night-match/Reveal';
+import { PitchDivider } from '@/components/landing/night-match/PitchDivider';
+import { Mono, nightGhostBtn, nightPrimaryBtn } from '@/components/night/ui';
+
+const confirmations = [
+  {
+    title: 'Verification completed',
+    desc: 'Your details have been verified successfully',
+  },
+  {
+    title: 'Digital signature received',
+    desc: 'Your signature has been saved securely',
+  },
+  {
+    title: 'Payment processed',
+    desc: 'payment completed successfully',
+    amount: '₹249',
+  },
+];
+
+const nextSteps = [
+  'Check your email for the joining letter',
+  'Download and save all documents for your records',
+  'Wait for onboarding instructions (within 24-48 hours)',
+  'Mark your calendar for your start date',
+];
 
 export default function OfferAcceptanceSuccessPage() {
   const params = useParams();
@@ -34,130 +65,123 @@ export default function OfferAcceptanceSuccessPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-green-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+      <NightShell ambient={0.5}>
+        <div className="flex min-h-screen items-center justify-center">
+          <NightLoader label="Counting the crowd…" />
         </div>
-      </div>
+      </NightShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 py-12 px-4">
-      <div className="container mx-auto max-w-3xl">
-        {/* Success Animation */}
-        <div className="text-center mb-8">
-          <div className="mx-auto w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mb-6 animate-bounce">
-            <svg className="w-16 h-16 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">🎉 Congratulations!</h1>
-          <p className="text-xl text-gray-600">Your offer acceptance is complete</p>
-        </div>
+    <NightShell>
+      <LandingHeader />
+      <main className="mx-auto max-w-3xl px-4 pb-20 pt-16 sm:px-6 sm:pt-24 lg:px-8">
+        {/* ── FULL-TIME WHISTLE — celebratory opener ── */}
+        <Reveal>
+          <p className="nm-overline mb-5 flex items-center gap-2.5 text-chalk-400">
+            <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-flood-500 shadow-flood" />
+            <span className="text-flood-500">Offer accepted</span>
+            · Welcome to the squad
+          </p>
+          <h1 className="nm-display-xl text-chalk-100">
+            Signed<span className="text-flood-500">!</span>
+          </h1>
+          <p className="mt-6 max-w-md text-sm leading-relaxed text-chalk-400">
+            Congratulations — your offer acceptance is complete. Welcome to the OutFyld team.
+          </p>
+        </Reveal>
 
-        {/* Success Card */}
-        <div className="bg-white rounded-xl shadow-2xl p-8 mb-6">
-          <div className="border-b-2 border-green-500 pb-4 mb-6">
-            <h2 className="text-2xl font-bold text-green-600">Payment Successful</h2>
-            <p className="text-gray-600 mt-2">Welcome to the OutFyld team!</p>
-          </div>
+        <PitchDivider flag="right" className="my-6" />
 
-          {/* Details */}
-          <div className="space-y-4">
-            <div className="flex items-start">
-              <div className="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
-                <span className="text-green-600 font-bold">✓</span>
-              </div>
-              <div>
-                <p className="font-semibold text-gray-800">Verification Completed</p>
-                <p className="text-sm text-gray-600">Your details have been verified successfully</p>
-              </div>
+        {/* ── SIGNING SHEET — confirmations ledger ── */}
+        <Reveal delay={0.08}>
+          <div className="rounded-[4px] border border-pitchline bg-pitch-700/90 p-6 sm:p-8">
+            <div className="border-b border-pitchline pb-5">
+              <p className="nm-overline text-flood-500">Payment successful</p>
+              <h2 className="mt-2 font-display text-3xl uppercase tracking-tight text-chalk-100">
+                Contract confirmed
+              </h2>
             </div>
 
-            <div className="flex items-start">
-              <div className="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
-                <span className="text-green-600 font-bold">✓</span>
-              </div>
-              <div>
-                <p className="font-semibold text-gray-800">Digital Signature Received</p>
-                <p className="text-sm text-gray-600">Your signature has been saved securely</p>
-              </div>
+            <ul>
+              {confirmations.map((c) => (
+                <li
+                  key={c.title}
+                  className="flex items-start gap-4 border-b border-pitchline/70 py-5 last:border-0"
+                >
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-flood-500" />
+                  <div>
+                    <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-chalk-100">
+                      {c.title}
+                    </p>
+                    <p className="mt-1 text-sm text-chalk-400">
+                      {c.amount && <Mono className="text-flood-500">{c.amount} </Mono>}
+                      {c.desc}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            {/* email note */}
+            <div className="mt-4 flex items-start gap-3 border-l-2 border-flood-500 bg-pitch-800/80 px-4 py-4">
+              <Mail className="mt-0.5 h-4 w-4 shrink-0 text-flood-500" />
+              <p className="text-sm leading-relaxed text-chalk-400">
+                <span className="font-medium text-chalk-100">Check your email!</span> We&apos;ve
+                sent your joining letter and onboarding details to{' '}
+                <span className="font-mono text-chalk-100">{application?.email}</span>
+              </p>
             </div>
 
-            <div className="flex items-start">
-              <div className="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
-                <span className="text-green-600 font-bold">✓</span>
-              </div>
-              <div>
-                <p className="font-semibold text-gray-800">Payment Processed</p>
-                <p className="text-sm text-gray-600">₹249 payment completed successfully</p>
-              </div>
+            {/* Next Steps */}
+            <div className="mt-10">
+              <p className="nm-overline text-chalk-400">Pre-season schedule</p>
+              <h3 className="mt-2 font-display text-2xl uppercase tracking-tight text-chalk-100">
+                What&apos;s next?
+              </h3>
+              <ol className="mt-3">
+                {nextSteps.map((step, i) => (
+                  <li
+                    key={step}
+                    className="flex items-start gap-4 border-b border-pitchline/70 py-4 last:border-0"
+                  >
+                    <span className="font-mono text-sm tabular-nums text-flood-500">
+                      {String(i + 1).padStart(2, '0')}
+                    </span>
+                    <p className="text-sm leading-relaxed text-chalk-400">{step}</p>
+                  </li>
+                ))}
+              </ol>
             </div>
           </div>
+        </Reveal>
 
-          {/* Information Box */}
-          <div className="mt-8 bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm text-blue-700">
-                  <strong>Check your email!</strong> We've sent your joining letter and onboarding details to <strong>{application?.email}</strong>
-                </p>
-              </div>
-            </div>
+        {/* ── Actions — one lime primary ── */}
+        <Reveal delay={0.14}>
+          <div className="mt-8 flex flex-col gap-4 sm:flex-row">
+            <Link href="/careers" className={nightPrimaryBtn}>
+              Back to careers
+            </Link>
+            <button onClick={() => window.print()} className={nightGhostBtn}>
+              <Printer className="h-4 w-4" />
+              Print this page
+            </button>
           </div>
 
-          {/* Next Steps */}
-          <div className="mt-8">
-            <h3 className="font-bold text-gray-800 mb-4 text-lg">📋 What's Next?</h3>
-            <ol className="space-y-3">
-              <li className="flex items-start">
-                <span className="flex-shrink-0 w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">1</span>
-                <p className="text-gray-700">Check your email for the joining letter</p>
-              </li>
-              <li className="flex items-start">
-                <span className="flex-shrink-0 w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">2</span>
-                <p className="text-gray-700">Download and save all documents for your records</p>
-              </li>
-              <li className="flex items-start">
-                <span className="flex-shrink-0 w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">3</span>
-                <p className="text-gray-700">Wait for onboarding instructions (within 24-48 hours)</p>
-              </li>
-              <li className="flex items-start">
-                <span className="flex-shrink-0 w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">4</span>
-                <p className="text-gray-700">Mark your calendar for your start date</p>
-              </li>
-            </ol>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link 
-            href="/careers"
-            className="bg-green-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-green-700 transition text-center"
-          >
-            Back to Careers
-          </Link>
-          <button
-            onClick={() => window.print()}
-            className="bg-gray-200 text-gray-800 px-8 py-3 rounded-lg font-semibold hover:bg-gray-300 transition"
-          >
-            Print This Page
-          </button>
-        </div>
-
-        {/* Contact Support */}
-        <div className="mt-8 text-center text-gray-600">
-          <p>Need help? Contact us at <a href="mailto:admin@outfyld.in" className="text-green-600 hover:underline">admin@outfyld.in</a></p>
-        </div>
-      </div>
-    </div>
+          {/* Contact Support */}
+          <p className="mt-10 font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-400">
+            Need help? Contact us at{' '}
+            <a
+              href="mailto:admin@outfyld.in"
+              className="text-chalk-100 transition-colors duration-200 ease-night hover:text-flood-500"
+            >
+              admin@outfyld.in
+            </a>
+          </p>
+        </Reveal>
+      </main>
+      <NightFooter />
+    </NightShell>
   );
 }

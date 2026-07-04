@@ -4,32 +4,19 @@ import { useState, useEffect, useMemo } from "react";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/contexts/AuthContext";
 import { useHoverDropdown } from "@/hooks/useHoverDropdown";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import {
   BarChart3,
   TrendingUp,
-  Users,
-  Calendar,
-  IndianRupee,
   ArrowUpRight,
   ArrowDownRight,
-  Eye,
   Clock,
-  CalendarCheck,
-  ChevronRight,
   ChevronDown,
   Sparkles,
   Activity,
   Target,
+  IndianRupee,
   Zap,
-  LayoutDashboard,
-  ArrowRight,
-  Settings,
-  RefreshCw,
-  Info,
-  Loader2,
   LogOut,
   User,
   CreditCard,
@@ -44,6 +31,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { NightShell } from "@/components/night/NightShell";
+import { NightLoader } from "@/components/night/NightLoader";
+import { Mono, nightCard, nightPrimaryBtn, nightGhostBtn } from "@/components/night/ui";
+import { CountUp } from "@/components/landing/night-match/CountUp";
+import { Reveal } from "@/components/landing/night-match/Reveal";
+import { PitchDivider } from "@/components/landing/night-match/PitchDivider";
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -83,62 +76,63 @@ interface DailyData {
 
 interface PeriodData {
   period: string;
-  emoji: string;
   time: string;
   bookings: number;
   totalSlots: number;
   rate: number;
-  color: string;
+  barClass: string;
 }
 
-// ─── Stat Card ───────────────────────────────────────────────────────
+// ─── Night palette for charts ────────────────────────────────────────
+const CHART = {
+  lime: "#C8F135",
+  chalk: "#9AA79F",
+  grid: "#1F2D26",
+  red: "#B91C1C",
+  page: "#080B0A",
+};
 
-function StatCard({
-  icon,
-  iconGradient,
+// ─── Stat tile ───────────────────────────────────────────────────────
+
+function StatTile({
   label,
   value,
   subtext,
   trend,
   trendValue,
 }: {
-  icon: React.ReactNode;
-  iconGradient: string;
   label: string;
-  value: string;
+  value: React.ReactNode;
   subtext: string;
   trend?: "up" | "down" | "neutral";
   trendValue?: string;
 }) {
   return (
-    <div className="group bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-6 hover:shadow-lg hover:shadow-emerald-50 hover:border-emerald-100 transition-all duration-300">
-      <div className="flex items-center justify-between mb-4">
-        <div
-          className={`w-11 h-11 rounded-xl bg-gradient-to-br ${iconGradient} flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform duration-300`}
-        >
-          {icon}
-        </div>
+    <div className={`${nightCard} p-5 sm:p-6`}>
+      <div className="flex items-start justify-between gap-3">
+        <p className="nm-overline text-chalk-400">{label}</p>
         {trend && trendValue && (
-          <div
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${
+          <span
+            className={`flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.12em] ${
               trend === "up"
-                ? "bg-emerald-50 text-emerald-700"
+                ? "text-flood-500"
                 : trend === "down"
-                  ? "bg-red-50 text-red-600"
-                  : "bg-gray-50 text-gray-500"
+                  ? "text-red-500"
+                  : "text-chalk-400"
             }`}
           >
             {trend === "up" && <ArrowUpRight className="h-3 w-3" />}
             {trend === "down" && <ArrowDownRight className="h-3 w-3" />}
             {trendValue}
-          </div>
+          </span>
         )}
       </div>
-      <p className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
+      <div className="mt-4 font-mono text-2xl tabular-nums tracking-tight text-chalk-100 sm:text-3xl">
         {value}
+      </div>
+      <p className="mt-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-chalk-400">
+        {subtext}
       </p>
-      <p className="text-sm font-medium text-gray-900 mt-1">{label}</p>
-      <p className="text-xs text-gray-400 mt-0.5">{subtext}</p>
     </div>
   );
 }
@@ -171,19 +165,18 @@ function BarChart({
               className="flex-1 flex flex-col items-center gap-1.5 group relative"
             >
               {/* Tooltip */}
-              <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+              <div className="absolute -top-10 left-1/2 -translate-x-1/2 border border-pitchline bg-pitch-900 font-mono text-chalk-100 text-[10px] px-2 py-1 rounded-[4px] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
                 {type === "bookings"
                   ? `${val} bookings`
                   : `₹${val.toLocaleString("en-IN")}`}
-                <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900" />
               </div>
 
               {/* Bar */}
               <div
-                className={`w-full rounded-t-md transition-all duration-500 cursor-pointer ${
+                className={`w-full rounded-t-[2px] transition-all duration-500 ease-night cursor-pointer ${
                   isEmpty
-                    ? "bg-gray-100"
-                    : "bg-gradient-to-t from-emerald-500 to-green-400 opacity-80 hover:opacity-100"
+                    ? "bg-pitch-800"
+                    : "bg-flood-500 opacity-80 hover:opacity-100 hover:shadow-flood"
                 }`}
                 style={{
                   height: isEmpty ? "4px" : `${Math.max(heightPercent, 8)}%`,
@@ -191,7 +184,7 @@ function BarChart({
               />
 
               {/* Label */}
-              <span className="text-[10px] text-gray-400 font-medium">
+              <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-chalk-400">
                 {d.label}
               </span>
             </div>
@@ -237,7 +230,7 @@ function LineChart({ data }: { data: DailyData[] }) {
             y1={height - padding - frac * (height - padding * 2)}
             x2={width - padding}
             y2={height - padding - frac * (height - padding * 2)}
-            stroke="#f3f4f6"
+            stroke={CHART.grid}
             strokeWidth="0.3"
           />
         ))}
@@ -249,7 +242,7 @@ function LineChart({ data }: { data: DailyData[] }) {
         <path
           d={linePath}
           fill="none"
-          stroke="#10b981"
+          stroke={CHART.lime}
           strokeWidth="0.8"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -262,8 +255,8 @@ function LineChart({ data }: { data: DailyData[] }) {
             cx={p.x}
             cy={p.y}
             r="1.2"
-            fill="#10b981"
-            stroke="white"
+            fill={CHART.lime}
+            stroke={CHART.page}
             strokeWidth="0.5"
           />
         ))}
@@ -271,8 +264,8 @@ function LineChart({ data }: { data: DailyData[] }) {
         {/* Gradient definition */}
         <defs>
           <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#10b981" stopOpacity="0.4" />
-            <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
+            <stop offset="0%" stopColor={CHART.lime} stopOpacity="0.4" />
+            <stop offset="100%" stopColor={CHART.lime} stopOpacity="0" />
           </linearGradient>
         </defs>
       </svg>
@@ -280,7 +273,7 @@ function LineChart({ data }: { data: DailyData[] }) {
       {/* X-axis labels */}
       <div className="flex justify-between px-1 mt-1">
         {data.map((d, i) => (
-          <span key={i} className="text-[9px] text-gray-400 font-medium">
+          <span key={i} className="font-mono text-[9px] uppercase tracking-[0.06em] text-chalk-400">
             {i % 2 === 0 || data.length <= 7 ? d.label : ""}
           </span>
         ))}
@@ -315,7 +308,7 @@ function DonutChart({
             cy={cy}
             r={radius}
             fill="none"
-            stroke="#f3f4f6"
+            stroke={CHART.grid}
             strokeWidth={strokeWidth}
           />
 
@@ -339,7 +332,7 @@ function DonutChart({
                   strokeDasharray={dashArray}
                   strokeDashoffset={dashOffset}
                   strokeLinecap="round"
-                  className="transition-all duration-700"
+                  className="transition-all duration-700 ease-night"
                 />
               );
             })}
@@ -347,23 +340,21 @@ function DonutChart({
 
         {/* Center text */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-lg font-bold text-gray-900">{total}</span>
-          <span className="text-[10px] text-gray-400">Total</span>
+          <Mono className="text-lg text-chalk-100">{total}</Mono>
+          <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-chalk-400">Total</span>
         </div>
       </div>
 
       {/* Legend */}
-      <div className="space-y-2">
+      <div className="space-y-2 min-w-32">
         {segments.map((seg, i) => (
           <div key={i} className="flex items-center gap-2">
             <span
-              className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+              className="h-1.5 w-1.5 flex-shrink-0"
               style={{ backgroundColor: seg.color }}
             />
-            <span className="text-xs text-gray-600">{seg.label}</span>
-            <span className="text-xs font-semibold text-gray-900 ml-auto">
-              {seg.value}
-            </span>
+            <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-chalk-400">{seg.label}</span>
+            <Mono className="ml-auto text-xs text-chalk-100">{seg.value}</Mono>
           </div>
         ))}
       </div>
@@ -371,31 +362,23 @@ function DonutChart({
   );
 }
 
-// ─── Insight Card ────────────────────────────────────────────────────
+// ─── Insight row ─────────────────────────────────────────────────────
 
 function InsightCard({
   icon,
-  iconBg,
-  iconColor,
   title,
   description,
 }: {
   icon: React.ReactNode;
-  iconBg: string;
-  iconColor: string;
   title: string;
   description: string;
 }) {
   return (
-    <div className="flex items-start gap-4 p-4 rounded-xl hover:bg-gray-50 transition-all duration-200">
-      <div
-        className={`flex-shrink-0 w-10 h-10 rounded-xl ${iconBg} flex items-center justify-center`}
-      >
-        <div className={iconColor}>{icon}</div>
-      </div>
+    <div className="flex items-start gap-4 border-b border-pitchline/60 px-5 py-4 transition-colors duration-200 ease-night last:border-0 hover:bg-white/[0.03]">
+      <span className="mt-0.5 shrink-0 text-flood-500">{icon}</span>
       <div className="min-w-0">
-        <p className="text-sm font-semibold text-gray-900">{title}</p>
-        <p className="text-xs text-gray-400 mt-0.5 leading-relaxed">
+        <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-chalk-100">{title}</p>
+        <p className="mt-1 text-xs leading-relaxed text-chalk-400">
           {description}
         </p>
       </div>
@@ -414,7 +397,31 @@ function getTimePeriod(
   return "midnight";
 }
 
-// ─── Main Analytics Component ────────────────────────────────────────
+// ─── Chart header (overline treatment, no icon squares) ─────────────
+
+function PanelHeader({
+  title,
+  caption,
+  right,
+}: {
+  title: string;
+  caption: string;
+  right?: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-pitchline/60 px-6 py-5">
+      <div>
+        <p className="nm-overline text-chalk-400">{caption}</p>
+        <h3 className="mt-1 font-display text-xl uppercase tracking-tight text-chalk-100">
+          {title}
+        </h3>
+      </div>
+      {right}
+    </div>
+  );
+}
+
+// ─── Main Analytics Component — MATCH ANALYSIS ───────────────────────
 
 function AnalyticsOverview() {
   const { isOpen, setIsOpen, handleMouseEnter, handleMouseLeave } = useHoverDropdown();
@@ -533,9 +540,9 @@ function AnalyticsOverview() {
 
       if (booking.status === "confirmed") {
         confirmedBookings++;
-        const amount = (booking.totalAmount || 0) 
-          - (booking.promoDiscountAmount || 0) 
-          - (booking.dynamicDiscountAmount || 0) 
+        const amount = (booking.totalAmount || 0)
+          - (booking.promoDiscountAmount || 0)
+          - (booking.dynamicDiscountAmount || 0)
           - (booking.loyaltyDiscountAmount || 0);
         totalRevenue += amount;
 
@@ -661,7 +668,6 @@ function AnalyticsOverview() {
     const periodData: PeriodData[] = [
       {
         period: "Morning",
-        emoji: "🌅",
         time: "6 AM – 12 PM",
         bookings: periodCounts.morning,
         totalSlots: totalSlotsPerPeriod,
@@ -669,11 +675,10 @@ function AnalyticsOverview() {
           totalSlotsPerPeriod > 0
             ? Math.round((periodCounts.morning / totalSlotsPerPeriod) * 100)
             : 0,
-        color: "from-emerald-500 to-green-400",
+        barClass: "bg-flood-500",
       },
       {
         period: "Afternoon",
-        emoji: "☀️",
         time: "12 PM – 6 PM",
         bookings: periodCounts.afternoon,
         totalSlots: totalSlotsPerPeriod,
@@ -681,11 +686,10 @@ function AnalyticsOverview() {
           totalSlotsPerPeriod > 0
             ? Math.round((periodCounts.afternoon / totalSlotsPerPeriod) * 100)
             : 0,
-        color: "from-green-500 to-teal-400",
+        barClass: "bg-flood-500/80",
       },
       {
         period: "Night",
-        emoji: "🌙",
         time: "6 PM – 12 AM",
         bookings: periodCounts.night,
         totalSlots: totalSlotsPerPeriod,
@@ -693,11 +697,10 @@ function AnalyticsOverview() {
           totalSlotsPerPeriod > 0
             ? Math.round((periodCounts.night / totalSlotsPerPeriod) * 100)
             : 0,
-        color: "from-teal-500 to-cyan-400",
+        barClass: "bg-flood-500/60",
       },
       {
         period: "Midnight",
-        emoji: "🌑",
         time: "12 AM – 6 AM",
         bookings: periodCounts.midnight,
         totalSlots: totalSlotsPerPeriod,
@@ -705,7 +708,7 @@ function AnalyticsOverview() {
           totalSlotsPerPeriod > 0
             ? Math.round((periodCounts.midnight / totalSlotsPerPeriod) * 100)
             : 0,
-        color: "from-gray-400 to-gray-300",
+        barClass: "bg-chalk-400/40",
       },
     ];
 
@@ -755,33 +758,35 @@ function AnalyticsOverview() {
   if (!user) return null;
   if (user.subscriptionPlan !== "premium" && user.subscriptionPlan !== "pro") {
     return (
-      <div className="min-h-screen bg-[#fafbfc] flex items-center justify-center">
-        <div className="text-center max-w-md px-6">
-          <div className="w-16 h-16 rounded-2xl bg-amber-50 flex items-center justify-center mx-auto mb-4">
-            <BarChart3 className="h-7 w-7 text-amber-500" />
-          </div>
-          <h2 className="text-lg font-bold text-gray-900">Premium Feature</h2>
-          <p className="text-sm text-gray-500 mt-2">
-            Analytics is available for Premium and Pro plan members only.
-            Upgrade your plan to access detailed insights.
-          </p>
-          <div className="flex items-center justify-center gap-3 mt-6">
-            <Button
-              onClick={() => router.push("/owner/subscription")}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl h-10 px-5 font-semibold shadow-lg shadow-emerald-200"
-            >
-              Upgrade Plan
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => router.push("/owner/dashboard")}
-              className="rounded-xl h-10 px-5 font-medium border-gray-200"
-            >
-              Back to Dashboard
-            </Button>
+      <NightShell ambient={0.45}>
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="max-w-md px-6 text-center">
+            <BarChart3 className="mx-auto h-8 w-8 text-flood-500" />
+            <p className="nm-overline mt-6 text-flood-500">Season pass required</p>
+            <h2 className="mt-2 font-display text-3xl uppercase tracking-tight text-chalk-100">
+              Premium Feature
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-chalk-400">
+              Analytics is available for Premium and Pro plan members only.
+              Upgrade your plan to access detailed insights.
+            </p>
+            <div className="mt-8 flex items-center justify-center gap-3">
+              <button
+                onClick={() => router.push("/owner/subscription")}
+                className={nightPrimaryBtn}
+              >
+                Upgrade Plan
+              </button>
+              <button
+                onClick={() => router.push("/owner/dashboard")}
+                className={nightGhostBtn}
+              >
+                Back to Dashboard
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      </NightShell>
     );
   }
 
@@ -797,39 +802,35 @@ function AnalyticsOverview() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#fafbfc] flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center mx-auto mb-4">
-            <Loader2 className="h-7 w-7 text-emerald-600 animate-spin" />
-          </div>
-          <p className="text-gray-500 font-medium">Loading analytics...</p>
-          <p className="text-xs text-gray-400 mt-1">Crunching your numbers</p>
+      <NightShell ambient={0.45}>
+        <div className="flex min-h-screen items-center justify-center">
+          <NightLoader label="Crunching the numbers…" />
         </div>
-      </div>
+      </NightShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#fafbfc]">
-      {/* ─────────── HEADER (same as dashboard) ─────────── */}
-      <header className="bg-white/80 backdrop-blur-xl border-b border-gray-100 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+    <NightShell ambient={0.45}>
+      {/* ─────────── HEADER (same as dashboard, restyled in place) ─────────── */}
+      <header className="sticky top-0 z-50 border-b border-pitchline bg-pitch-900/80 backdrop-blur-xl">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex h-16 items-center justify-between">
             <Link
               href="/"
-              className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
+              className="flex items-center gap-2.5 transition-opacity hover:opacity-80"
             >
               <img
                 src="/images/logo.png"
                 alt="OutFyld Logo"
-                className="h-9 w-9 sm:h-10 sm:w-10 object-contain"
+                className="h-9 w-9 object-contain sm:h-10 sm:w-10"
               />
-              <h1 className="text-lg sm:text-xl font-bold text-emerald-600 tracking-tight">
+              <h1 className="font-display text-lg uppercase tracking-tight text-chalk-100 sm:text-xl">
                 OutFyld
               </h1>
             </Link>
 
-            <nav className="hidden lg:flex items-center gap-8">
+            <nav className="hidden items-center gap-8 lg:flex">
               {[
                 { label: "Home", href: "/" },
                 { label: "About", href: "/about" },
@@ -838,61 +839,65 @@ function AnalyticsOverview() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="text-sm font-medium text-gray-500 hover:text-emerald-600 transition-colors"
+                  className="font-mono text-[11px] uppercase tracking-[0.14em] text-chalk-400 transition-colors duration-200 ease-night hover:text-flood-500"
                 >
                   {link.label}
                 </Link>
               ))}
+              <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-flood-500">
+                Analytics
+              </span>
             </nav>
 
             <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="h-auto p-1.5 hover:bg-gray-50 rounded-xl flex items-center gap-3 focus-visible:ring-0 focus-visible:outline-none focus:ring-0 border-none outline-none"
+                  className="flex h-auto items-center gap-3 rounded-[4px] border-none p-1.5 outline-none hover:bg-white/[0.04] focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
                   onMouseEnter={handleMouseEnter}
                   onMouseLeave={handleMouseLeave}
-                >                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center text-white text-base font-bold shadow-md">
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-[4px] bg-flood-500 font-display text-base uppercase text-pitch-900">
                     {(user.name || "O").charAt(0).toUpperCase()}
                   </div>
 
-                  <div className="text-right hidden lg:block">
-                    <p className="text-sm font-semibold text-gray-900 leading-none">
+                  <div className="hidden text-right lg:block">
+                    <p className="text-sm font-semibold leading-none text-chalk-100">
                       {user.name}
                     </p>
-                    <p className="text-[11px] text-gray-500 mt-1">
+                    <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.1em] text-chalk-400">
                       {user.businessName || "Arena Owner"}
                     </p>
                   </div>
                   {user.subscriptionPlan && (
-                    <Badge className="hidden md:flex bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-50 text-[10px] font-semibold tracking-wide">
+                    <span className="hidden rounded-[4px] border border-flood-500/40 px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.16em] text-flood-500 md:inline-flex">
                       {user.subscriptionPlan.charAt(0).toUpperCase() +
                         user.subscriptionPlan.slice(1)}
-                    </Badge>
+                    </span>
                   )}
-                  <ChevronDown className="h-4 w-4 text-gray-400" />
+                  <ChevronDown className="h-4 w-4 text-chalk-400" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="end"
-                className="w-64 p-2 rounded-xl shadow-lg border-gray-100"
+                className="w-64 rounded-[4px] p-2"
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
               >
-                <DropdownMenuLabel className="font-semibold text-gray-900 px-3 py-2">
+                <DropdownMenuLabel className="nm-overline px-3 py-2 text-chalk-400">
                   My Account
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator className="my-1" />
                 <DropdownMenuItem
                   onClick={() => router.push("/owner/profile")}
-                  className="cursor-pointer rounded-lg px-3 py-2.5 transition-colors focus:bg-emerald-50 focus:text-emerald-700"
+                  className="cursor-pointer rounded-[4px] px-3 py-2.5 transition-colors"
                 >
                   <User className="mr-3 h-5 w-5" />
                   <span className="text-base">My Profile</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => router.push("/owner/bank-details")}
-                  className="cursor-pointer rounded-lg px-3 py-2.5 transition-colors focus:bg-emerald-50 focus:text-emerald-700"
+                  className="cursor-pointer rounded-[4px] px-3 py-2.5 transition-colors"
                 >
                   <CreditCard className="mr-3 h-5 w-5" />
                   <span className="text-base">Payment Details</span>
@@ -901,7 +906,7 @@ function AnalyticsOverview() {
                   user.subscriptionPlan === "pro") && (
                   <DropdownMenuItem
                     onClick={() => router.push("/owner/analytics")}
-                    className="cursor-pointer rounded-lg px-3 py-2.5 transition-colors focus:bg-emerald-50 focus:text-emerald-700"
+                    className="cursor-pointer rounded-[4px] px-3 py-2.5 transition-colors"
                   >
                     <BarChart3 className="mr-3 h-5 w-5" />
                     <span className="text-base">Analytics</span>
@@ -910,7 +915,7 @@ function AnalyticsOverview() {
                 <DropdownMenuSeparator className="my-1" />
                 <DropdownMenuItem
                   onClick={logout}
-                  className="cursor-pointer rounded-lg px-3 py-2.5 text-red-600 focus:bg-red-50 focus:text-red-700 transition-colors"
+                  className="cursor-pointer rounded-[4px] px-3 py-2.5 text-red-500 transition-colors focus:text-red-400"
                 >
                   <LogOut className="mr-3 h-5 w-5" />
                   <span className="text-base font-medium">Log out</span>
@@ -921,385 +926,296 @@ function AnalyticsOverview() {
         </div>
       </header>
 
-      {/* ─────────── HERO BANNER ─────────── */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-600 via-green-600 to-teal-700" />
-        <div
-          className="absolute inset-0 opacity-10"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle at 2px 2px, white 1px, transparent 0)",
-            backgroundSize: "24px 24px",
-          }}
-        />
-        <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3 blur-3xl" />
-
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-20 sm:pb-24">
+      {/* ─────────── TITLE — MATCH ANALYSIS ─────────── */}
+      <section className="mx-auto max-w-7xl px-4 pb-10 pt-12 sm:px-6 sm:pt-16 lg:px-8">
+        <Reveal>
           <Link
             href="/owner/dashboard"
-            className="text-sm text-white/70 hover:text-white flex items-center gap-1.5 transition-colors duration-200"
+            className="font-mono text-[11px] uppercase tracking-[0.14em] text-chalk-400 transition-colors duration-200 ease-night hover:text-flood-500"
           >
-            ← Dashboard
+            ← Manager&apos;s office
           </Link>
-          <div className="mt-6">
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-2xl sm:text-3xl font-bold text-white">
-                Analytics Overview
-              </h1>
-              <Badge className="bg-white/15 text-white border-white/20 hover:bg-white/20 text-[10px]">
-                <Sparkles className="h-3 w-3 mr-1" />
-                Live
-              </Badge>
-            </div>
-            <p className="text-emerald-200 text-sm">
+          <div className="mt-8">
+            <p className="nm-overline mb-3 text-flood-500">Match analysis</p>
+            <h1 className="nm-display-l text-chalk-100">
+              The Numbers Room
+            </h1>
+            <p className="mt-4 max-w-lg text-sm text-chalk-400">
               {greeting}
               {user?.name ? `, ${user.name.split(" ")[0]}` : ""}. Track your
               turf performance and bookings.
             </p>
           </div>
-        </div>
-      </div>
+        </Reveal>
+      </section>
 
       {/* ─────────── CONTENT ─────────── */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-12 relative z-10 pb-12">
-        {/* Stat Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
-          <StatCard
-            icon={<IndianRupee className="h-5 w-5" />}
-            iconGradient="from-emerald-500 to-green-600"
-            label="Total Revenue"
-            value={`₹${analytics.totalRevenue.toLocaleString("en-IN")}`}
-            subtext={`₹${analytics.monthlyRevenue.toLocaleString("en-IN")} this month`}
-            trend={analytics.revenueTrend}
-            trendValue={
-              analytics.revenueChangePercent !== 0
-                ? `${analytics.revenueChangePercent > 0 ? "+" : ""}${analytics.revenueChangePercent}%`
-                : "—"
-            }
-          />
-          <StatCard
-            icon={<CalendarCheck className="h-5 w-5" />}
-            iconGradient="from-green-500 to-teal-500"
-            label="Total Bookings"
-            value={String(analytics.totalBookings)}
-            subtext={`${analytics.confirmedBookings} confirmed · ${analytics.pendingBookings} pending`}
-            trend={analytics.bookingTrend}
-            trendValue={
-              analytics.monthlyBookings > 0
-                ? `${analytics.monthlyBookings} this month`
-                : "—"
-            }
-          />
-          <StatCard
-            icon={<Users className="h-5 w-5" />}
-            iconGradient="from-teal-500 to-cyan-500"
-            label="Unique Players"
-            value={String(analytics.uniqueCustomers)}
-            subtext="Distinct customers who booked"
-            trend={analytics.uniqueCustomers > 0 ? "up" : "neutral"}
-            trendValue={analytics.uniqueCustomers > 0 ? "Active" : "—"}
-          />
-          <StatCard
-            icon={<Activity className="h-5 w-5" />}
-            iconGradient="from-cyan-500 to-sky-500"
-            label="Busiest Day"
-            value={analytics.busiestDay}
-            subtext={
-              analytics.busiestDayCount > 0
-                ? `${analytics.busiestDayCount} bookings on ${analytics.busiestDay}s`
-                : "No data yet"
-            }
-          />
-        </div>
+      <div className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
+        {/* Stat tiles */}
+        <Reveal>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4">
+            <StatTile
+              label="Total Revenue"
+              value={<CountUp value={analytics.totalRevenue} prefix="₹" />}
+              subtext={`₹${analytics.monthlyRevenue.toLocaleString("en-IN")} this month`}
+              trend={analytics.revenueTrend}
+              trendValue={
+                analytics.revenueChangePercent !== 0
+                  ? `${analytics.revenueChangePercent > 0 ? "+" : ""}${analytics.revenueChangePercent}%`
+                  : "—"
+              }
+            />
+            <StatTile
+              label="Total Bookings"
+              value={<CountUp value={analytics.totalBookings} />}
+              subtext={`${analytics.confirmedBookings} confirmed · ${analytics.pendingBookings} pending`}
+              trend={analytics.bookingTrend}
+              trendValue={
+                analytics.monthlyBookings > 0
+                  ? `${analytics.monthlyBookings} this month`
+                  : "—"
+              }
+            />
+            <StatTile
+              label="Unique Players"
+              value={<CountUp value={analytics.uniqueCustomers} />}
+              subtext="Distinct customers who booked"
+              trend={analytics.uniqueCustomers > 0 ? "up" : "neutral"}
+              trendValue={analytics.uniqueCustomers > 0 ? "Active" : "—"}
+            />
+            <StatTile
+              label="Busiest Day"
+              value={
+                <span className="font-display text-2xl uppercase tracking-tight sm:text-3xl">
+                  {analytics.busiestDay}
+                </span>
+              }
+              subtext={
+                analytics.busiestDayCount > 0
+                  ? `${analytics.busiestDayCount} bookings on ${analytics.busiestDay}s`
+                  : "No data yet"
+              }
+            />
+          </div>
+        </Reveal>
 
         {/* Charts Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mt-5">
+        <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-3">
           {/* Bar Chart */}
-          <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="px-6 py-5 border-b border-gray-50 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center">
-                  <BarChart3 className="h-4 w-4 text-emerald-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 text-[15px]">
-                    {barType === "bookings"
-                      ? "Daily Bookings"
-                      : "Daily Revenue"}
-                  </h3>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    Last {chartView === "week" ? "7 days" : "30 days"}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {(["bookings", "revenue"] as const).map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => setBarType(t)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
-                      barType === t
-                        ? "bg-emerald-50 text-emerald-700"
-                        : "text-gray-400 hover:bg-gray-50 hover:text-gray-600"
-                    }`}
-                  >
-                    {t === "bookings" ? "Bookings" : "Revenue"}
-                  </button>
-                ))}
-                <div className="w-px h-4 bg-gray-200 mx-1" />
-                {(["week", "month"] as const).map((v) => (
-                  <button
-                    key={v}
-                    onClick={() => setChartView(v)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
-                      chartView === v
-                        ? "bg-emerald-50 text-emerald-700"
-                        : "text-gray-400 hover:bg-gray-50 hover:text-gray-600"
-                    }`}
-                  >
-                    {v === "week" ? "Week" : "Month"}
-                  </button>
-                ))}
+          <Reveal className="lg:col-span-2">
+            <div className={`${nightCard} overflow-hidden`}>
+              <PanelHeader
+                caption={`Last ${chartView === "week" ? "7 days" : "30 days"}`}
+                title={barType === "bookings" ? "Daily Bookings" : "Daily Revenue"}
+                right={
+                  <div className="flex items-center gap-2">
+                    {(["bookings", "revenue"] as const).map((t) => (
+                      <button
+                        key={t}
+                        onClick={() => setBarType(t)}
+                        className={`rounded-[4px] border px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.12em] transition-colors duration-200 ease-night ${
+                          barType === t
+                            ? "border-flood-500/60 text-flood-500"
+                            : "border-transparent text-chalk-400 hover:text-chalk-100"
+                        }`}
+                      >
+                        {t === "bookings" ? "Bookings" : "Revenue"}
+                      </button>
+                    ))}
+                    <div className="mx-1 h-4 w-px bg-pitchline" />
+                    {(["week", "month"] as const).map((v) => (
+                      <button
+                        key={v}
+                        onClick={() => setChartView(v)}
+                        className={`rounded-[4px] border px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.12em] transition-colors duration-200 ease-night ${
+                          chartView === v
+                            ? "border-flood-500/60 text-flood-500"
+                            : "border-transparent text-chalk-400 hover:text-chalk-100"
+                        }`}
+                      >
+                        {v === "week" ? "Week" : "Month"}
+                      </button>
+                    ))}
+                  </div>
+                }
+              />
+              <div className="p-6">
+                <BarChart data={analytics.dailyChartData} type={barType} />
               </div>
             </div>
-            <div className="p-6">
-              <BarChart data={analytics.dailyChartData} type={barType} />
-            </div>
-          </div>
+          </Reveal>
 
           {/* Booking Status Donut */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="px-6 py-5 border-b border-gray-50">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-teal-50 flex items-center justify-center">
-                  <Target className="h-4 w-4 text-teal-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 text-[15px]">
-                    Booking Status
-                  </h3>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    All-time breakdown
-                  </p>
-                </div>
+          <Reveal delay={0.08}>
+            <div className={`${nightCard} overflow-hidden`}>
+              <PanelHeader caption="All-time breakdown" title="Booking Status" />
+              <div className="flex items-center justify-center p-6">
+                <DonutChart
+                  segments={[
+                    {
+                      label: "Confirmed",
+                      value: analytics.confirmedBookings,
+                      color: CHART.lime,
+                    },
+                    {
+                      label: "Pending",
+                      value: analytics.pendingBookings,
+                      color: CHART.chalk,
+                    },
+                    {
+                      label: "Cancelled",
+                      value: analytics.cancelledBookings,
+                      color: CHART.red,
+                    },
+                  ]}
+                />
               </div>
             </div>
-            <div className="p-6 flex items-center justify-center">
-              <DonutChart
-                segments={[
-                  {
-                    label: "Confirmed",
-                    value: analytics.confirmedBookings,
-                    color: "#10b981",
-                  },
-                  {
-                    label: "Pending",
-                    value: analytics.pendingBookings,
-                    color: "#f59e0b",
-                  },
-                  {
-                    label: "Cancelled",
-                    value: analytics.cancelledBookings,
-                    color: "#ef4444",
-                  },
-                ]}
-              />
-            </div>
-          </div>
+          </Reveal>
         </div>
 
         {/* Revenue Line Chart + Insights */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mt-5">
+        <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-3">
           {/* Revenue Trend Line */}
-          <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="px-6 py-5 border-b border-gray-50 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center">
-                  <TrendingUp className="h-4 w-4 text-green-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 text-[15px]">
-                    Revenue Trend
-                  </h3>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    Last {chartView === "week" ? "7 days" : "30 days"}
-                  </p>
-                </div>
+          <Reveal className="lg:col-span-2">
+            <div className={`${nightCard} overflow-hidden`}>
+              <PanelHeader
+                caption={`Last ${chartView === "week" ? "7 days" : "30 days"}`}
+                title="Revenue Trend"
+                right={
+                  <Mono className="text-xl text-flood-500">
+                    ₹{analytics.monthlyRevenue.toLocaleString("en-IN")}
+                  </Mono>
+                }
+              />
+              <div className="p-6">
+                <LineChart data={analytics.dailyChartData} />
               </div>
-              <span className="text-xl font-bold text-emerald-600">
-                ₹{analytics.monthlyRevenue.toLocaleString("en-IN")}
-              </span>
             </div>
-            <div className="p-6">
-              <LineChart data={analytics.dailyChartData} />
-            </div>
-          </div>
+          </Reveal>
 
           {/* Insights */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="px-6 py-5 border-b border-gray-50">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-teal-50 flex items-center justify-center">
-                  <Zap className="h-4 w-4 text-teal-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 text-[15px]">
-                    Quick Insights
-                  </h3>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    Tips to boost performance
-                  </p>
-                </div>
+          <Reveal delay={0.08}>
+            <div className={`${nightCard} overflow-hidden`}>
+              <PanelHeader caption="Tips to boost performance" title="Quick Insights" />
+              <div>
+                <InsightCard
+                  icon={<Target className="h-4 w-4" />}
+                  title="Set Dynamic Pricing"
+                  description="Enable discounts for off-peak hours to attract more bookings."
+                />
+                <InsightCard
+                  icon={<Clock className="h-4 w-4" />}
+                  title="Peak Hours"
+                  description="Most bookings happen between 6 PM – 10 PM on weekdays."
+                />
+                <InsightCard
+                  icon={<Activity className="h-4 w-4" />}
+                  title="Keep Slots Updated"
+                  description="Turfs with accurate availability get 2x more views."
+                />
+                <InsightCard
+                  icon={<Sparkles className="h-4 w-4" />}
+                  title="Add More Photos"
+                  description="Turfs with 4+ images receive 60% more bookings."
+                />
               </div>
             </div>
-            <div className="p-2">
-              <InsightCard
-                icon={<Target className="h-4 w-4" />}
-                iconBg="bg-emerald-50"
-                iconColor="text-emerald-600"
-                title="Set Dynamic Pricing"
-                description="Enable discounts for off-peak hours to attract more bookings."
-              />
-              <InsightCard
-                icon={<Clock className="h-4 w-4" />}
-                iconBg="bg-green-50"
-                iconColor="text-green-600"
-                title="Peak Hours"
-                description="Most bookings happen between 6 PM – 10 PM on weekdays."
-              />
-              <InsightCard
-                icon={<Activity className="h-4 w-4" />}
-                iconBg="bg-teal-50"
-                iconColor="text-teal-600"
-                title="Keep Slots Updated"
-                description="Turfs with accurate availability get 2x more views."
-              />
-              <InsightCard
-                icon={<Sparkles className="h-4 w-4" />}
-                iconBg="bg-cyan-50"
-                iconColor="text-cyan-600"
-                title="Add More Photos"
-                description="Turfs with 4+ images receive 60% more bookings."
-              />
-            </div>
-          </div>
+          </Reveal>
         </div>
+
+        <PitchDivider className="my-6" flag="left" />
 
         {/* Revenue Breakdown + Occupancy */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mt-5">
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
           {/* Revenue Breakdown */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="px-6 py-5 border-b border-gray-50">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center">
-                  <IndianRupee className="h-4 w-4 text-green-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 text-[15px]">
-                    Revenue Breakdown
-                  </h3>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    All-time earnings summary
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="p-6">
-              {[
-                {
-                  label: "Total Bookings Revenue",
-                  amount: `₹${analytics.totalRevenue.toLocaleString("en-IN")}`,
-                  color: "bg-emerald-500",
-                },
-                {
-                  label: "Platform Commission (~10%)",
-                  amount: `-₹${analytics.commission.toLocaleString("en-IN")}`,
-                  color: "bg-amber-500",
-                },
-                {
-                  label: "Gateway Fees (~2%)",
-                  amount: `-₹${analytics.gatewayFee.toLocaleString("en-IN")}`,
-                  color: "bg-gray-400",
-                },
-              ].map((item, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0"
-                >
-                  <div className="flex items-center gap-3">
-                    <span
-                      className={`w-2.5 h-2.5 rounded-full ${item.color}`}
-                    />
-                    <span className="text-sm text-gray-600">{item.label}</span>
+          <Reveal>
+            <div className={`${nightCard} overflow-hidden`}>
+              <PanelHeader
+                caption="All-time earnings summary"
+                title="Club Treasury"
+                right={<IndianRupee className="h-4 w-4 text-flood-500" />}
+              />
+              <div className="p-6">
+                {[
+                  {
+                    label: "Total Bookings Revenue",
+                    amount: `₹${analytics.totalRevenue.toLocaleString("en-IN")}`,
+                    dotClass: "bg-flood-500",
+                  },
+                  {
+                    label: "Platform Commission (~10%)",
+                    amount: `-₹${analytics.commission.toLocaleString("en-IN")}`,
+                    dotClass: "bg-chalk-400",
+                  },
+                  {
+                    label: "Gateway Fees (~2%)",
+                    amount: `-₹${analytics.gatewayFee.toLocaleString("en-IN")}`,
+                    dotClass: "bg-chalk-400/50",
+                  },
+                ].map((item, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between border-b border-pitchline/60 py-3 last:border-0"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className={`h-1.5 w-1.5 ${item.dotClass}`} />
+                      <span className="text-sm text-chalk-400">{item.label}</span>
+                    </div>
+                    <Mono className="text-sm text-chalk-100">{item.amount}</Mono>
                   </div>
-                  <span className="text-sm font-semibold text-gray-900">
-                    {item.amount}
-                  </span>
+                ))}
+                <div className="mt-4 flex items-center justify-between border-t border-pitchline pt-4">
+                  <span className="nm-overline text-chalk-100">Net Earnings</span>
+                  <Mono className="text-xl text-flood-500">
+                    ₹{analytics.netEarnings.toLocaleString("en-IN")}
+                  </Mono>
                 </div>
-              ))}
-              <Separator className="my-4" />
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold text-gray-900">
-                  Net Earnings
-                </span>
-                <span className="text-xl font-bold text-emerald-600">
-                  ₹{analytics.netEarnings.toLocaleString("en-IN")}
-                </span>
               </div>
             </div>
-          </div>
+          </Reveal>
 
           {/* Occupancy by Period */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="px-6 py-5 border-b border-gray-50">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-teal-50 flex items-center justify-center">
-                  <Activity className="h-4 w-4 text-teal-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 text-[15px]">
-                    Occupancy by Period
-                  </h3>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    Estimated slot fill rate
-                  </p>
-                </div>
+          <Reveal delay={0.08}>
+            <div className={`${nightCard} overflow-hidden`}>
+              <PanelHeader
+                caption="Estimated slot fill rate"
+                title="Occupancy by Period"
+                right={<Zap className="h-4 w-4 text-flood-500" />}
+              />
+              <div className="space-y-5 p-6">
+                {analytics.periodData.map((item, i) => (
+                  <div key={i}>
+                    <div className="mb-2 flex items-center justify-between">
+                      <div>
+                        <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-chalk-100">
+                          {item.period}
+                        </span>
+                        <span className="ml-2 font-mono text-[10px] text-chalk-400">
+                          {item.time}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <Mono className="text-sm text-chalk-100">{item.rate}%</Mono>
+                        <span className="ml-1.5 font-mono text-[10px] text-chalk-400">
+                          ({item.bookings})
+                        </span>
+                      </div>
+                    </div>
+                    <div className="h-1.5 overflow-hidden rounded-[2px] bg-pitch-800">
+                      <div
+                        className={`h-full rounded-[2px] ${item.barClass} transition-all duration-700 ease-night`}
+                        style={{ width: `${Math.max(item.rate, 2)}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-            <div className="p-6 space-y-5">
-              {analytics.periodData.map((item, i) => (
-                <div key={i}>
-                  <div className="flex items-center justify-between mb-2">
-                    <div>
-                      <span className="text-sm font-medium text-gray-900">
-                        {item.emoji} {item.period}
-                      </span>
-                      <span className="text-xs text-gray-400 ml-2">
-                        {item.time}
-                      </span>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-sm font-semibold text-gray-700">
-                        {item.rate}%
-                      </span>
-                      <span className="text-xs text-gray-400 ml-1.5">
-                        ({item.bookings})
-                      </span>
-                    </div>
-                  </div>
-                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full bg-gradient-to-r ${item.color} transition-all duration-700`}
-                      style={{ width: `${Math.max(item.rate, 2)}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          </Reveal>
         </div>
       </div>
-    </div>
+    </NightShell>
   );
 }
 

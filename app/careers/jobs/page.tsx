@@ -2,11 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { Briefcase, MapPin, Clock, Calendar } from 'lucide-react';
+import { Briefcase, MapPin, Clock, Calendar, ArrowLeft, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
+import { NightShell } from '@/components/night/NightShell';
+import { LandingHeader } from '@/components/landing/LandingHeader';
+import { NightFooter } from '@/components/landing/night-match/NightFooter';
+import { NightLoader } from '@/components/night/NightLoader';
+import { Reveal } from '@/components/landing/night-match/Reveal';
+import { PitchDivider } from '@/components/landing/night-match/PitchDivider';
+import { Mono } from '@/components/night/ui';
 
 interface Job {
   _id: string;
@@ -21,6 +25,19 @@ interface Job {
   };
   deadline?: string;
   createdAt: string;
+}
+
+/** Square-ish bordered tag — the Night Match replacement for pill badges. */
+function Tag({ children, tone = 'chalk' }: { children: React.ReactNode; tone?: 'chalk' | 'lime' }) {
+  return (
+    <span
+      className={`inline-flex items-center rounded-[2px] border px-2 py-1 font-mono text-[10px] uppercase tracking-[0.14em] ${
+        tone === 'lime' ? 'border-flood-500/40 text-flood-500' : 'border-chalk-400/30 text-chalk-400'
+      }`}
+    >
+      {children}
+    </span>
+  );
 }
 
 export default function JobsPage() {
@@ -53,139 +70,151 @@ export default function JobsPage() {
     }
   };
 
-  const getDepartmentColor = (department: string) => {
-    switch (department) {
-      case 'Frontend':
-        return 'bg-blue-100 text-blue-700';
-      case 'Backend':
-        return 'bg-purple-100 text-purple-700';
-      case 'Full-stack':
-        return 'bg-green-100 text-green-700';
-      default:
-        return 'bg-gray-100 text-gray-700';
-    }
-  };
-
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'Internship':
-        return 'bg-orange-100 text-orange-700';
-      case 'Full-time':
-        return 'bg-emerald-100 text-emerald-700';
-      case 'Part-time':
-        return 'bg-yellow-100 text-yellow-700';
-      default:
-        return 'bg-gray-100 text-gray-700';
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white py-12 px-4">
-        <div className="max-w-6xl mx-auto">
-          <Link href="/careers" className="text-green-100 hover:text-white mb-4 inline-block">
-            ← Back to Careers
-          </Link>
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">Open Positions</h1>
-          <p className="text-xl text-green-50">
-            Join our team and help shape the future of sports booking
-          </p>
-        </div>
-      </div>
+    <NightShell>
+      <LandingHeader />
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        {/* Loading State */}
-        {loading && (
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
-            <p className="mt-4 text-gray-600">Loading jobs...</p>
-          </div>
-        )}
-
-        {/* Error State */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-            {error}
-          </div>
-        )}
-
-        {/* Jobs List */}
-        {!loading && !error && jobs.length === 0 && (
-          <div className="text-center py-12">
-            <Briefcase className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-700 mb-2">No open positions</h3>
-            <p className="text-gray-600">
-              Check back later or send your resume to admin@outfyld.in
+      <main>
+        {/* ── FIXTURE LIST HEADER ── */}
+        <section className="nm-grain relative mx-auto max-w-7xl px-4 pb-6 pt-12 sm:px-6 sm:pt-16 lg:px-8">
+          <Reveal>
+            <Link
+              href="/careers"
+              className="nm-overline mb-6 inline-flex items-center gap-2 text-chalk-400 transition-colors duration-200 ease-night hover:text-flood-500"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              Back to careers
+            </Link>
+            <p className="nm-overline mb-4 flex items-center gap-2.5 text-chalk-400">
+              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-flood-500 shadow-flood" />
+              <span className="text-flood-500">Join the squad</span>
+              · Transfer window open
             </p>
-          </div>
-        )}
-
-        {!loading && !error && jobs.length > 0 && (
-          <div className="space-y-6">
-            <p className="text-gray-600">
-              Showing {jobs.length} {jobs.length === 1 ? 'position' : 'positions'}
+            <h1 className="nm-display-xl text-chalk-100">Open positions</h1>
+          </Reveal>
+          <Reveal delay={0.1} className="mt-6 lg:ml-[38%]">
+            <p className="nm-body-l max-w-xl text-chalk-400">
+              Join our team and help shape the future of sports booking.
             </p>
+          </Reveal>
+        </section>
 
-            {jobs.map((job) => (
-              <Card key={job._id} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                    <div className="flex-1">
-                      <CardTitle className="text-2xl mb-2">{job.title}</CardTitle>
-                      <CardDescription className="text-base">
-                        {job.description.substring(0, 150)}...
-                      </CardDescription>
-                    </div>
-                    <div className="flex gap-2">
-                      <Badge className={getDepartmentColor(job.department)}>
-                        {job.department}
-                      </Badge>
-                      <Badge className={getTypeColor(job.employmentType)}>
-                        {job.employmentType}
-                      </Badge>
-                    </div>
-                  </div>
-                </CardHeader>
+        <PitchDivider flag="right" />
 
-                <CardContent>
-                  <div className="flex flex-wrap gap-4 text-sm text-gray-600">
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4" />
-                      <span>{job.location}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Briefcase className="w-4 h-4" />
-                      <span>{job.employmentType}</span>
-                    </div>
-                    <div className="flex items-center gap-2 font-semibold text-green-600">
-                      💰 <span>{job.stipend.amount} ({job.stipend.type})</span>
-                    </div>
-                    {job.deadline && (
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4" />
-                        <span>Apply by {format(new Date(job.deadline), 'MMM dd, yyyy')}</span>
+        <div className="mx-auto max-w-7xl px-4 pb-20 pt-8 sm:px-6 lg:px-8">
+          {/* Loading State */}
+          {loading && (
+            <div className="flex justify-center py-24">
+              <NightLoader label="Checking the team sheet…" />
+            </div>
+          )}
+
+          {/* Error State */}
+          {error && (
+            <div className="rounded-[4px] border border-red-900/60 bg-pitch-700/80 px-4 py-3 text-sm text-chalk-100">
+              {error}
+            </div>
+          )}
+
+          {/* Empty State */}
+          {!loading && !error && jobs.length === 0 && (
+            <div className="flex flex-col items-center border border-pitchline bg-pitch-700/60 px-6 py-20 text-center">
+              <Briefcase className="mb-5 h-10 w-10 text-flood-500" />
+              <p className="font-display text-3xl uppercase tracking-tight text-chalk-100">
+                No open positions
+              </p>
+              <p className="mt-3 max-w-sm text-sm text-chalk-400">
+                Check back later or send your resume to{' '}
+                <a
+                  href="mailto:admin@outfyld.in"
+                  className="font-mono text-chalk-100 transition-colors duration-200 ease-night hover:text-flood-500"
+                >
+                  admin@outfyld.in
+                </a>
+              </p>
+            </div>
+          )}
+
+          {/* ── Jobs — fixture-list rows ── */}
+          {!loading && !error && jobs.length > 0 && (
+            <Reveal>
+              <div className="overflow-hidden rounded-[4px] border border-pitchline bg-pitch-700/80">
+                {/* list header */}
+                <div className="flex items-center justify-between border-b border-pitchline/60 px-5 py-4 sm:px-8">
+                  <p className="nm-overline text-chalk-400">This week&apos;s fixtures</p>
+                  <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-chalk-400">
+                    <Mono className="text-flood-500">{String(jobs.length).padStart(2, '0')}</Mono>{' '}
+                    {jobs.length === 1 ? 'position' : 'positions'}
+                  </p>
+                </div>
+
+                {jobs.map((job, i) => (
+                  <Link
+                    key={job._id}
+                    href={`/careers/jobs/${job._id}`}
+                    className="group block border-b border-pitchline/60 px-5 py-7 transition-colors duration-200 ease-night last:border-b-0 hover:bg-pitch-800/60 sm:px-8"
+                  >
+                    <div className="flex flex-col gap-5 md:flex-row md:items-start">
+                      {/* fixture number */}
+                      <span className="hidden font-mono text-sm tabular-nums text-flood-500 md:mt-1.5 md:block">
+                        {String(i + 1).padStart(2, '0')}
+                      </span>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-3">
+                          <h2 className="font-display text-2xl uppercase leading-none tracking-tight text-chalk-100 transition-colors duration-200 ease-night group-hover:text-flood-500 sm:text-3xl">
+                            {job.title}
+                          </h2>
+                          <Tag tone="lime">{job.department}</Tag>
+                          <Tag>{job.employmentType}</Tag>
+                        </div>
+
+                        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-chalk-400">
+                          {job.description.substring(0, 150)}...
+                        </p>
+
+                        {/* meta row */}
+                        <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-400">
+                          <span className="flex items-center gap-1.5">
+                            <MapPin className="h-3.5 w-3.5 text-flood-500" />
+                            {job.location}
+                          </span>
+                          <span className="flex items-center gap-1.5">
+                            <Briefcase className="h-3.5 w-3.5 text-flood-500" />
+                            {job.employmentType}
+                          </span>
+                          <span className="flex items-center gap-1.5 text-chalk-100">
+                            <Mono className="text-flood-500">{job.stipend.amount}</Mono>
+                            ({job.stipend.type})
+                          </span>
+                          {job.deadline && (
+                            <span className="flex items-center gap-1.5">
+                              <Calendar className="h-3.5 w-3.5 text-flood-500" />
+                              Apply by <Mono>{format(new Date(job.deadline), 'MMM dd, yyyy')}</Mono>
+                            </span>
+                          )}
+                          <span className="flex items-center gap-1.5">
+                            <Clock className="h-3.5 w-3.5 text-flood-500" />
+                            Posted <Mono>{format(new Date(job.createdAt), 'MMM dd, yyyy')}</Mono>
+                          </span>
+                        </div>
                       </div>
-                    )}
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4" />
-                      <span>Posted {format(new Date(job.createdAt), 'MMM dd, yyyy')}</span>
-                    </div>
-                  </div>
-                </CardContent>
 
-                <CardFooter>
-                  <Link href={`/careers/jobs/${job._id}`} className="w-full md:w-auto">
-                    <Button className="w-full md:w-auto bg-green-600 hover:bg-green-700">
-                      View Details & Apply
-                    </Button>
+                      {/* kick-off arrow */}
+                      <span className="nm-overline flex items-center gap-2 self-start text-chalk-400 transition-colors duration-200 ease-night group-hover:text-flood-500 md:mt-1.5 md:self-center">
+                        View &amp; apply
+                        <ArrowRight className="h-4 w-4 transition-transform duration-200 ease-night group-hover:translate-x-1" />
+                      </span>
+                    </div>
                   </Link>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
+                ))}
+              </div>
+            </Reveal>
+          )}
+        </div>
+      </main>
+
+      <NightFooter />
+    </NightShell>
   );
 }

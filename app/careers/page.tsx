@@ -1,215 +1,248 @@
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Briefcase, Users, TrendingUp, Award, MapPin, Clock, Lightbulb, HandshakeIcon, BookOpen } from 'lucide-react';
+import {
+  Briefcase, Users, TrendingUp, Award, ArrowRight, Lightbulb, HandshakeIcon, BookOpen,
+} from 'lucide-react';
 import CareersPageNotifications from '@/components/careers/CareersPageNotifications';
 import { Suspense } from 'react';
+import { NightShell } from '@/components/night/NightShell';
+import { LandingHeader } from '@/components/landing/LandingHeader';
+import { NightFooter } from '@/components/landing/night-match/NightFooter';
+import { Reveal } from '@/components/landing/night-match/Reveal';
+import { PitchDivider } from '@/components/landing/night-match/PitchDivider';
+
+const whyJoin = [
+  {
+    no: '01',
+    title: 'Growth mindset',
+    desc: 'Rapid career progression in a fast-growing startup environment.',
+    icon: <TrendingUp className="h-4 w-4" />,
+  },
+  {
+    no: '02',
+    title: 'Great team',
+    desc: 'Work with passionate, talented people.',
+    icon: <Users className="h-4 w-4" />,
+  },
+  {
+    no: '03',
+    title: 'Impact',
+    desc: 'Bring real change to Indian sports.',
+    icon: <Award className="h-4 w-4" />,
+  },
+  {
+    no: '04',
+    title: 'Flexibility',
+    desc: 'Remote-friendly culture with flexible working hours.',
+    icon: <Briefcase className="h-4 w-4" />,
+  },
+];
+
+const culture = [
+  {
+    title: 'Innovation first',
+    desc: "We encourage creative thinking and aren't afraid to try new approaches. Your ideas matter here.",
+    icon: <Lightbulb className="h-4 w-4" />,
+  },
+  {
+    title: 'Collaboration',
+    desc: 'We believe in teamwork. Every voice is heard, and every contribution is valued.',
+    icon: <HandshakeIcon className="h-4 w-4" />,
+  },
+  {
+    title: 'Learning',
+    desc: 'Continuous learning is part of our DNA. We invest in your growth through training and mentorship.',
+    icon: <BookOpen className="h-4 w-4" />,
+  },
+];
+
+const perks = [
+  {
+    title: 'Performance-based stipend*',
+    desc: 'Competitive internship stipends based on your contribution',
+  },
+  {
+    title: 'Completion certificate',
+    desc: 'Official certificate upon successful internship completion',
+  },
+  { title: 'Flexible work', desc: 'Remote work options and flexible hours' },
+  {
+    title: 'Real-world experience',
+    desc: 'Work on live projects that impact thousands of users',
+  },
+  {
+    title: 'Mentorship program',
+    desc: 'Direct guidance from experienced team leads and founders',
+  },
+  { title: 'Free turf access', desc: 'Complimentary access to partner turfs' },
+];
 
 export default function CareersPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+    <NightShell>
       {/* Notifications for offer acceptance */}
       <Suspense fallback={null}>
         <CareersPageNotifications />
       </Suspense>
 
-      {/* Hero Section */}
-      <section className="relative bg-gradient-to-r from-green-600 to-emerald-600 text-white py-20 px-4">
-        <div className="max-w-6xl mx-auto text-center">
-          <h1 className="text-5xl md:text-6xl font-bold mb-6">
-            Join the OutFyld Team
-          </h1>
-          <p className="text-xl md:text-2xl mb-8 text-green-50">
-            Build the future of sports and turf booking in India
-          </p>
-          <Link href="/careers/jobs">
-            <Button size="lg" variant="secondary" className="text-lg px-8 py-6">
-              View Open Positions
-            </Button>
-          </Link>
-        </div>
-      </section>
+      <LandingHeader />
 
-      {/* Why Join Us Section */}
-      <section className="py-16 px-4">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-4xl font-bold text-center mb-12 text-gray-800">
-            Why Work at OutFyld?
-          </h2>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="text-center p-6 rounded-lg bg-white shadow-md hover:shadow-xl transition-shadow">
-              <div className="w-16 h-16 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center">
-                <TrendingUp className="w-8 h-8 text-green-600" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Growth Mindset</h3>
-              <p className="text-gray-600">
-                Rapid career progression in a fast-growing startup environment
-              </p>
+      <main>
+        {/* ── TEAM SHEET OPENER — oversized Anton statement, asymmetric ── */}
+        <section className="nm-grain relative mx-auto max-w-7xl px-4 pb-14 pt-14 sm:px-6 sm:pt-20 lg:px-8">
+          <Reveal>
+            <p className="nm-overline mb-6 text-flood-500">Join the squad</p>
+            <h1 className="nm-display-xl max-w-5xl text-chalk-100">
+              Play for the
+              <br />
+              home team
+            </h1>
+          </Reveal>
+          <Reveal delay={0.1} className="mt-8 lg:ml-[38%]">
+            <p className="nm-body-l max-w-xl text-chalk-400">
+              Build the future of sports and turf booking in India — nights under floodlights,
+              shipped by a small squad that plays every position.
+            </p>
+            <div className="mt-9 flex flex-wrap gap-4">
+              <Link
+                href="/careers/jobs"
+                className="nm-overline nm-flood-glow inline-flex items-center gap-2 rounded-[4px] bg-flood-500 px-8 py-4 text-pitch-900 transition-transform duration-300 ease-night hover:scale-[1.02]"
+              >
+                View open positions
+                <ArrowRight className="h-4 w-4" />
+              </Link>
             </div>
+          </Reveal>
+        </section>
 
-            <div className="text-center p-6 rounded-lg bg-white shadow-md hover:shadow-xl transition-shadow">
-              <div className="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center">
-                <Users className="w-8 h-8 text-blue-600" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Great Team</h3>
-              <p className="text-gray-600">
-                Work with passionate, talented people
-              </p>
-            </div>
+        <PitchDivider flag="right" />
 
-            <div className="text-center p-6 rounded-lg bg-white shadow-md hover:shadow-xl transition-shadow">
-              <div className="w-16 h-16 mx-auto mb-4 bg-purple-100 rounded-full flex items-center justify-center">
-                <Award className="w-8 h-8 text-purple-600" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Impact</h3>
-              <p className="text-gray-600">
-               Bring real change to Indian sports
-              </p>
+        {/* ── WHY WORK AT OUTFYLD — hairline ledger, mono numbering ── */}
+        <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+          <Reveal>
+            <p className="nm-overline mb-3 text-flood-500">The scouting report</p>
+            <h2 className="nm-display-l max-w-3xl text-chalk-100">
+              Why work at <span className="text-flood-500">OutFyld</span>
+            </h2>
+          </Reveal>
+          <Reveal delay={0.08} className="mt-10 lg:ml-[24%]">
+            <div className="max-w-2xl">
+              {whyJoin.map((f) => (
+                <div
+                  key={f.no}
+                  className="group flex items-start gap-5 border-b border-pitchline/70 py-6 transition-colors duration-200 ease-night last:border-0 hover:border-flood-500/40"
+                >
+                  <span className="font-mono text-sm tabular-nums text-flood-500">{f.no}</span>
+                  <span className="mt-0.5 text-flood-500">{f.icon}</span>
+                  <div>
+                    <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-chalk-100">
+                      {f.title}
+                    </p>
+                    <p className="mt-1 text-sm text-chalk-400">{f.desc}</p>
+                  </div>
+                </div>
+              ))}
             </div>
+          </Reveal>
+        </section>
 
-            <div className="text-center p-6 rounded-lg bg-white shadow-md hover:shadow-xl transition-shadow">
-              <div className="w-16 h-16 mx-auto mb-4 bg-orange-100 rounded-full flex items-center justify-center">
-                <Briefcase className="w-8 h-8 text-orange-600" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Flexibility</h3>
-              <p className="text-gray-600">
-                Remote-friendly culture with flexible working hours
-              </p>
-            </div>
+        <PitchDivider flag="left" />
+
+        {/* ── OUR CULTURE — editorial statements, staggered ── */}
+        <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+          <Reveal>
+            <p className="nm-overline mb-3 text-chalk-400">The dressing room</p>
+            <h2 className="nm-display-l text-chalk-100">How we play</h2>
+          </Reveal>
+          <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {culture.map((c, i) => (
+              <Reveal key={c.title} delay={i * 0.06} className={i === 1 ? 'lg:mt-12' : ''}>
+                <div className="group relative h-full overflow-hidden rounded-[4px] border border-pitchline bg-pitch-700/90 p-6 transition-[border-color,box-shadow] duration-300 ease-night hover:border-flood-500/50 hover:shadow-flood">
+                  <span className="text-flood-500">{c.icon}</span>
+                  <p className="mt-5 font-display text-2xl uppercase tracking-tight text-chalk-100">
+                    {c.title}
+                  </p>
+                  <p className="mt-3 text-sm leading-relaxed text-chalk-400">{c.desc}</p>
+                </div>
+              </Reveal>
+            ))}
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Our Culture Section */}
-      <section className="py-16 px-4 bg-gray-50">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-4xl font-bold text-center mb-12 text-gray-800">
-            Our Culture
-          </h2>
-          
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center p-6 rounded-lg bg-white shadow-md hover:shadow-xl transition-shadow">
-              <div className="w-16 h-16 mx-auto mb-4 bg-yellow-100 rounded-full flex items-center justify-center">
-                <Lightbulb className="w-8 h-8 text-yellow-600" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Innovation First</h3>
-              <p className="text-gray-600">
-                We encourage creative thinking and aren&apos;t afraid to try new approaches. Your ideas matter here.
-              </p>
-            </div>
+        <PitchDivider flag="right" />
 
-            <div className="text-center p-6 rounded-lg bg-white shadow-md hover:shadow-xl transition-shadow">
-              <div className="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center">
-                <HandshakeIcon className="w-8 h-8 text-blue-600" />
+        {/* ── PERKS & BENEFITS — two-column hairline ledger ── */}
+        <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+          <div className="lg:grid lg:grid-cols-12 lg:gap-10">
+            <Reveal className="lg:col-span-4">
+              <p className="nm-overline mb-3 text-flood-500">Match-day extras</p>
+              <h2 className="nm-display-l text-chalk-100">
+                Perks &amp;
+                <br />
+                benefits
+              </h2>
+            </Reveal>
+            <Reveal delay={0.08} className="mt-10 lg:col-span-8 lg:mt-2">
+              <div className="grid gap-x-10 sm:grid-cols-2">
+                {perks.map((p, i) => (
+                  <div
+                    key={p.title}
+                    className="border-b border-pitchline/70 py-5 transition-colors duration-200 ease-night hover:border-flood-500/40"
+                  >
+                    <p className="flex items-baseline gap-3 font-mono text-[11px] uppercase tracking-[0.16em] text-chalk-100">
+                      <span className="tabular-nums text-flood-500">
+                        {String(i + 1).padStart(2, '0')}
+                      </span>
+                      {p.title}
+                    </p>
+                    <p className="mt-1.5 pl-8 text-sm text-chalk-400">{p.desc}</p>
+                  </div>
+                ))}
               </div>
-              <h3 className="text-xl font-semibold mb-2">Collaboration</h3>
-              <p className="text-gray-600">
-                We believe in teamwork. Every voice is heard, and every contribution is valued.
-              </p>
-            </div>
-
-            <div className="text-center p-6 rounded-lg bg-white shadow-md hover:shadow-xl transition-shadow">
-              <div className="w-16 h-16 mx-auto mb-4 bg-indigo-100 rounded-full flex items-center justify-center">
-                <BookOpen className="w-8 h-8 text-indigo-600" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Learning</h3>
-              <p className="text-gray-600">
-                Continuous learning is part of our DNA. We invest in your growth through training and mentorship.
-              </p>
-            </div>
+            </Reveal>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Perks & Benefits */}
-      <section className="py-16 px-4">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-4xl font-bold text-center mb-12 text-gray-800">
-            Perks & Benefits
-          </h2>
-          
-          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-            <div className="flex items-start space-x-4 p-4">
-              <div className="w-3 h-3 bg-green-600 rounded-full mt-2"></div>
-              <div>
-                <h4 className="font-semibold text-lg">Performance-Based Stipend*</h4>
-                <p className="text-gray-600">Competitive internship stipends based on your contribution</p>
-              </div>
+        <PitchDivider flag="left" />
+
+        {/* ── CTA — one lime action ── */}
+        <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+          <Reveal>
+            <h2 className="nm-display-xl max-w-4xl text-chalk-100">
+              Ready to make
+              <br />
+              an impact?
+            </h2>
+            <p className="mt-5 max-w-lg text-sm text-chalk-400">
+              Check out our open positions and apply today — the transfer window is open.
+            </p>
+            <div className="mt-9 flex flex-wrap gap-4">
+              <Link
+                href="/careers/jobs"
+                className="nm-overline nm-flood-glow inline-flex items-center gap-2 rounded-[4px] bg-flood-500 px-8 py-4 text-pitch-900 transition-transform duration-300 ease-night hover:scale-[1.02]"
+              >
+                <Briefcase className="h-4 w-4" />
+                View all openings
+              </Link>
             </div>
+          </Reveal>
 
-            <div className="flex items-start space-x-4 p-4">
-              <div className="w-3 h-3 bg-green-600 rounded-full mt-2"></div>
-              <div>
-                <h4 className="font-semibold text-lg">Completion Certificate</h4>
-                <p className="text-gray-600">Official certificate upon successful internship completion</p>
-              </div>
-            </div>
+          {/* speculative applications */}
+          <Reveal delay={0.08} className="mt-16 max-w-xl border-t border-pitchline pt-8 lg:ml-[38%]">
+            <p className="nm-overline text-chalk-400">Don&apos;t see a role that fits?</p>
+            <p className="mt-3 text-sm leading-relaxed text-chalk-400">
+              We&apos;re always looking for talented people. Send us your resume at{' '}
+              <a
+                href="mailto:careers@outfyld.in"
+                className="font-mono text-chalk-100 transition-colors duration-200 ease-night hover:text-flood-500"
+              >
+                admin@outfyld.in
+              </a>
+            </p>
+          </Reveal>
+        </section>
+      </main>
 
-            <div className="flex items-start space-x-4 p-4">
-              <div className="w-3 h-3 bg-green-600 rounded-full mt-2"></div>
-              <div>
-                <h4 className="font-semibold text-lg">Flexible Work</h4>
-                <p className="text-gray-600">Remote work options and flexible hours</p>
-              </div>
-            </div>
-
-            <div className="flex items-start space-x-4 p-4">
-              <div className="w-3 h-3 bg-green-600 rounded-full mt-2"></div>
-              <div>
-                <h4 className="font-semibold text-lg">Real-World Experience</h4>
-                <p className="text-gray-600">Work on live projects that impact thousands of users</p>
-              </div>
-            </div>
-
-            <div className="flex items-start space-x-4 p-4">
-              <div className="w-3 h-3 bg-green-600 rounded-full mt-2"></div>
-              <div>
-                <h4 className="font-semibold text-lg">Mentorship Program</h4>
-                <p className="text-gray-600">Direct guidance from experienced team leads and founders</p>
-              </div>
-            </div>
-
-            <div className="flex items-start space-x-4 p-4">
-              <div className="w-3 h-3 bg-green-600 rounded-full mt-2"></div>
-              <div>
-                <h4 className="font-semibold text-lg">Free Turf Access</h4>
-                <p className="text-gray-600">Complimentary access to partner turfs</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Open Positions Preview */}
-      <section className="py-16 px-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white">
-        <div className="max-w-6xl mx-auto text-center">
-          <h2 className="text-4xl font-bold mb-6">
-            Ready to Make an Impact?
-          </h2>
-          <p className="text-xl mb-8 text-green-50">
-            Check out our open positions and apply today
-          </p>
-          <Link href="/careers/jobs">
-            <Button size="lg" variant="secondary" className="text-lg px-8 py-6">
-              <Briefcase className="w-5 h-5 mr-2" />
-              View All Openings
-            </Button>
-          </Link>
-        </div>
-      </section>
-
-      {/* Contact Section */}
-      <section className="py-12 px-4 bg-gray-50">
-        <div className="max-w-4xl mx-auto text-center">
-          <h3 className="text-2xl font-semibold mb-4">Don&apos;t see a role that fits?</h3>
-          <p className="text-gray-600 mb-6">
-            We&apos;re always looking for talented people. Send us your resume at{' '}
-            <a href="mailto:careers@outfyld.in" className="text-green-600 hover:underline">
-              admin@outfyld.in
-            </a>
-          </p>
-        </div>
-      </section>
-    </div>
+      <NightFooter />
+    </NightShell>
   );
 }

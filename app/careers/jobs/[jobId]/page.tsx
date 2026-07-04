@@ -3,12 +3,16 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MapPin, Briefcase, Clock, Calendar, ArrowLeft } from 'lucide-react';
+import { MapPin, Briefcase, Clock, Calendar, ArrowLeft, Check } from 'lucide-react';
 import { format } from 'date-fns';
 import ApplicationForm from '@/components/careers/ApplicationForm';
+import { NightShell } from '@/components/night/NightShell';
+import { LandingHeader } from '@/components/landing/LandingHeader';
+import { NightFooter } from '@/components/landing/night-match/NightFooter';
+import { NightLoader } from '@/components/night/NightLoader';
+import { Reveal } from '@/components/landing/night-match/Reveal';
+import { PitchDivider } from '@/components/landing/night-match/PitchDivider';
+import { Mono, nightGhostBtn, nightPrimaryBtn, SweepButton } from '@/components/night/ui';
 
 interface Job {
   _id: string;
@@ -25,6 +29,27 @@ interface Job {
   };
   deadline?: string;
   createdAt: string;
+}
+
+const offerings = [
+  'Performance-Based Stipend*',
+  'Flexible work environment',
+  'Completion Certificate',
+  'Real-World Experience',
+  'Mentorship Program',
+];
+
+/** Square-ish bordered tag — never a pill. */
+function Tag({ children, tone = 'chalk' }: { children: React.ReactNode; tone?: 'chalk' | 'lime' }) {
+  return (
+    <span
+      className={`inline-flex items-center rounded-[2px] border px-2 py-1 font-mono text-[10px] uppercase tracking-[0.14em] ${
+        tone === 'lime' ? 'border-flood-500/40 text-flood-500' : 'border-chalk-400/30 text-chalk-400'
+      }`}
+    >
+      {children}
+    </span>
+  );
 }
 
 export default function JobDetailsPage() {
@@ -59,57 +84,33 @@ export default function JobDetailsPage() {
     }
   };
 
-  const getDepartmentColor = (department: string) => {
-    switch (department) {
-      case 'Frontend':
-        return 'bg-blue-100 text-blue-700';
-      case 'Backend':
-        return 'bg-purple-100 text-purple-700';
-      case 'Full-stack':
-        return 'bg-green-100 text-green-700';
-      default:
-        return 'bg-gray-100 text-gray-700';
-    }
-  };
-
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'Internship':
-        return 'bg-orange-100 text-orange-700';
-      case 'Full-time':
-        return 'bg-emerald-100 text-emerald-700';
-      case 'Part-time':
-        return 'bg-yellow-100 text-yellow-700';
-      default:
-        return 'bg-gray-100 text-gray-700';
-    }
-  };
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
-          <p className="mt-4 text-gray-600">Loading job details...</p>
+      <NightShell>
+        <div className="flex min-h-screen items-center justify-center">
+          <NightLoader label="Pulling the team sheet…" />
         </div>
-      </div>
+      </NightShell>
     );
   }
 
   if (error || !job) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Job Not Found</h2>
-          <p className="text-gray-600 mb-6">{error || 'This job posting does not exist.'}</p>
-          <Link href="/careers/jobs">
-            <Button>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Jobs
-            </Button>
-          </Link>
+      <NightShell>
+        <div className="flex min-h-screen items-center justify-center px-4">
+          <div className="max-w-md text-center">
+            <p className="nm-overline mb-4 text-flood-500">Off the fixture list</p>
+            <h2 className="nm-display-l text-chalk-100">Job not found</h2>
+            <p className="mt-5 text-sm text-chalk-400">
+              {error || 'This job posting does not exist.'}
+            </p>
+            <Link href="/careers/jobs" className={`${nightGhostBtn} mt-8`}>
+              <ArrowLeft className="h-4 w-4" />
+              Back to jobs
+            </Link>
+          </div>
         </div>
-      </div>
+      </NightShell>
     );
   }
 
@@ -118,161 +119,179 @@ export default function JobDetailsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white py-8 px-4">
-        <div className="max-w-4xl mx-auto">
-          <Link href="/careers/jobs" className="text-green-100 hover:text-white mb-4 inline-flex items-center">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to All Jobs
-          </Link>
-        </div>
-      </div>
+    <NightShell>
+      <LandingHeader />
 
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* Job Header */}
-        <Card className="mb-6">
-          <CardHeader>
-            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-              <div className="flex-1">
-                <CardTitle className="text-3xl mb-3">{job.title}</CardTitle>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  <Badge className={getDepartmentColor(job.department)}>
-                    {job.department}
-                  </Badge>
-                  <Badge className={getTypeColor(job.employmentType)}>
-                    {job.employmentType}
-                  </Badge>
-                </div>
+      <main>
+        {/* ── MATCH POSTER — job header ── */}
+        <section className="nm-grain relative mx-auto max-w-5xl px-4 pb-8 pt-12 sm:px-6 sm:pt-16 lg:px-8">
+          <Reveal>
+            <Link
+              href="/careers/jobs"
+              className="nm-overline mb-8 inline-flex items-center gap-2 text-chalk-400 transition-colors duration-200 ease-night hover:text-flood-500"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              Back to all jobs
+            </Link>
+
+            <p className="nm-overline mb-4 text-flood-500">Open position</p>
+            <h1 className="nm-display-l max-w-4xl text-chalk-100">{job.title}</h1>
+
+            <div className="mt-5 flex flex-wrap items-center gap-2">
+              <Tag tone="lime">{job.department}</Tag>
+              <Tag>{job.employmentType}</Tag>
+            </div>
+          </Reveal>
+
+          <Reveal delay={0.08}>
+            <div className="mt-8 flex flex-col gap-6 border-t border-pitchline pt-6 md:flex-row md:items-center md:justify-between">
+              {/* meta row */}
+              <div className="flex flex-wrap gap-x-6 gap-y-2 font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-400">
+                <span className="flex items-center gap-1.5">
+                  <MapPin className="h-3.5 w-3.5 text-flood-500" />
+                  {job.location}
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Briefcase className="h-3.5 w-3.5 text-flood-500" />
+                  {job.employmentType}
+                </span>
+                <span className="flex items-center gap-1.5 text-chalk-100">
+                  <Mono className="text-flood-500">{job.stipend.amount}</Mono>
+                  ({job.stipend.type})
+                </span>
+                {job.deadline && (
+                  <span className="flex items-center gap-1.5">
+                    <Calendar className="h-3.5 w-3.5 text-flood-500" />
+                    Apply by <Mono>{format(new Date(job.deadline), 'MMM dd, yyyy')}</Mono>
+                  </span>
+                )}
+                <span className="flex items-center gap-1.5">
+                  <Clock className="h-3.5 w-3.5 text-flood-500" />
+                  Posted <Mono>{format(new Date(job.createdAt), 'MMM dd, yyyy')}</Mono>
+                </span>
               </div>
-              <Button
-                size="lg"
+
+              {/* ONE lime primary per view */}
+              <button
                 onClick={() => setShowApplicationForm(true)}
-                className="bg-green-600 hover:bg-green-700 w-full md:w-auto"
+                className={`${nightPrimaryBtn} w-full shrink-0 md:w-auto`}
               >
-                Apply Now
-              </Button>
+                Apply now
+              </button>
             </div>
+          </Reveal>
+        </section>
 
-            <div className="flex flex-wrap gap-4 mt-4 text-sm text-gray-600">
-              <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4" />
-                <span>{job.location}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Briefcase className="w-4 h-4" />
-                <span>{job.employmentType}</span>
-              </div>
-              <div className="flex items-center gap-2 font-semibold text-green-600">
-                💰 <span>{job.stipend.amount} ({job.stipend.type})</span>
-              </div>
-              {job.deadline && (
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4" />
-                  <span>Apply by {format(new Date(job.deadline), 'MMM dd, yyyy')}</span>
-                </div>
+        <PitchDivider flag="right" />
+
+        {/* ── THE BRIEF — long-form sections, hairline ledger ── */}
+        <section className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
+          <div className="lg:grid lg:grid-cols-12 lg:gap-12">
+            <div className="lg:col-span-8">
+              {/* About the Role */}
+              <Reveal>
+                <p className="nm-overline mb-3 text-flood-500">The brief</p>
+                <h2 className="font-display text-3xl uppercase tracking-tight text-chalk-100">
+                  About the role
+                </h2>
+                <p className="mt-5 whitespace-pre-line text-sm leading-relaxed text-chalk-400">
+                  {job.description}
+                </p>
+              </Reveal>
+
+              {/* Responsibilities */}
+              {job.responsibilities && job.responsibilities.length > 0 && (
+                <Reveal className="mt-14">
+                  <p className="nm-overline mb-3 text-flood-500">Your position on the pitch</p>
+                  <h2 className="font-display text-3xl uppercase tracking-tight text-chalk-100">
+                    Responsibilities
+                  </h2>
+                  <ul className="mt-5">
+                    {job.responsibilities.map((responsibility, index) => (
+                      <li
+                        key={index}
+                        className="flex items-start gap-4 border-b border-pitchline/70 py-4 last:border-0"
+                      >
+                        <span className="font-mono text-xs tabular-nums text-flood-500">
+                          {String(index + 1).padStart(2, '0')}
+                        </span>
+                        <span className="text-sm leading-relaxed text-chalk-400">
+                          {responsibility}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </Reveal>
               )}
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4" />
-                <span>Posted {format(new Date(job.createdAt), 'MMM dd, yyyy')}</span>
-              </div>
+
+              {/* Requirements */}
+              {job.requirements && job.requirements.length > 0 && (
+                <Reveal className="mt-14">
+                  <p className="nm-overline mb-3 text-flood-500">Trial standards</p>
+                  <h2 className="font-display text-3xl uppercase tracking-tight text-chalk-100">
+                    Requirements
+                  </h2>
+                  <ul className="mt-5">
+                    {job.requirements.map((requirement, index) => (
+                      <li
+                        key={index}
+                        className="flex items-start gap-4 border-b border-pitchline/70 py-4 last:border-0"
+                      >
+                        <Check className="mt-0.5 h-4 w-4 shrink-0 text-flood-500" />
+                        <span className="text-sm leading-relaxed text-chalk-400">
+                          {requirement}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </Reveal>
+              )}
             </div>
-          </CardHeader>
-        </Card>
 
-        {/* Job Description */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>About the Role</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-700 whitespace-pre-line">{job.description}</p>
-          </CardContent>
-        </Card>
+            {/* What We Offer — side rail */}
+            <Reveal delay={0.08} className="mt-14 lg:col-span-4 lg:mt-0">
+              <div className="rounded-[4px] border border-pitchline bg-pitch-700/90 p-6 lg:sticky lg:top-24">
+                <p className="nm-overline text-flood-500">Contract terms</p>
+                <h2 className="mt-2 font-display text-2xl uppercase tracking-tight text-chalk-100">
+                  What we offer
+                </h2>
+                <ul className="mt-4">
+                  {offerings.map((item) => (
+                    <li
+                      key={item}
+                      className="flex items-start gap-3 border-b border-pitchline/70 py-3 last:border-0"
+                    >
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-flood-500" />
+                      <span className="text-sm text-chalk-400">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </Reveal>
+          </div>
+        </section>
 
-        {/* Responsibilities */}
-        {job.responsibilities && job.responsibilities.length > 0 && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Responsibilities</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2">
-                {job.responsibilities.map((responsibility, index) => (
-                  <li key={index} className="flex items-start gap-2">
-                    <span className="text-green-600 mt-1">✓</span>
-                    <span className="text-gray-700">{responsibility}</span>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-        )}
+        <PitchDivider flag="left" />
 
-        {/* Requirements */}
-        {job.requirements && job.requirements.length > 0 && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Requirements</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2">
-                {job.requirements.map((requirement, index) => (
-                  <li key={index} className="flex items-start">
-                    <span className="text-green-600 mr-2">•</span>
-                    <span className="text-gray-700">{requirement}</span>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-        )}
+        {/* ── KICK OFF — closing apply ── */}
+        <section className="mx-auto max-w-5xl px-4 pb-20 pt-8 sm:px-6 lg:px-8">
+          <Reveal>
+            <h2 className="nm-display-l max-w-3xl text-chalk-100">
+              Ready for <span className="text-flood-500">kick-off?</span>
+            </h2>
+            <div className="mt-8">
+              <SweepButton onClick={() => setShowApplicationForm(true)} className="px-10 py-4">
+                Apply for this position
+              </SweepButton>
+            </div>
+            <p className="mt-5 font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-400">
+              By applying, you agree to our terms and privacy policy
+            </p>
+          </Reveal>
+        </section>
+      </main>
 
-        {/* What We Offer */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>What We Offer</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2">
-              <li className="flex items-start">
-                <span className="text-green-600 mr-2">✓</span>
-                <span className="text-gray-700">Performance-Based Stipend*</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-green-600 mr-2">✓</span>
-                <span className="text-gray-700">Flexible work environment</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-green-600 mr-2">✓</span>
-                <span className="text-gray-700">Completion Certificate</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-green-600 mr-2">✓</span>
-                <span className="text-gray-700">Real-World Experience</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-green-600 mr-2">✓</span>
-                <span className="text-gray-700">Mentorship Program</span>
-              </li>
-            </ul>
-          </CardContent>
-        </Card>
-
-        {/* Apply Button */}
-        <div className="text-center">
-          <Button
-            size="lg"
-            onClick={() => setShowApplicationForm(true)}
-            className="bg-green-600 hover:bg-green-700 px-12"
-          >
-            Apply for this Position
-          </Button>
-          <p className="text-sm text-gray-600 mt-4">
-            By applying, you agree to our terms and privacy policy
-          </p>
-        </div>
-      </div>
-    </div>
+      <NightFooter />
+    </NightShell>
   );
 }
