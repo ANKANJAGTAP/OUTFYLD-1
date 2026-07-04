@@ -1,5 +1,5 @@
 import './globals.css';
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Anton, Geist, Geist_Mono } from 'next/font/google';
 import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -15,10 +15,15 @@ const geist = Geist({ subsets: ['latin'], variable: '--font-geist', display: 'sw
 const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono', display: 'swap', preload: false });
 const anton = Anton({ subsets: ['latin'], weight: '400', variable: '--font-anton', display: 'swap', preload: false });
 
+// themeColor belongs in the viewport export (Next 15) — keeping it in metadata
+// emits an "Unsupported metadata themeColor" warning for every route.
+export const viewport: Viewport = {
+  themeColor: '#080B0A',
+};
+
 export const metadata: Metadata = {
   title: 'OutFyld - Sports Arena Booking Platform',
   description: 'Book sports arenas instantly. Find cricket, football, and other sports facilities with real-time availability and secure payments.',
-  themeColor: '#ffffff',
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
