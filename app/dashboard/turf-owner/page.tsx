@@ -11,30 +11,33 @@ const LocationPickerMap = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="h-64 bg-gray-100 rounded-xl animate-pulse flex items-center justify-center">
-        <p className="text-sm text-gray-400">Loading map...</p>
+      <div className="flex h-64 items-center justify-center rounded-[4px] border border-pitchline bg-pitch-800/60">
+        <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-chalk-400">
+          Loading map…
+        </p>
       </div>
     ),
   }
 );
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { NightShell } from "@/components/night/NightShell";
+import { NightLoader } from "@/components/night/NightLoader";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+  nightCard,
+  nightGhostBtn,
+  nightPrimaryBtn,
+  Mono,
+  NightInput,
+  StatusDot,
+} from "@/components/night/ui";
+import { CountUp } from "@/components/landing/night-match/CountUp";
+import { Reveal } from "@/components/landing/night-match/Reveal";
+import { PitchDivider } from "@/components/landing/night-match/PitchDivider";
+import { ScoreboardSetPiece } from "@/components/landing/night-match/ScoreboardSetPiece";
 import {
   AlertCircle,
   Save,
   User,
-  Building,
   IndianRupee,
   MapPin,
   LogOut,
@@ -46,13 +49,11 @@ import {
   ArrowRight,
   CheckCircle2,
   Loader2,
-  Shield,
   CreditCard,
   Layers,
   Settings,
   ArrowLeft,
 } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
 
 // Import our custom components
@@ -106,7 +107,34 @@ interface OwnerFormData {
   };
 }
 
-/* ─── Tab Step Card ──────────────────────────────────────────────── */
+/* ─── Field label — mono caps, lime asterisk ─────────────────────── */
+function FieldLabel({
+  htmlFor,
+  children,
+  required,
+  hint,
+}: {
+  htmlFor: string;
+  children: React.ReactNode;
+  required?: boolean;
+  hint?: string;
+}) {
+  return (
+    <label
+      htmlFor={htmlFor}
+      className="block font-mono text-[10px] uppercase tracking-[0.16em] text-chalk-400"
+    >
+      {children} {required && <span className="text-flood-500">*</span>}
+      {hint && (
+        <span className="ml-1 normal-case tracking-normal text-chalk-400/60">
+          ({hint})
+        </span>
+      )}
+    </label>
+  );
+}
+
+/* ─── Tab Step Row — fixture-row treatment ───────────────────────── */
 function TabStepButton({
   step,
   label,
@@ -125,39 +153,45 @@ function TabStepButton({
   return (
     <button
       onClick={onClick}
-      className={`group flex items-center gap-3 p-3 rounded-xl transition-all duration-200 w-full text-left ${
-        active
-          ? "bg-emerald-50 border-emerald-200 border shadow-sm"
-          : "hover:bg-gray-50 border border-transparent"
+      className={`group relative flex w-full items-center gap-4 border-b border-pitchline/60 px-5 py-4 text-left transition-colors duration-200 ease-night last:border-0 ${
+        active ? "bg-white/[0.04]" : "hover:bg-white/[0.03]"
       }`}
     >
-      <div
-        className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 ${
+      {active && (
+        <span
+          aria-hidden
+          className="absolute inset-y-0 left-0 w-[2px] bg-flood-500 shadow-flood"
+        />
+      )}
+      <span
+        className={`w-7 shrink-0 font-mono text-xl leading-none tabular-nums ${
           active
-            ? "bg-emerald-600 text-white shadow-md"
+            ? "text-flood-500"
             : completed
-            ? "bg-emerald-50 text-emerald-600"
-            : "bg-gray-100 text-gray-400 group-hover:bg-gray-200"
+            ? "text-chalk-100"
+            : "text-chalk-400/50"
         }`}
       >
-        {completed && !active ? (
-          <CheckCircle2 className="h-4 w-4" />
-        ) : (
-          <Icon className="h-4 w-4" />
-        )}
-      </div>
-      <div className="min-w-0">
-        <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">
-          Step {step}
-        </p>
-        <p
-          className={`text-sm font-medium truncate ${
-            active ? "text-emerald-700" : "text-gray-700"
+        {String(step).padStart(2, "0")}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span
+          className={`block truncate font-mono text-[11px] uppercase tracking-[0.14em] ${
+            active ? "text-chalk-100" : "text-chalk-400"
           }`}
         >
           {label}
-        </p>
-      </div>
+        </span>
+        <span className="mt-1 flex items-center gap-2 font-mono text-[9px] uppercase tracking-[0.16em] text-chalk-400">
+          <StatusDot tone={completed || active ? "lime" : "chalk"} />
+          {completed ? "Complete" : active ? "On the board" : "Up next"}
+        </span>
+      </span>
+      <Icon
+        className={`h-4 w-4 shrink-0 transition-colors duration-200 ease-night ${
+          active ? "text-flood-500" : "text-chalk-400/50 group-hover:text-chalk-400"
+        }`}
+      />
     </button>
   );
 }
@@ -165,93 +199,63 @@ function TabStepButton({
 /* ─── Section Card ──────────────────────────────────────────────── */
 function SectionCard({
   icon: Icon,
-  iconBg,
-  iconColor,
   title,
   subtitle,
   children,
 }: {
   icon: any;
-  iconBg: string;
-  iconColor: string;
   title: string;
   subtitle?: string;
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-      <div className="px-6 py-5 border-b border-gray-50 flex items-center gap-3">
-        <div
-          className={`w-9 h-9 rounded-xl ${iconBg} flex items-center justify-center`}
-        >
-          <Icon className={`h-4 w-4 ${iconColor}`} />
-        </div>
-        <div>
-          <h3 className="font-semibold text-gray-900 text-[15px]">{title}</h3>
-          {subtitle && (
-            <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>
-          )}
+    <section className={`${nightCard} overflow-hidden`}>
+      <div className="flex items-center gap-3 border-b border-pitchline/60 px-6 py-4">
+        <Icon className="h-4 w-4 shrink-0 text-flood-500" />
+        <div className="min-w-0">
+          <p className="nm-overline text-chalk-100">{title}</p>
+          {subtitle && <p className="mt-0.5 text-xs text-chalk-400">{subtitle}</p>}
         </div>
       </div>
       <div className="p-6">{children}</div>
-    </div>
+    </section>
   );
 }
 
 /* ─── Status Screen ──────────────────────────────────────────────── */
 function StatusScreen({
-  icon: Icon,
-  iconColor,
-  iconBg,
+  tone,
+  status,
   title,
   description,
   detail,
   actions,
 }: {
-  icon: any;
-  iconColor: string;
-  iconBg: string;
+  tone: "lime" | "chalk" | "red";
+  status: string;
   title: string;
   description: string;
   detail?: React.ReactNode;
   actions: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-[#fafbfc]">
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-600 via-green-600 to-teal-700" />
-        <div
-          className="absolute inset-0 opacity-10"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle at 2px 2px, white 1px, transparent 0)",
-            backgroundSize: "24px 24px",
-          }}
-        />
-        <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3 blur-3xl" />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-24 text-center">
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-            {title}
-          </h1>
-          <p className="text-emerald-200 text-base mt-3">{description}</p>
-        </div>
+    <NightShell ambient={0.45}>
+      <div className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center px-4 py-16 sm:px-6">
+        <p className="nm-overline mb-4 text-flood-500">The dugout</p>
+        <h1 className="font-display text-5xl uppercase leading-[0.95] tracking-tight text-chalk-100 sm:text-6xl">
+          {title}
+        </h1>
+        <p className="mt-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-chalk-400">
+          <StatusDot tone={tone} />
+          {status}
+        </p>
+        <p className="mt-5 max-w-md text-sm leading-relaxed text-chalk-400">
+          {description}
+        </p>
+        {detail && <div className="mt-6 max-w-md">{detail}</div>}
+        <div className="mt-9 flex flex-col gap-3 sm:flex-row">{actions}</div>
       </div>
-      <div className="max-w-lg mx-auto -mt-10 relative z-10 px-4 pb-12">
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-xl shadow-gray-200/50 p-8 text-center">
-          <div
-            className={`w-16 h-16 rounded-2xl ${iconBg} flex items-center justify-center mx-auto mb-5`}
-          >
-            <Icon className={`h-8 w-8 ${iconColor}`} />
-          </div>
-          <h3 className="text-lg font-bold text-gray-900 mb-2">{title}</h3>
-          <p className="text-sm text-gray-500 mb-4">{description}</p>
-          {detail}
-          <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
-            {actions}
-          </div>
-        </div>
-      </div>
-    </div>
+    </NightShell>
   );
 }
 
@@ -554,18 +558,11 @@ function TurfOwnerDashboard() {
   /* ── Loading ── */
   if (loading || checkingSubscription) {
     return (
-      <div className="min-h-screen bg-[#fafbfc] flex items-center justify-center">
-        <div className="text-center">
-          <div className="relative mx-auto w-16 h-16 mb-5">
-            <div className="w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center">
-              <Loader2 className="h-8 w-8 text-emerald-500 animate-spin" />
-            </div>
-          </div>
-          <p className="text-sm text-gray-500 font-medium">
-            Loading your dashboard…
-          </p>
+      <NightShell ambient={0.45}>
+        <div className="flex min-h-screen items-center justify-center">
+          <NightLoader label="Opening the dugout…" />
         </div>
-      </div>
+      </NightShell>
     );
   }
 
@@ -573,27 +570,19 @@ function TurfOwnerDashboard() {
   if (!subscriptionStatus?.hasSubscription) {
     return (
       <StatusScreen
-        icon={Shield}
-        iconColor="text-amber-500"
-        iconBg="bg-amber-50"
-        title="Subscription Required"
-        description="You need a subscription plan before adding arenas."
+        tone="chalk"
+        status="Season pass required"
+        title="No season pass on file"
+        description="You need a subscription plan before adding arenas. Pick a season pass and come back to chalk up your ground."
         actions={
           <>
-            <Link href="/owner/subscription">
-              <Button className="rounded-xl h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-lg shadow-emerald-200 transition-all">
-                <CreditCard className="w-4 h-4 mr-2" />
-                Choose Plan
-              </Button>
+            <Link href="/owner/subscription" className={nightPrimaryBtn}>
+              <CreditCard className="h-4 w-4" />
+              Choose plan
             </Link>
-            <Link href="/owner/dashboard">
-              <Button
-                variant="outline"
-                className="rounded-xl h-11 border-gray-200 text-gray-600 hover:bg-gray-50 font-medium transition-all"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Dashboard
-              </Button>
+            <Link href="/owner/dashboard" className={nightGhostBtn}>
+              <ArrowLeft className="h-4 w-4" />
+              Dashboard
             </Link>
           </>
         }
@@ -605,20 +594,14 @@ function TurfOwnerDashboard() {
   if (subscriptionStatus?.status === "pending") {
     return (
       <StatusScreen
-        icon={Clock}
-        iconColor="text-amber-500"
-        iconBg="bg-amber-50"
-        title="Subscription Pending"
-        description="Your payment is being verified by our admin team."
+        tone="chalk"
+        status="Under review"
+        title="Waiting on the officials"
+        description="Your payment is being verified by our admin team. You will be waved through as soon as the check clears."
         actions={
-          <Link href="/owner/dashboard">
-            <Button
-              variant="outline"
-              className="rounded-xl h-11 border-gray-200 text-gray-600 hover:bg-gray-50 font-medium transition-all"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Go to Dashboard
-            </Button>
+          <Link href="/owner/dashboard" className={nightGhostBtn}>
+            <ArrowLeft className="h-4 w-4" />
+            Go to dashboard
           </Link>
         }
       />
@@ -629,35 +612,27 @@ function TurfOwnerDashboard() {
   if (subscriptionStatus?.status === "rejected") {
     return (
       <StatusScreen
-        icon={AlertCircle}
-        iconColor="text-red-500"
-        iconBg="bg-red-50"
-        title="Subscription Rejected"
-        description="Your application was not approved."
+        tone="red"
+        status="Application rejected"
+        title="Application not approved"
+        description="Your subscription application was not approved. Review the reason below and reapply."
         detail={
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-2 text-left">
-            <p className="text-xs font-semibold text-red-700 uppercase tracking-wider mb-1">
+          <div className="rounded-[4px] border border-red-700/40 bg-red-950/30 p-4 text-left">
+            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-red-400">
               Reason
             </p>
-            <p className="text-sm text-red-600">
+            <p className="mt-1.5 text-sm text-red-300">
               {subscriptionStatus.rejectionReason || "No reason provided"}
             </p>
           </div>
         }
         actions={
           <>
-            <Link href="/owner/subscription">
-              <Button className="rounded-xl h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-lg shadow-emerald-200 transition-all">
-                Reapply
-              </Button>
+            <Link href="/owner/subscription" className={nightPrimaryBtn}>
+              Reapply
             </Link>
-            <Link href="/owner/dashboard">
-              <Button
-                variant="outline"
-                className="rounded-xl h-11 border-gray-200 text-gray-600 hover:bg-gray-50 font-medium transition-all"
-              >
-                Dashboard
-              </Button>
+            <Link href="/owner/dashboard" className={nightGhostBtn}>
+              Dashboard
             </Link>
           </>
         }
@@ -665,211 +640,245 @@ function TurfOwnerDashboard() {
     );
   }
 
+  /* ── Team sheet numbers — live as the owner fills the form ── */
+  const sheetStats = [
+    { label: "PRICE / HR (RS)", value: formData.pricing, prefix: "₹" },
+    { label: "SLOTS / WEEK", value: formData.availableSlots.length },
+    { label: "SPORTS", value: formData.sportsOffered.length },
+    { label: "PHOTOS", value: formData.turfImages.length },
+  ];
+
   /* ═══════════════════════════════════════════
    *  MAIN FORM VIEW
    * ═══════════════════════════════════════════ */
   return (
-    <div className="min-h-screen bg-[#fafbfc]">
-      {/* ─────────── HERO BANNER ─────────── */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-600 via-green-600 to-teal-700" />
-        <div
-          className="absolute inset-0 opacity-10"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle at 2px 2px, white 1px, transparent 0)",
-            backgroundSize: "24px 24px",
-          }}
-        />
-        <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3 blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-72 h-72 bg-emerald-400/10 rounded-full translate-y-1/2 -translate-x-1/4 blur-3xl" />
+    <NightShell ambient={0.45}>
+      {/* ─────────── HEADER — restyled in place ─────────── */}
+      <header className="sticky top-0 z-40 border-b border-pitchline bg-pitch-900/80 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+          <Link
+            href="/owner/dashboard"
+            className="group flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-chalk-400 transition-colors duration-200 ease-night hover:text-flood-500"
+          >
+            <ArrowLeft className="h-3.5 w-3.5 transition-transform duration-200 ease-night group-hover:-translate-x-1" />
+            Back to dashboard
+          </Link>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-24 sm:pb-28">
-          {/* Top Bar */}
-          <div className="flex items-center justify-between mb-8">
-            <Link href="/owner/dashboard">
-              <Button
-                variant="ghost"
-                className="text-white/80 hover:text-white hover:bg-white/10 rounded-xl -ml-2 font-medium text-sm"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Dashboard
-              </Button>
-            </Link>
-
-            <div className="flex items-center gap-3">
-              <div className="text-right hidden sm:block">
-                <p className="text-sm font-medium text-white">{user?.name}</p>
-                <p className="text-[11px] text-emerald-200">Arena Owner</p>
-              </div>
-              <Button
-                onClick={handleLogout}
-                variant="ghost"
-                size="sm"
-                className="text-white/80 hover:text-white hover:bg-white/10 rounded-xl"
-              >
-                <LogOut className="h-4 w-4" />
-              </Button>
+          <div className="flex items-center gap-4">
+            <div className="hidden text-right sm:block">
+              <p className="text-sm leading-tight text-chalk-100">{user?.name}</p>
+              <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-flood-500">
+                Arena owner
+              </p>
             </div>
-          </div>
-
-          {/* Hero Content */}
-          <div className="text-center">
-            <Badge className="bg-white/15 text-white border-white/20 hover:bg-white/20 text-[10px] mb-4">
-              <Building className="h-3 w-3 mr-1" />
-              {isEditMode ? "Edit Arena" : "Add New Arena"}
-            </Badge>
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight">
-              {isEditMode ? "Update Your Arena" : "Create Your Arena"}
-            </h1>
-            <p className="text-emerald-200 text-base sm:text-lg mt-4 max-w-2xl mx-auto">
-              {isEditMode
-                ? "Update your arena details, images, scheduling, and location information."
-                : "Set up your arena facility with all the details players need to find and book your venue."}
-            </p>
-
-            {/* Progress Indicator */}
-            <div className="flex items-center justify-center gap-2 mt-8">
-              {tabs.map((tab, i) => (
-                <div key={tab.id} className="flex items-center gap-2">
-                  <button
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all duration-200 ${
-                      tab.id === activeTab
-                        ? "bg-white text-emerald-700 shadow-lg"
-                        : i < currentTabIndex
-                        ? "bg-white/25 text-white"
-                        : "bg-white/10 text-white/50"
-                    }`}
-                  >
-                    {i < currentTabIndex ? (
-                      <CheckCircle2 className="h-3.5 w-3.5" />
-                    ) : (
-                      tab.step
-                    )}
-                  </button>
-                  {i < tabs.length - 1 && (
-                    <div
-                      className={`w-8 sm:w-12 h-0.5 rounded-full transition-all duration-200 ${
-                        i < currentTabIndex ? "bg-white/40" : "bg-white/10"
-                      }`}
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
+            <button
+              onClick={handleLogout}
+              aria-label="Log out"
+              className="rounded-[4px] border border-chalk-400/30 p-2 text-chalk-400 transition-colors duration-200 ease-night hover:border-flood-500 hover:text-flood-500"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* ─────────── CONTENT ─────────── */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-12 relative z-10 pb-12">
-        {/* Status Messages */}
-        {error && (
-          <div className="mb-6 flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl p-4">
-            <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
-            <p className="text-sm text-red-700">{error}</p>
-          </div>
-        )}
-        {success && (
-          <div className="mb-6 flex items-start gap-3 bg-emerald-50 border border-emerald-200 rounded-xl p-4">
-            <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5 flex-shrink-0" />
-            <p className="text-sm text-emerald-700">{success}</p>
-          </div>
-        )}
+      {/* ─────────── TITLE BAND — asymmetric, oversized ─────────── */}
+      <section className="mx-auto max-w-7xl px-4 pt-10 sm:px-6 sm:pt-14 lg:px-8">
+        <Reveal>
+          <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="nm-overline mb-3 text-flood-500">The dugout</p>
+              <h1 className="font-display text-5xl uppercase leading-[0.95] tracking-tight text-chalk-100 sm:text-6xl lg:text-7xl">
+                {isEditMode ? (
+                  <>
+                    Update
+                    <br />
+                    the arena
+                  </>
+                ) : (
+                  <>
+                    Chalk up
+                    <br />
+                    your arena
+                  </>
+                )}
+              </h1>
+              <p className="mt-5 max-w-xl text-sm leading-relaxed text-chalk-400">
+                {isEditMode
+                  ? "Update your arena details, images, scheduling, and location information."
+                  : "Set up your arena facility with all the details players need to find and book your venue."}
+              </p>
+            </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* ── LEFT: Tab Navigation (sidebar) ── */}
-          <div className="lg:col-span-1 space-y-5">
-            {/* Steps */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-xl shadow-gray-200/50 overflow-hidden">
-              <div className="px-6 py-5 border-b border-gray-50 flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center">
-                  <Layers className="h-4 w-4 text-emerald-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 text-[15px]">
-                    Setup Steps
-                  </h3>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    Step {currentTabIndex + 1} of {tabs.length}
-                  </p>
-                </div>
-              </div>
-              <div className="p-3 space-y-1">
+            {/* step counter + clickable progress ticks */}
+            <div className="shrink-0 lg:text-right">
+              <p className="font-mono text-5xl leading-none tabular-nums tracking-tight text-chalk-100">
+                {String(currentTabIndex + 1).padStart(2, "0")}
+                <span className="text-chalk-400/40">
+                  /{String(tabs.length).padStart(2, "0")}
+                </span>
+              </p>
+              <p className="nm-caption mt-2 text-chalk-400">
+                {tabs[currentTabIndex]?.label}
+              </p>
+              <div className="mt-4 flex gap-1.5 lg:justify-end">
                 {tabs.map((tab, i) => (
-                  <TabStepButton
+                  <button
                     key={tab.id}
-                    step={tab.step}
-                    label={tab.label}
-                    icon={tab.icon}
-                    active={tab.id === activeTab}
-                    completed={i < currentTabIndex}
                     onClick={() => setActiveTab(tab.id)}
+                    aria-label={`Step ${tab.step}: ${tab.label}`}
+                    className={`h-1 w-8 rounded-[2px] transition-colors duration-200 ease-night ${
+                      i === currentTabIndex
+                        ? "bg-flood-500 shadow-flood"
+                        : i < currentTabIndex
+                        ? "bg-flood-500/40"
+                        : "bg-pitchline hover:bg-chalk-400/40"
+                    }`}
                   />
                 ))}
               </div>
             </div>
+          </div>
+        </Reveal>
+      </section>
 
-            {/* Quick Tips */}
-            <div className="bg-gradient-to-br from-emerald-600 to-teal-700 rounded-2xl p-5 text-white relative overflow-hidden">
-              <div
-                className="absolute inset-0 opacity-10"
-                style={{
-                  backgroundImage:
-                    "radial-gradient(circle at 2px 2px, white 1px, transparent 0)",
-                  backgroundSize: "16px 16px",
-                }}
-              />
-              <div className="relative">
-                <div className="flex items-center gap-2 mb-3">
-                  <Sparkles className="h-5 w-5 text-emerald-200" />
-                  <span className="text-sm font-semibold">Quick Tips</span>
+      {/* ─────────── TEAM SHEET — 3D stadium scoreboard, live numbers ─────────── */}
+      <section className="mx-auto max-w-7xl px-4 pt-10 sm:px-6 lg:px-8">
+        <p className="nm-overline text-chalk-400">
+          Team sheet — updates as you build
+        </p>
+        <div className="mt-4">
+          <ScoreboardSetPiece
+            cells={[
+              { label: "PRICE / HR (RS)", value: formData.pricing },
+              { label: "SLOTS / WEEK", value: formData.availableSlots.length },
+              { label: "SPORTS", value: formData.sportsOffered.length },
+              { label: "PHOTOS", value: formData.turfImages.length },
+            ]}
+            srText={`Arena sheet so far: ₹${formData.pricing.toLocaleString(
+              "en-IN"
+            )} per hour, ${formData.availableSlots.length} weekly slots, ${
+              formData.sportsOffered.length
+            } sports offered, ${formData.turfImages.length} photos uploaded.`}
+          >
+            {/* flat fallback — same numbers, asymmetric: price leads */}
+            <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[4px] border border-pitchline bg-pitchline/60 sm:grid-cols-[1.7fr_1fr_1fr_1fr]">
+              {sheetStats.map((s, i) => (
+                <div
+                  key={s.label}
+                  className={`bg-pitch-700/90 px-5 py-6 ${
+                    i === 0 ? "sm:px-8 sm:py-8" : ""
+                  }`}
+                >
+                  <div
+                    className={`font-mono tabular-nums tracking-tight text-chalk-100 ${
+                      i === 0 ? "text-4xl sm:text-5xl" : "text-2xl sm:text-3xl"
+                    }`}
+                  >
+                    <CountUp value={s.value} prefix={s.prefix || ""} />
+                  </div>
+                  <p className="nm-caption mt-2 text-chalk-400">{s.label}</p>
                 </div>
-                <ul className="text-emerald-100 text-xs leading-relaxed space-y-2">
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="h-3 w-3 mt-0.5 flex-shrink-0" />
-                    Add high-quality images to attract more players
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="h-3 w-3 mt-0.5 flex-shrink-0" />
-                    Set competitive pricing for your area
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="h-3 w-3 mt-0.5 flex-shrink-0" />
-                    Mark your exact location on the map
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="h-3 w-3 mt-0.5 flex-shrink-0" />
-                    Add all available time slots
-                  </li>
+              ))}
+            </div>
+          </ScoreboardSetPiece>
+        </div>
+      </section>
+
+      <PitchDivider flag="left" />
+
+      {/* ─────────── CONTENT ─────────── */}
+      <div className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
+        {/* Status Messages */}
+        {error && (
+          <div className="mb-6 flex items-start gap-3 rounded-[4px] border border-red-700/40 bg-red-950/30 p-4">
+            <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-400" />
+            <p className="text-sm text-red-300">{error}</p>
+          </div>
+        )}
+        {success && (
+          <div className="mb-6 flex items-start gap-3 rounded-[4px] border border-flood-500/50 bg-flood-500/10 p-4 shadow-flood">
+            <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-flood-500" />
+            <p className="text-sm text-chalk-100">{success}</p>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
+          {/* ── LEFT: Tab Navigation (sidebar) ── */}
+          <div className="space-y-6 lg:col-span-1">
+            {/* Steps — fixture rows */}
+            <Reveal>
+              <div className="overflow-hidden rounded-[4px] border border-pitchline bg-pitch-700/80">
+                <div className="flex items-center justify-between border-b border-pitchline/60 px-5 py-4">
+                  <p className="nm-overline text-chalk-400">Match prep</p>
+                  <Mono className="text-[10px] text-chalk-400">
+                    {currentTabIndex + 1}/{tabs.length}
+                  </Mono>
+                </div>
+                <div>
+                  {tabs.map((tab, i) => (
+                    <TabStepButton
+                      key={tab.id}
+                      step={tab.step}
+                      label={tab.label}
+                      icon={tab.icon}
+                      active={tab.id === activeTab}
+                      completed={i < currentTabIndex}
+                      onClick={() => setActiveTab(tab.id)}
+                    />
+                  ))}
+                </div>
+              </div>
+            </Reveal>
+
+            {/* Touchline notes */}
+            <Reveal delay={0.08}>
+              <div className="rounded-[4px] border border-pitchline bg-pitch-700/60">
+                <div className="border-b border-pitchline/60 px-5 py-4">
+                  <p className="nm-overline flex items-center gap-2 text-flood-500">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Touchline notes
+                  </p>
+                </div>
+                <ul className="space-y-3 px-5 py-4">
+                  {[
+                    "Add high-quality images to attract more players",
+                    "Set competitive pricing for your area",
+                    "Mark your exact location on the map",
+                    "Add all available time slots",
+                  ].map((tip) => (
+                    <li
+                      key={tip}
+                      className="flex items-start gap-2.5 text-xs leading-relaxed text-chalk-400"
+                    >
+                      <span
+                        aria-hidden
+                        className="mt-1.5 h-1 w-1 flex-shrink-0 bg-flood-500"
+                      />
+                      {tip}
+                    </li>
+                  ))}
                 </ul>
               </div>
-            </div>
+            </Reveal>
           </div>
 
           {/* ── RIGHT: Form Content ── */}
-          <div className="lg:col-span-3 space-y-5">
+          <div className="space-y-5 lg:col-span-3">
             {/* ═══ TAB: Business Info ═══ */}
             {activeTab === "business-info" && (
               <>
                 <SectionCard
                   icon={User}
-                  iconBg="bg-emerald-50"
-                  iconColor="text-emerald-600"
-                  title="Basic Information"
+                  title="Basic information"
                   subtitle="Your business and contact details"
                 >
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                  <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
                     <div className="space-y-2">
-                      <Label
-                        htmlFor="ownerName"
-                        className="text-xs font-semibold text-gray-700"
-                      >
-                        Owner Name{" "}
-                        <span className="text-red-400">*</span>
-                      </Label>
-                      <Input
+                      <FieldLabel htmlFor="ownerName" required>
+                        Owner name
+                      </FieldLabel>
+                      <NightInput
                         id="ownerName"
                         placeholder="Your full name"
                         value={formData.ownerName || ""}
@@ -879,18 +888,13 @@ function TurfOwnerDashboard() {
                             ownerName: e.target.value,
                           })
                         }
-                        className="rounded-xl border-gray-200 h-11 text-sm focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100 transition-all"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label
-                        htmlFor="businessName"
-                        className="text-xs font-semibold text-gray-700"
-                      >
-                        Business Name{" "}
-                        <span className="text-red-400">*</span>
-                      </Label>
-                      <Input
+                      <FieldLabel htmlFor="businessName" required>
+                        Business name
+                      </FieldLabel>
+                      <NightInput
                         id="businessName"
                         placeholder="Your turf business name"
                         value={formData.businessName || ""}
@@ -900,18 +904,13 @@ function TurfOwnerDashboard() {
                             businessName: e.target.value,
                           })
                         }
-                        className="rounded-xl border-gray-200 h-11 text-sm focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100 transition-all"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label
-                        htmlFor="phone"
-                        className="text-xs font-semibold text-gray-700"
-                      >
-                        Phone Number{" "}
-                        <span className="text-red-400">*</span>
-                      </Label>
-                      <Input
+                      <FieldLabel htmlFor="phone" required>
+                        Phone number
+                      </FieldLabel>
+                      <NightInput
                         id="phone"
                         placeholder="+91 9XXXXXXXXX"
                         value={formData.phone || ""}
@@ -921,7 +920,6 @@ function TurfOwnerDashboard() {
                             phone: e.target.value,
                           })
                         }
-                        className="rounded-xl border-gray-200 h-11 text-sm focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100 transition-all"
                       />
                     </div>
                   </div>
@@ -929,21 +927,15 @@ function TurfOwnerDashboard() {
 
                 <SectionCard
                   icon={IndianRupee}
-                  iconBg="bg-green-50"
-                  iconColor="text-green-600"
                   title="Pricing"
                   subtitle="Set your hourly rates and discount limits"
                 >
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                     <div className="space-y-2">
-                      <Label
-                        htmlFor="pricing"
-                        className="text-xs font-semibold text-gray-700"
-                      >
-                        Price per Hour (₹){" "}
-                        <span className="text-red-400">*</span>
-                      </Label>
-                      <Input
+                      <FieldLabel htmlFor="pricing" required>
+                        Price per hour (₹)
+                      </FieldLabel>
+                      <NightInput
                         id="pricing"
                         type="number"
                         placeholder="Enter hourly rate"
@@ -954,20 +946,14 @@ function TurfOwnerDashboard() {
                             pricing: Number(e.target.value),
                           })
                         }
-                        className="rounded-xl border-gray-200 h-11 text-sm focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100 transition-all"
+                        className="font-mono tabular-nums"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label
-                        htmlFor="maxDiscount"
-                        className="text-xs font-semibold text-gray-700"
-                      >
-                        Max Discount %{" "}
-                        <span className="text-gray-400 font-normal">
-                          (Dynamic Pricing)
-                        </span>
-                      </Label>
-                      <Input
+                      <FieldLabel htmlFor="maxDiscount" hint="Dynamic pricing">
+                        Max discount %
+                      </FieldLabel>
+                      <NightInput
                         id="maxDiscount"
                         type="number"
                         placeholder="e.g. 20"
@@ -983,9 +969,9 @@ function TurfOwnerDashboard() {
                             ),
                           })
                         }
-                        className="rounded-xl border-gray-200 h-11 text-sm focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100 transition-all"
+                        className="font-mono tabular-nums"
                       />
-                      <p className="text-[11px] text-gray-400">
+                      <p className="text-[11px] leading-relaxed text-chalk-400/70">
                         Maximum discount (0–100%) the platform can offer based
                         on demand.
                       </p>
@@ -995,38 +981,35 @@ function TurfOwnerDashboard() {
 
                 <SectionCard
                   icon={CreditCard}
-                  iconBg="bg-teal-50"
-                  iconColor="text-teal-600"
-                  title="Bank Details & Payouts"
+                  title="Bank details & payouts"
                   subtitle="Configure where your payouts will be sent"
                 >
-                  <Link href="/owner/bank-details">
-                    <button className="flex items-center gap-3 p-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 transition-colors group w-full text-left">
-                      <div className="w-9 h-9 rounded-lg bg-emerald-600 flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
-                        <CreditCard className="h-4 w-4" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-semibold text-emerald-800">
-                          Manage Bank Details
-                        </p>
-                        <p className="text-[11px] text-emerald-600">
-                          Add or update your bank account
-                        </p>
-                      </div>
-                      <ArrowRight className="h-4 w-4 text-emerald-400 group-hover:translate-x-1 transition-transform" />
-                    </button>
+                  <Link
+                    href="/owner/bank-details"
+                    className="group flex items-center gap-4 rounded-[4px] border border-pitchline bg-pitch-800/60 px-5 py-4 transition-colors duration-200 ease-night hover:border-flood-500/40 hover:bg-white/[0.03]"
+                  >
+                    <CreditCard className="h-4 w-4 flex-shrink-0 text-flood-500" />
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-mono text-[11px] uppercase tracking-[0.14em] text-chalk-100">
+                        Manage bank details
+                      </span>
+                      <span className="mt-0.5 block text-xs text-chalk-400">
+                        Add or update your club treasury account
+                      </span>
+                    </span>
+                    <ArrowRight className="h-4 w-4 flex-shrink-0 text-flood-500 transition-transform duration-200 ease-night group-hover:translate-x-1" />
                   </Link>
                 </SectionCard>
 
                 {/* Navigation */}
                 <div className="flex justify-end pt-2">
-                  <Button
+                  <button
                     onClick={() => setActiveTab("turf-details")}
-                    className="rounded-xl h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-lg shadow-emerald-200 hover:shadow-xl hover:shadow-emerald-300 transition-all duration-200"
+                    className={nightGhostBtn}
                   >
-                    Next: Arena Details
-                    <ChevronRight className="w-4 h-4 ml-2" />
-                  </Button>
+                    Next: Arena details
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
                 </div>
               </>
             )}
@@ -1036,9 +1019,7 @@ function TurfOwnerDashboard() {
               <>
                 <SectionCard
                   icon={ImageIcon}
-                  iconBg="bg-emerald-50"
-                  iconColor="text-emerald-600"
-                  title="Arena Images"
+                  title="Arena images"
                   subtitle="Upload photos of your arena facility"
                 >
                   <TurfImagesUploader
@@ -1052,9 +1033,7 @@ function TurfOwnerDashboard() {
                 {subscriptionStatus?.plan === "pro" && (
                   <SectionCard
                     icon={Sparkles}
-                    iconBg="bg-amber-50"
-                    iconColor="text-amber-600"
-                    title="Premium Banner Image"
+                    title="Premium banner image"
                     subtitle="Pro plan exclusive — showcase your turf with a banner"
                   >
                     <BannerImageUploader
@@ -1068,9 +1047,7 @@ function TurfOwnerDashboard() {
 
                 <SectionCard
                   icon={Layers}
-                  iconBg="bg-green-50"
-                  iconColor="text-green-600"
-                  title="Sports & Amenities"
+                  title="Sports & amenities"
                   subtitle="Select the sports and facilities you offer"
                 >
                   <div className="space-y-6">
@@ -1090,7 +1067,7 @@ function TurfOwnerDashboard() {
                         }))
                       }
                     />
-                    <Separator />
+                    <div aria-hidden className="h-px bg-pitchline" />
                     <AmenitiesSelector
                       value={formData.amenities}
                       onChange={(amenities) =>
@@ -1102,9 +1079,7 @@ function TurfOwnerDashboard() {
 
                 <SectionCard
                   icon={Settings}
-                  iconBg="bg-teal-50"
-                  iconColor="text-teal-600"
-                  title="About Your Arena"
+                  title="About your arena"
                   subtitle="Describe your turf to attract players"
                 >
                   <AboutSection
@@ -1115,21 +1090,20 @@ function TurfOwnerDashboard() {
 
                 {/* Navigation */}
                 <div className="flex justify-between pt-2">
-                  <Button
-                    variant="outline"
+                  <button
                     onClick={() => setActiveTab("business-info")}
-                    className="rounded-xl h-11 border-gray-200 text-gray-600 hover:bg-gray-50 font-medium transition-all"
+                    className={nightGhostBtn}
                   >
-                    <ChevronLeft className="w-4 h-4 mr-2" />
+                    <ChevronLeft className="h-4 w-4" />
                     Previous
-                  </Button>
-                  <Button
+                  </button>
+                  <button
                     onClick={() => setActiveTab("scheduling")}
-                    className="rounded-xl h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-lg shadow-emerald-200 hover:shadow-xl hover:shadow-emerald-300 transition-all duration-200"
+                    className={nightGhostBtn}
                   >
                     Next: Scheduling
-                    <ChevronRight className="w-4 h-4 ml-2" />
-                  </Button>
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
                 </div>
               </>
             )}
@@ -1139,9 +1113,7 @@ function TurfOwnerDashboard() {
               <>
                 <SectionCard
                   icon={Clock}
-                  iconBg="bg-emerald-50"
-                  iconColor="text-emerald-600"
-                  title="Time Slot Management"
+                  title="Time slot management"
                   subtitle="Configure your available booking slots"
                 >
                   <SlotManager
@@ -1154,21 +1126,20 @@ function TurfOwnerDashboard() {
 
                 {/* Navigation */}
                 <div className="flex justify-between pt-2">
-                  <Button
-                    variant="outline"
+                  <button
                     onClick={() => setActiveTab("turf-details")}
-                    className="rounded-xl h-11 border-gray-200 text-gray-600 hover:bg-gray-50 font-medium transition-all"
+                    className={nightGhostBtn}
                   >
-                    <ChevronLeft className="w-4 h-4 mr-2" />
+                    <ChevronLeft className="h-4 w-4" />
                     Previous
-                  </Button>
-                  <Button
+                  </button>
+                  <button
                     onClick={() => setActiveTab("location")}
-                    className="rounded-xl h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-lg shadow-emerald-200 hover:shadow-xl hover:shadow-emerald-300 transition-all duration-200"
+                    className={nightGhostBtn}
                   >
                     Next: Location
-                    <ChevronRight className="w-4 h-4 ml-2" />
-                  </Button>
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
                 </div>
               </>
             )}
@@ -1178,20 +1149,15 @@ function TurfOwnerDashboard() {
               <>
                 <SectionCard
                   icon={MapPin}
-                  iconBg="bg-teal-50"
-                  iconColor="text-teal-600"
-                  title="Location Details"
+                  title="Location details"
                   subtitle="Enter your turf address and pin exact location"
                 >
                   <div className="space-y-5">
                     <div className="space-y-2">
-                      <Label
-                        htmlFor="address"
-                        className="text-xs font-semibold text-gray-700"
-                      >
-                        Address / Colony / Area
-                      </Label>
-                      <Input
+                      <FieldLabel htmlFor="address">
+                        Address / colony / area
+                      </FieldLabel>
+                      <NightInput
                         id="address"
                         placeholder="e.g., Koramangala 5th Block, Near Sony Signal"
                         value={formData.location?.address || ""}
@@ -1204,18 +1170,14 @@ function TurfOwnerDashboard() {
                             },
                           })
                         }
-                        className="rounded-xl border-gray-200 h-11 text-sm focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100 transition-all"
                       />
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                       <div className="space-y-2">
-                        <Label
-                          htmlFor="city"
-                          className="text-xs font-semibold text-gray-700"
-                        >
-                          City <span className="text-red-400">*</span>
-                        </Label>
-                        <Input
+                        <FieldLabel htmlFor="city" required>
+                          City
+                        </FieldLabel>
+                        <NightInput
                           id="city"
                           placeholder="City"
                           value={formData.location?.city || ""}
@@ -1229,17 +1191,11 @@ function TurfOwnerDashboard() {
                             })
                           }
                           required
-                          className="rounded-xl border-gray-200 h-11 text-sm focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100 transition-all"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label
-                          htmlFor="state"
-                          className="text-xs font-semibold text-gray-700"
-                        >
-                          State
-                        </Label>
-                        <Input
+                        <FieldLabel htmlFor="state">State</FieldLabel>
+                        <NightInput
                           id="state"
                           placeholder="State"
                           value={formData.location?.state || ""}
@@ -1252,17 +1208,11 @@ function TurfOwnerDashboard() {
                               },
                             })
                           }
-                          className="rounded-xl border-gray-200 h-11 text-sm focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100 transition-all"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label
-                          htmlFor="pincode"
-                          className="text-xs font-semibold text-gray-700"
-                        >
-                          Pincode
-                        </Label>
-                        <Input
+                        <FieldLabel htmlFor="pincode">Pincode</FieldLabel>
+                        <NightInput
                           id="pincode"
                           placeholder="Pincode"
                           value={formData.location?.pincode || ""}
@@ -1275,7 +1225,7 @@ function TurfOwnerDashboard() {
                               },
                             })
                           }
-                          className="rounded-xl border-gray-200 h-11 text-sm focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100 transition-all"
+                          className="font-mono tabular-nums"
                         />
                       </div>
                     </div>
@@ -1283,124 +1233,111 @@ function TurfOwnerDashboard() {
                 </SectionCard>
 
                 {/* Map Picker */}
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                  <div className="px-6 py-5 border-b border-gray-50 flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-cyan-50 flex items-center justify-center">
-                      <MapPin className="h-4 w-4 text-cyan-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900 text-[15px]">
-                        Pin Your Location
-                      </h3>
-                      <p className="text-xs text-gray-400 mt-0.5">
-                        Drop a pin on the map for exact turf location
-                      </p>
-                    </div>
-                  </div>
-                  <div className="p-4">
-                    <LocationPickerMap
-                      address={formData.location?.address || ""}
-                      city={formData.location?.city || ""}
-                      state={formData.location?.state || ""}
-                      pincode={formData.location?.pincode || ""}
-                      initialCoordinates={
-                        formData.geoLocation?.coordinates
-                          ? {
-                              latitude: formData.geoLocation.coordinates[1],
-                              longitude: formData.geoLocation.coordinates[0],
-                            }
-                          : undefined
-                      }
-                      onLocationConfirmed={(locationData) => {
-                        setFormData((prev) => ({
-                          ...prev,
-                          geoLocation: {
-                            type: "Point" as const,
-                            coordinates: locationData.coordinates,
-                          },
-                          locationMetadata: {
-                            accuracy: locationData.accuracy,
-                            accuracyRadius: locationData.accuracyRadius,
-                            isOwnerVerified: locationData.isOwnerVerified,
-                            geocodedBy: "user_pin_drop",
-                            geocodedAt: new Date(),
-                          },
-                          location: {
-                            ...prev.location,
-                            ...(locationData.address && {
-                              address: locationData.address,
-                            }),
-                            ...(locationData.city && {
-                              city: locationData.city,
-                            }),
-                            ...(locationData.state && {
-                              state: locationData.state,
-                            }),
-                            ...(locationData.pincode && {
-                              pincode: locationData.pincode,
-                            }),
-                          },
-                        }));
-                      }}
-                    />
-                  </div>
-                </div>
+                <SectionCard
+                  icon={MapPin}
+                  title="Pin your location"
+                  subtitle="Drop a pin on the map for exact turf location"
+                >
+                  <LocationPickerMap
+                    address={formData.location?.address || ""}
+                    city={formData.location?.city || ""}
+                    state={formData.location?.state || ""}
+                    pincode={formData.location?.pincode || ""}
+                    initialCoordinates={
+                      formData.geoLocation?.coordinates
+                        ? {
+                            latitude: formData.geoLocation.coordinates[1],
+                            longitude: formData.geoLocation.coordinates[0],
+                          }
+                        : undefined
+                    }
+                    onLocationConfirmed={(locationData) => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        geoLocation: {
+                          type: "Point" as const,
+                          coordinates: locationData.coordinates,
+                        },
+                        locationMetadata: {
+                          accuracy: locationData.accuracy,
+                          accuracyRadius: locationData.accuracyRadius,
+                          isOwnerVerified: locationData.isOwnerVerified,
+                          geocodedBy: "user_pin_drop",
+                          geocodedAt: new Date(),
+                        },
+                        location: {
+                          ...prev.location,
+                          ...(locationData.address && {
+                            address: locationData.address,
+                          }),
+                          ...(locationData.city && {
+                            city: locationData.city,
+                          }),
+                          ...(locationData.state && {
+                            state: locationData.state,
+                          }),
+                          ...(locationData.pincode && {
+                            pincode: locationData.pincode,
+                          }),
+                        },
+                      }));
+                    }}
+                  />
+                </SectionCard>
 
                 {/* Navigation */}
                 <div className="flex justify-between pt-2">
-                  <Button
-                    variant="outline"
+                  <button
                     onClick={() => setActiveTab("scheduling")}
-                    className="rounded-xl h-11 border-gray-200 text-gray-600 hover:bg-gray-50 font-medium transition-all"
+                    className={nightGhostBtn}
                   >
-                    <ChevronLeft className="w-4 h-4 mr-2" />
+                    <ChevronLeft className="h-4 w-4" />
                     Previous
-                  </Button>
+                  </button>
                 </div>
               </>
             )}
 
             {/* ═══ GLOBAL SAVE BUTTON ═══ */}
             <div className="sticky bottom-4 z-10">
-              <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-gray-100 shadow-xl shadow-gray-200/50 p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex flex-col items-center justify-between gap-4 rounded-[4px] border border-pitchline bg-pitch-900/85 p-4 backdrop-blur sm:flex-row sm:px-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center">
-                    <Save className="h-4 w-4 text-emerald-600" />
-                  </div>
+                  <Save className="h-4 w-4 flex-shrink-0 text-flood-500" />
                   <div>
-                    <p className="text-sm font-semibold text-gray-900">
-                      {isEditMode ? "Save Changes" : "Submit Your Turf"}
+                    <p className="nm-overline text-chalk-100">
+                      {isEditMode ? "Save changes" : "Submit your turf"}
                     </p>
-                    <p className="text-[11px] text-gray-400">
-                      All fields marked * are required
+                    <p className="mt-0.5 font-mono text-[9px] uppercase tracking-[0.16em] text-chalk-400">
+                      All fields marked <span className="text-flood-500">*</span>{" "}
+                      are required
                     </p>
                   </div>
                 </div>
-                <Button
+                <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="rounded-xl h-11 px-8 font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-200 hover:shadow-xl hover:shadow-emerald-300 disabled:opacity-50 disabled:shadow-none transition-all duration-200 w-full sm:w-auto"
+                  className={`${nightPrimaryBtn} w-full sm:w-auto`}
                 >
                   {saving ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      <Loader2 className="h-4 w-4 animate-spin" />
                       Saving…
                     </>
                   ) : (
                     <>
-                      <Save className="w-4 h-4 mr-2" />
+                      <Save className="h-4 w-4" />
                       {isEditMode
-                        ? "Update Arena Details"
-                        : "Submit Arena Details"}
+                        ? "Update arena details"
+                        : "Submit arena details"}
                     </>
                   )}
-                </Button>
+                </button>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </NightShell>
   );
 }
 
