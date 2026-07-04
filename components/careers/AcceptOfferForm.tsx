@@ -3,6 +3,17 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import SignatureCanvas from 'react-signature-canvas';
+import { AlertTriangle, Loader2 } from 'lucide-react';
+import {
+  nightField,
+  nightPrimaryBtn,
+  nightGhostBtn,
+  nightCard,
+  NightInput,
+  NightTextarea,
+  Overline,
+  Mono,
+} from '@/components/night/ui';
 
 interface AcceptOfferFormProps {
   application: any;
@@ -187,7 +198,7 @@ export default function AcceptOfferForm({ application, applicationId }: AcceptOf
           contact: verificationData.phone
         },
         theme: {
-          color: '#16a34a'
+          color: '#C8F135'
         },
         modal: {
           ondismiss: function() {
@@ -204,21 +215,42 @@ export default function AcceptOfferForm({ application, applicationId }: AcceptOf
     }
   };
 
+  const positionTitle = application?.job?.title || 'Intern';
+
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      {/* Error Display */}
+    <div className="mx-auto max-w-3xl px-4 py-10">
+      {/* Step ledger */}
+      <div className="mb-8 flex items-center gap-3">
+        {[1, 2, 3].map((n) => (
+          <div key={n} className="flex flex-1 items-center gap-3">
+            <span
+              className={`font-mono text-sm ${
+                n <= currentStep ? 'text-flood-500' : 'text-chalk-400/50'
+              }`}
+            >
+              {String(n).padStart(2, '0')}
+            </span>
+            <span
+              className={`h-px flex-1 transition-colors duration-300 ease-night ${
+                n <= currentStep ? 'bg-flood-500/60' : 'bg-pitchline'
+              }`}
+            />
+          </div>
+        ))}
+      </div>
+
       {/* Error Alert */}
       {error && (
-        <div className="bg-red-50 border-2 border-red-300 text-red-900 px-6 py-4 rounded-lg mb-6">
-          <h3 className="font-bold text-lg mb-2">❌ Error Occurred</h3>
-          <p className="mb-3">{error}</p>
-          <div className="text-sm bg-white border border-red-200 rounded p-3 space-y-2">
-            <p className="font-semibold">What to do next:</p>
-            <ul className="list-disc list-inside ml-2 space-y-1">
+        <div className="mb-6 rounded-[4px] border border-red-800/60 bg-red-950/40 px-6 py-4 text-chalk-100">
+          <h3 className="nm-overline mb-2 text-red-400">Error occurred</h3>
+          <p className="mb-3 text-sm text-chalk-100">{error}</p>
+          <div className="space-y-2 rounded-[4px] border border-pitchline bg-pitch-900/60 p-3 text-sm text-chalk-400">
+            <p className="text-chalk-100">What to do next:</p>
+            <ul className="ml-2 list-inside list-disc space-y-1">
               <li>Check your internet connection and try again</li>
-              <li>If payment was deducted, DO NOT pay again - Contact us immediately</li>
-              <li>Keep your Application ID handy: <strong>{application?._id}</strong></li>
-              <li>Email us at <strong>admin@outfyld.in</strong> with the error details</li>
+              <li>If payment was deducted, DO NOT pay again — contact us immediately</li>
+              <li>Keep your Application ID handy: <Mono className="text-flood-500">{application?._id}</Mono></li>
+              <li>Email us at <span className="text-chalk-100">admin@outfyld.in</span> with the error details</li>
             </ul>
           </div>
         </div>
@@ -226,19 +258,16 @@ export default function AcceptOfferForm({ application, applicationId }: AcceptOf
 
       {/* Processing Warning */}
       {(loading || paymentProcessing) && (
-        <div className="bg-yellow-50 border-2 border-yellow-400 text-yellow-900 px-6 py-4 rounded-lg mb-6">
+        <div className="mb-6 rounded-[4px] border border-flood-500/40 bg-pitch-800/80 px-6 py-4 text-chalk-100 shadow-flood">
           <div className="flex items-start gap-3">
-            <svg className="animate-spin h-6 w-6 text-yellow-600 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
+            <Loader2 className="mt-0.5 h-6 w-6 flex-shrink-0 animate-spin text-flood-500" />
             <div>
-              <h3 className="font-bold text-lg mb-1">⚠️ Processing - Please Wait!</h3>
-              <p className="font-semibold mb-2">DO NOT close this window, press back, or refresh the page!</p>
-              <ul className="text-sm space-y-1">
-                <li>• Payment is being processed...</li>
-                <li>• This usually takes 10-30 seconds</li>
-                <li>• You will see a confirmation once complete</li>
+              <h3 className="nm-overline mb-1 text-flood-500">Processing — please wait</h3>
+              <p className="mb-2 text-sm font-medium text-chalk-100">Do NOT close this window, press back, or refresh the page.</p>
+              <ul className="space-y-1 text-sm text-chalk-400">
+                <li>· Payment is being processed…</li>
+                <li>· This usually takes 10–30 seconds</li>
+                <li>· You will see a confirmation once complete</li>
               </ul>
             </div>
           </div>
@@ -247,88 +276,70 @@ export default function AcceptOfferForm({ application, applicationId }: AcceptOf
 
       {/* Step 1: Verification */}
       {currentStep === 1 && (
-        <div className="bg-white rounded-lg shadow-xl p-8">
-          <h2 className="text-3xl font-bold text-gray-800 mb-2">Step 1: Verify Your Details</h2>
-          <p className="text-gray-600 mb-6">Please confirm your information and enter your Offer Letter ID</p>
+        <div className={`${nightCard} p-8`}>
+          <Overline tone="lime">Sign the offer · Step 01</Overline>
+          <h2 className="mt-3 font-display text-4xl uppercase leading-[0.95] tracking-tight text-chalk-100">
+            Verify your details
+          </h2>
+          <p className="mt-3 text-sm text-chalk-400">Confirm your information and enter your Offer Letter ID.</p>
 
-          <form onSubmit={handleVerificationSubmit} className="space-y-6">
+          <form onSubmit={handleVerificationSubmit} className="mt-8 space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
-              <input
-                type="text"
-                value={verificationData.fullName}
-                disabled
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50"
-              />
+              <label className="nm-caption mb-2 block uppercase tracking-[0.14em] text-chalk-400">Full name</label>
+              <NightInput type="text" value={verificationData.fullName} disabled />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-              <input
-                type="email"
-                value={verificationData.email}
-                disabled
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50"
-              />
+              <label className="nm-caption mb-2 block uppercase tracking-[0.14em] text-chalk-400">Email</label>
+              <NightInput type="email" value={verificationData.email} disabled />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
-              <input
-                type="tel"
-                value={verificationData.phone}
-                disabled
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50"
-              />
+              <label className="nm-caption mb-2 block uppercase tracking-[0.14em] text-chalk-400">Phone</label>
+              <NightInput type="tel" value={verificationData.phone} disabled />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Offer Letter ID <span className="text-red-500">*</span>
+              <label className="nm-caption mb-2 block uppercase tracking-[0.14em] text-chalk-400">
+                Offer Letter ID <span className="text-flood-500">*</span>
               </label>
-              <input
+              <NightInput
                 type="text"
                 value={verificationData.offerLetterId}
                 onChange={(e) => setVerificationData({ ...verificationData, offerLetterId: e.target.value.trim().toUpperCase() })}
                 placeholder="OUTFYLD-INF-2025-XXXXXX"
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               />
-              <p className="text-sm text-gray-500 mt-1">Enter the Offer Letter ID from your email</p>
+              <p className="mt-1.5 text-xs text-chalk-400">Enter the Offer Letter ID from your email.</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Current Address</label>
-              <textarea
+              <label className="nm-caption mb-2 block uppercase tracking-[0.14em] text-chalk-400">Current address</label>
+              <NightTextarea
                 value={verificationData.currentAddress}
                 onChange={(e) => setVerificationData({ ...verificationData, currentAddress: e.target.value })}
                 rows={3}
                 placeholder="Enter your current residential address"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Confirm Position Accepted <span className="text-red-500">*</span>
+              <label className="nm-caption mb-2 block uppercase tracking-[0.14em] text-chalk-400">
+                Confirm position accepted <span className="text-flood-500">*</span>
               </label>
               <select
                 value={verificationData.acceptedPosition}
                 onChange={(e) => setVerificationData({ ...verificationData, acceptedPosition: e.target.value })}
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className={nightField}
               >
-                <option value="">Select the position you're accepting</option>
-                <option value={application?.job?.title || 'Intern'}>{application?.job?.title || 'Intern'}</option>
+                <option value="">Select the position you&apos;re accepting</option>
+                <option value={positionTitle}>{positionTitle}</option>
               </select>
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Verifying...' : 'Continue to Signature →'}
+            <button type="submit" disabled={loading} className={`${nightPrimaryBtn} w-full`}>
+              {loading ? 'Verifying…' : 'Continue to signature'}
             </button>
           </form>
         </div>
@@ -336,14 +347,18 @@ export default function AcceptOfferForm({ application, applicationId }: AcceptOf
 
       {/* Step 2: Digital Signature */}
       {currentStep === 2 && (
-        <div className="bg-white rounded-lg shadow-xl p-8">
-          <h2 className="text-3xl font-bold text-gray-800 mb-2">Step 2: Digital Signature</h2>
-          <p className="text-gray-600 mb-6">Please sign below to accept the offer</p>
+        <div className={`${nightCard} p-8`}>
+          <Overline tone="lime">Sign the offer · Step 02</Overline>
+          <h2 className="mt-3 font-display text-4xl uppercase leading-[0.95] tracking-tight text-chalk-100">
+            Digital signature
+          </h2>
+          <p className="mt-3 text-sm text-chalk-400">Sign below to accept the offer.</p>
 
-          <div className="space-y-6">
+          <div className="mt-8 space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Your Signature</label>
-              <div className="border-2 border-gray-300 rounded-lg overflow-hidden bg-white">
+              <label className="nm-caption mb-2 block uppercase tracking-[0.14em] text-chalk-400">Your signature</label>
+              {/* Light backing is intentional — ink needs contrast to read (same exception as QR surfaces). */}
+              <div className="overflow-hidden rounded-[4px] border border-pitchline bg-chalk-100">
                 <SignatureCanvas
                   ref={signatureRef}
                   canvasProps={{
@@ -356,18 +371,18 @@ export default function AcceptOfferForm({ application, applicationId }: AcceptOf
               <button
                 type="button"
                 onClick={clearSignature}
-                className="mt-2 text-sm text-red-600 hover:text-red-800"
+                className="mt-2 nm-caption uppercase tracking-[0.14em] text-red-400 transition-colors hover:text-red-300"
               >
-                Clear Signature
+                Clear signature
               </button>
             </div>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h3 className="font-semibold text-blue-900 mb-2">Terms & Conditions</h3>
-              <ul className="text-sm text-blue-800 space-y-1">
-                <li>• I confirm that the information provided is accurate</li>
-                <li>• I accept the internship position as offered</li>
-                <li>• I understand this is a binding agreement</li>
+            <div className="rounded-[4px] border border-pitchline bg-pitch-800/60 p-4">
+              <h3 className="nm-overline mb-2 text-flood-500">Terms &amp; conditions</h3>
+              <ul className="space-y-1 text-sm text-chalk-400">
+                <li>· I confirm that the information provided is accurate</li>
+                <li>· I accept the internship position as offered</li>
+                <li>· I understand this is a binding agreement</li>
               </ul>
             </div>
 
@@ -377,38 +392,29 @@ export default function AcceptOfferForm({ application, applicationId }: AcceptOf
                 id="terms"
                 checked={agreedToTerms}
                 onChange={(e) => setAgreedToTerms(e.target.checked)}
-                className="mt-1 mr-3 h-5 w-5 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                className="mr-3 mt-1 h-5 w-5 rounded-[3px] border-pitchline bg-pitch-800 text-flood-500 accent-flood-500 focus:ring-flood-500"
               />
-              <label htmlFor="terms" className="text-sm text-gray-700">
+              <label htmlFor="terms" className="text-sm text-chalk-400">
                 I have read and agree to the{' '}
                 <a
                   href="/careers/terms-and-conditions"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-green-600 hover:text-green-800 underline font-medium"
+                  className="font-medium text-flood-500 underline transition-colors hover:text-flood-600"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  Terms & Conditions
+                  Terms &amp; Conditions
                 </a>
                 {' '}stated above, and I digitally sign this offer acceptance
               </label>
             </div>
 
             <div className="flex gap-4">
-              <button
-                type="button"
-                onClick={() => setCurrentStep(1)}
-                className="flex-1 bg-gray-200 text-gray-800 py-3 px-6 rounded-lg font-semibold hover:bg-gray-300 transition"
-              >
-                ← Back
+              <button type="button" onClick={() => setCurrentStep(1)} className={`${nightGhostBtn} flex-1`}>
+                Back
               </button>
-              <button
-                type="button"
-                onClick={handleSignatureSubmit}
-                disabled={loading}
-                className="flex-1 bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Saving...' : 'Submit Signature →'}
+              <button type="button" onClick={handleSignatureSubmit} disabled={loading} className={`${nightPrimaryBtn} flex-1`}>
+                {loading ? 'Saving…' : 'Submit signature'}
               </button>
             </div>
           </div>
@@ -417,65 +423,60 @@ export default function AcceptOfferForm({ application, applicationId }: AcceptOf
 
       {/* Step 3: Payment */}
       {currentStep === 3 && (
-        <div className="bg-white rounded-lg shadow-xl p-8">
-          <h2 className="text-3xl font-bold text-gray-800 mb-2">Step 3: Complete Payment</h2>
-          <p className="text-gray-600 mb-6">Final step to confirm your joining</p>
+        <div className={`${nightCard} p-8`}>
+          <Overline tone="lime">Sign the offer · Step 03</Overline>
+          <h2 className="mt-3 font-display text-4xl uppercase leading-[0.95] tracking-tight text-chalk-100">
+            Complete payment
+          </h2>
+          <p className="mt-3 text-sm text-chalk-400">Final step to confirm your joining.</p>
 
-          <div className="space-y-6">
-            <div className="bg-green-50 border-2 border-green-200 rounded-lg p-6">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-lg font-semibold text-gray-800">Onboarding Fee</span>
-                <span className="text-3xl font-bold text-green-600">₹249</span>
+          <div className="mt-8 space-y-6">
+            <div className="rounded-[4px] border border-flood-500/40 bg-pitch-800/60 p-6">
+              <div className="mb-4 flex items-center justify-between">
+                <span className="nm-overline text-chalk-400">Onboarding fee</span>
+                <span className="font-mono text-3xl text-flood-500">
+                  <span className="text-chalk-400">₹</span>249
+                </span>
               </div>
-              <div className="text-sm text-gray-600 space-y-1">
-                <p>✓ Processing Fee: ₹149</p>
-                <p>✓ Digital Certificate: ₹100</p>
+              <div className="space-y-1 text-sm text-chalk-400">
+                <p>Processing fee: <Mono className="text-chalk-100">₹149</Mono></p>
+                <p>Digital certificate: <Mono className="text-chalk-100">₹100</Mono></p>
               </div>
             </div>
 
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <p className="text-sm text-yellow-800">
-                <strong>Note:</strong> This is a one-time payment. You will receive a digital joining letter and receipt after successful payment.
+            <div className="rounded-[4px] border border-pitchline bg-pitch-800/40 p-4">
+              <p className="text-sm text-chalk-400">
+                <span className="text-chalk-100">Note:</span> This is a one-time payment. You will receive a digital joining letter and receipt after successful payment.
               </p>
             </div>
 
             {/* Critical Payment Instructions */}
-            <div className="bg-blue-50 border-2 border-blue-400 rounded-lg p-4">
-              <h4 className="font-semibold text-blue-900 mb-3">🔐 Important Payment Instructions:</h4>
-              <ul className="text-sm text-blue-800 space-y-2 list-disc list-inside">
-                <li><strong>Do NOT close this window</strong> during or after payment</li>
-                <li><strong>Do NOT press the back button</strong> or refresh the page</li>
-                <li>Wait patiently for 10-30 seconds after payment</li>
-                <li><strong>Do NOT pay twice</strong> if you see an error - contact us first</li>
+            <div className="rounded-[4px] border border-flood-500/40 bg-pitch-800/60 p-4">
+              <h4 className="nm-overline mb-3 flex items-center gap-2 text-flood-500">
+                <AlertTriangle className="h-4 w-4" />
+                Important payment instructions
+              </h4>
+              <ul className="list-inside list-disc space-y-2 text-sm text-chalk-400">
+                <li><span className="text-chalk-100">Do NOT close this window</span> during or after payment</li>
+                <li><span className="text-chalk-100">Do NOT press the back button</span> or refresh the page</li>
+                <li>Wait patiently for 10–30 seconds after payment</li>
+                <li><span className="text-chalk-100">Do NOT pay twice</span> if you see an error — contact us first</li>
                 <li>Save your Razorpay transaction ID for reference</li>
               </ul>
             </div>
 
             <div className="flex gap-4">
-              <button
-                type="button"
-                onClick={() => setCurrentStep(2)}
-                disabled={paymentProcessing}
-                className="flex-1 bg-gray-200 text-gray-800 py-3 px-6 rounded-lg font-semibold hover:bg-gray-300 transition disabled:opacity-50"
-              >
-                ← Back
+              <button type="button" onClick={() => setCurrentStep(2)} disabled={paymentProcessing} className={`${nightGhostBtn} flex-1`}>
+                Back
               </button>
-              <button
-                type="button"
-                onClick={handlePayment}
-                disabled={paymentProcessing}
-                className="flex-1 bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-              >
+              <button type="button" onClick={handlePayment} disabled={paymentProcessing} className={`${nightPrimaryBtn} flex-1`}>
                 {paymentProcessing ? (
                   <>
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Processing...
+                    <Loader2 className="-ml-1 mr-2 h-5 w-5 animate-spin" />
+                    Processing…
                   </>
                 ) : (
-                  '💳 Pay ₹249 via Razorpay'
+                  'Pay ₹249 via Razorpay'
                 )}
               </button>
             </div>
