@@ -1,5 +1,6 @@
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import { NightClass } from '@/components/night/NightShell';
+import { ScrollIndicator } from '@/components/night/ScrollIndicator';
 import { SmoothScroll } from '@/components/landing/night-match/SmoothScroll';
 import { AmbientLayer } from '@/components/landing/night-match/AmbientLayer';
 import { HeroKickoff } from '@/components/landing/night-match/HeroKickoff';
@@ -29,6 +30,8 @@ export default async function Home() {
       <main className="relative min-h-screen bg-pitch-900">
         {/* dark theme scope for portals (account dropdown, toasts) */}
         <NightClass />
+        {/* scroll progress indicator (lime marker tracks scroll position) */}
+        <ScrollIndicator />
         {/* one persistent living layer behind every section (z-1; sections are z-2, slightly translucent) */}
         <AmbientLayer />
         <LandingHeader />

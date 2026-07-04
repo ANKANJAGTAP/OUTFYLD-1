@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { AmbientLayer } from '@/components/landing/night-match/AmbientLayer';
+import { ScrollIndicator } from '@/components/night/ScrollIndicator';
 
 /**
  * NightShell — wraps every Night Match product page.
@@ -60,6 +61,7 @@ export function NightShell({
   return (
     <div className={`nm-route-in relative min-h-screen bg-pitch-900 text-chalk-100 ${className}`}>
       <AmbientLayer intensity={ambient} />
+      <ScrollIndicator />
       <div className="relative z-[2]">{children}</div>
     </div>
   );
