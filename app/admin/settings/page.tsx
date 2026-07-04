@@ -3,13 +3,12 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Upload, Shield } from 'lucide-react';
+import { Loader2, Upload, Shield, ArrowLeft } from 'lucide-react';
 import Image from 'next/image';
+import { NightShell } from '@/components/night/NightShell';
+import { NightLoader } from '@/components/night/NightLoader';
+import { NightInput, nightCard, nightPrimaryBtn, StatusDot } from '@/components/night/ui';
+import { Reveal } from '@/components/landing/night-match/Reveal';
 
 export default function AdminSettingsPage() {
   const { user, initialLoading } = useAuth();
@@ -130,135 +129,166 @@ export default function AdminSettingsPage() {
 
   if (initialLoading || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-      </div>
+      <NightShell ambient={0.4}>
+        <div className="flex min-h-screen items-center justify-center">
+          <NightLoader label="Unlocking the club office…" />
+        </div>
+      </NightShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <Shield className="w-8 h-8 text-green-600" />
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Admin Settings</h1>
-              <p className="text-gray-600">Manage payment QR code for owner subscriptions</p>
-            </div>
+    <NightShell ambient={0.4}>
+      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 md:py-12 lg:px-8">
+        {/* ── masthead ── */}
+        <Reveal>
+          <button
+            onClick={() => router.push('/admin/dashboard')}
+            className="group mb-6 inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-400 transition-colors duration-200 ease-night hover:text-flood-500"
+          >
+            <ArrowLeft className="h-3.5 w-3.5 transition-transform duration-200 ease-night group-hover:-translate-x-1" />
+            Back to control room
+          </button>
+
+          <div>
+            <p className="nm-overline mb-3 flex items-center gap-2 text-flood-500">
+              <Shield className="h-4 w-4" />
+              Control room
+            </p>
+            <h1 className="nm-display-l text-chalk-100">Club settings</h1>
+            <p className="mt-2 text-sm text-chalk-400">
+              Manage payment QR code for owner subscriptions
+            </p>
           </div>
-          <Button variant="outline" onClick={() => router.push('/admin/dashboard')}>
-            Back to Dashboard
-          </Button>
-        </div>
+        </Reveal>
 
         {error && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
+          <div className="mt-6 rounded-[4px] border border-red-700/60 bg-red-950/40 px-4 py-3">
+            <p className="font-mono text-xs uppercase tracking-[0.12em] text-red-400">{error}</p>
+          </div>
         )}
 
         {success && (
-          <Alert className="mb-6 bg-green-50 border-green-200">
-            <AlertDescription className="text-green-800">{success}</AlertDescription>
-          </Alert>
+          <div className="mt-6 flex items-center gap-2 rounded-[4px] border border-flood-500/40 bg-pitch-700/80 px-4 py-3">
+            <StatusDot tone="lime" />
+            <p className="font-mono text-xs uppercase tracking-[0.12em] text-flood-500">{success}</p>
+          </div>
         )}
 
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="mt-8 grid gap-6 md:grid-cols-2">
           {/* Current QR Code */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Current Payment QR Code</CardTitle>
-              <CardDescription>
-                This QR code is shown to turf owners during subscription
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {currentQR ? (
-                <div className="relative w-full aspect-square border-2 border-gray-200 rounded-lg overflow-hidden">
-                  <Image
-                    src={currentQR}
-                    alt="Current Payment QR"
-                    fill
-                    className="object-contain p-4"
-                  />
-                </div>
-              ) : (
-                <div className="w-full aspect-square border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
-                  <p className="text-gray-500 text-center px-4">
-                    No QR code uploaded yet.<br />Upload one to get started.
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <Reveal delay={0.08}>
+            <div className={`${nightCard} overflow-hidden`}>
+              <div className="border-b border-pitchline/60 px-6 py-4">
+                <p className="nm-overline text-chalk-400">On the board</p>
+                <h2 className="mt-1 font-display text-xl uppercase tracking-tight text-chalk-100">
+                  Current payment QR
+                </h2>
+                <p className="mt-1 text-xs text-chalk-400">
+                  This QR code is shown to turf owners during subscription
+                </p>
+              </div>
+              <div className="p-6">
+                {currentQR ? (
+                  <div className="relative aspect-square w-full overflow-hidden rounded-[4px] border border-pitchline bg-chalk-100">
+                    <Image
+                      src={currentQR}
+                      alt="Current Payment QR"
+                      fill
+                      className="object-contain p-4"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex aspect-square w-full items-center justify-center rounded-[4px] border border-dashed border-pitchline">
+                    <p className="px-4 text-center font-mono text-xs uppercase tracking-[0.12em] text-chalk-400">
+                      No QR code uploaded yet.<br />Upload one to get started.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </Reveal>
 
           {/* Upload New QR Code */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Upload New QR Code</CardTitle>
-              <CardDescription>
-                Upload a new payment QR code image
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="qr-upload">Select QR Code Image</Label>
-                <Input
-                  id="qr-upload"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="cursor-pointer"
-                />
+          <Reveal delay={0.14}>
+            <div className={`${nightCard} overflow-hidden`}>
+              <div className="border-b border-pitchline/60 px-6 py-4">
+                <p className="nm-overline text-chalk-400">New season</p>
+                <h2 className="mt-1 font-display text-xl uppercase tracking-tight text-chalk-100">
+                  Upload new QR code
+                </h2>
+                <p className="mt-1 text-xs text-chalk-400">
+                  Upload a new payment QR code image
+                </p>
               </div>
-
-              {qrPreview && (
-                <div className="relative w-full aspect-square border-2 border-gray-200 rounded-lg overflow-hidden">
-                  <Image
-                    src={qrPreview}
-                    alt="QR Preview"
-                    fill
-                    className="object-contain p-4"
+              <div className="space-y-4 p-6">
+                <div className="space-y-2">
+                  <label htmlFor="qr-upload" className="nm-overline block text-chalk-400">
+                    Select QR code image
+                  </label>
+                  <NightInput
+                    id="qr-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="cursor-pointer file:mr-4 file:cursor-pointer file:rounded-[4px] file:border-0 file:bg-pitch-900 file:px-3 file:py-1 file:font-mono file:text-[10px] file:uppercase file:tracking-[0.12em] file:text-chalk-100"
                   />
                 </div>
-              )}
 
-              <Button 
-                onClick={handleSubmit} 
-                disabled={submitting || !qrImage}
-                className="w-full"
-              >
-                {submitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Uploading...
-                  </>
-                ) : (
-                  <>
-                    <Upload className="h-4 w-4 mr-2" />
-                    Upload QR Code
-                  </>
+                {qrPreview && (
+                  <div className="relative aspect-square w-full overflow-hidden rounded-[4px] border border-pitchline bg-chalk-100">
+                    <Image
+                      src={qrPreview}
+                      alt="QR Preview"
+                      fill
+                      className="object-contain p-4"
+                    />
+                  </div>
                 )}
-              </Button>
-            </CardContent>
-          </Card>
+
+                <button
+                  onClick={handleSubmit}
+                  disabled={submitting || !qrImage}
+                  className={`${nightPrimaryBtn} w-full`}
+                >
+                  {submitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-4 w-4" />
+                      Upload QR code
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </Reveal>
         </div>
 
         {/* Instructions */}
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>Instructions</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm text-gray-600">
-            <p>1. Generate a UPI QR code from your payment app (Google Pay, PhonePe, Paytm, etc.)</p>
-            <p>2. Save the QR code image to your device</p>
-            <p>3. Upload the image using the form above</p>
-            <p>4. Turf owners will see this QR code when selecting their subscription plan</p>
-            <p>5. Update this QR code anytime by uploading a new image</p>
-          </CardContent>
-        </Card>
+        <Reveal delay={0.18}>
+          <div className={`${nightCard} mt-6 px-6 py-5`}>
+            <p className="nm-overline text-flood-500">Match-day instructions</p>
+            <ol className="mt-4 space-y-2 text-sm leading-relaxed text-chalk-400">
+              {[
+                'Generate a UPI QR code from your payment app (Google Pay, PhonePe, Paytm, etc.)',
+                'Save the QR code image to your device',
+                'Upload the image using the form above',
+                'Turf owners will see this QR code when selecting their subscription plan',
+                'Update this QR code anytime by uploading a new image',
+              ].map((step, i) => (
+                <li key={i} className="flex gap-3">
+                  <span className="font-mono text-xs tabular-nums text-flood-500">{String(i + 1).padStart(2, '0')}</span>
+                  <span>{step}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </Reveal>
       </div>
-    </div>
+    </NightShell>
   );
 }
