@@ -27,7 +27,7 @@ interface PlayerStats {
   favoriteSpots: number;
 }
 
-export interface BookingItem {
+interface BookingItem {
   id: string;
   turfId: string;
   turfName: string;
@@ -52,7 +52,7 @@ const STATUS: Record<string, { label: string; tone: 'lime' | 'chalk' | 'red' }> 
 
 // ─── Fixture history row ────────────────────────────────────────────
 
-export function FixtureRow({ booking }: { booking: BookingItem }) {
+function FixtureRow({ booking }: { booking: BookingItem }) {
   const status = STATUS[booking.status] || STATUS.pending;
   const isCompleted =
     booking.status === 'completed' ||
