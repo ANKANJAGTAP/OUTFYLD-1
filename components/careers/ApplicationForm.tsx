@@ -2,14 +2,18 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft, Upload, CheckCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, Upload, CheckCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import {
+  NightInput,
+  NightTextarea,
+  nightField,
+  nightPrimaryBtn,
+  nightGhostBtn,
+  nightCard,
+  Mono,
+  StatusDot,
+} from '@/components/night/ui';
 
 interface Job {
   _id: string;
@@ -48,10 +52,22 @@ interface FormData {
   };
 }
 
+/** Mono-caps field label — the ledger voice. */
+function FieldLabel({ htmlFor, children }: { htmlFor?: string; children: React.ReactNode }) {
+  return (
+    <label
+      htmlFor={htmlFor}
+      className="mb-2 block font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-400"
+    >
+      {children}
+    </label>
+  );
+}
+
 export default function ApplicationForm({ job, onBack }: ApplicationFormProps) {
   const router = useRouter();
   const { user } = useAuth();
-  
+
   const [formData, setFormData] = useState<FormData>({
     fullName: user?.name || '',
     email: user?.email || '',
@@ -121,25 +137,25 @@ export default function ApplicationForm({ job, onBack }: ApplicationFormProps) {
       setError('Please enter a valid 10-digit phone number');
       return false;
     }
-    
+
     // Validate College (Required)
     if (!formData.college.trim()) {
       setError('Please enter your college/university name');
       return false;
     }
-    
+
     // Validate Branch (Required)
     if (!formData.branch.trim()) {
       setError('Please enter your branch/stream');
       return false;
     }
-    
+
     // Validate Graduation Year (Required)
     if (!formData.graduationYear.trim()) {
       setError('Please enter your year of graduation');
       return false;
     }
-    
+
     if (!resumeFile) {
       setError('Please upload your resume');
       return false;
@@ -182,7 +198,7 @@ export default function ApplicationForm({ job, onBack }: ApplicationFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -266,458 +282,465 @@ export default function ApplicationForm({ job, onBack }: ApplicationFormProps) {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <Card className="max-w-md w-full">
-          <CardHeader className="text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle className="w-10 h-10 text-green-600" />
-            </div>
-            <CardTitle className="text-2xl">Application Submitted!</CardTitle>
-            <CardDescription>
-              Thank you for applying to the {job.title} position
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="text-center">
-            <p className="text-gray-600 mb-4">
-              We&apos;ve received your application and will review it shortly. You&apos;ll receive a confirmation email at <strong>{formData.email}</strong>.
-            </p>
-            <p className="text-sm text-gray-500">
-              Redirecting you in a moment...
-            </p>
-          </CardContent>
-        </Card>
+      <div className="flex min-h-screen items-center justify-center bg-pitch-900 p-4">
+        <div className={`${nightCard} w-full max-w-md p-8 text-center`}>
+          <CheckCircle className="mx-auto mb-5 h-10 w-10 text-flood-500" />
+          <p className="nm-overline mb-3 text-flood-500">Team sheet updated</p>
+          <h2 className="font-display text-3xl uppercase tracking-tight text-chalk-100">
+            Application submitted
+          </h2>
+          <p className="mt-4 text-sm leading-relaxed text-chalk-400">
+            Thank you for applying to the {job.title} position. We&apos;ve received your
+            application and will review it shortly. You&apos;ll receive a confirmation email at{' '}
+            <span className="text-chalk-100">{formData.email}</span>.
+          </p>
+          <p className="mt-5 font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-400">
+            Redirecting you in a moment…
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white py-8 px-4">
-        <div className="max-w-3xl mx-auto">
+    <div className="min-h-screen bg-pitch-900">
+      {/* ── TRIAL PAPERWORK — form header ── */}
+      <div className="nm-grain relative border-b border-pitchline px-4 pb-10 pt-12 sm:pt-16">
+        <div className="mx-auto max-w-3xl">
           <button
             onClick={onBack}
-            className="text-green-100 hover:text-white mb-4 inline-flex items-center"
+            className="nm-overline mb-8 inline-flex items-center gap-2 text-chalk-400 transition-colors duration-200 ease-night hover:text-flood-500"
           >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Job Details
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Back to job details
           </button>
-          <h1 className="text-3xl font-bold">Apply for {job.title}</h1>
-          <p className="text-green-50 mt-2">{job.department} • {job.employmentType}</p>
+          <p className="nm-overline mb-4 text-flood-500">Join the squad</p>
+          <h1 className="font-display text-4xl uppercase tracking-tight text-chalk-100 sm:text-5xl">
+            Apply — {job.title}
+          </h1>
+          <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-400">
+            {job.department} / {job.employmentType}
+          </p>
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto px-4 py-8">
-        {/* User Status Alert */}
+      <div className="mx-auto max-w-3xl px-4 py-10">
+        {/* User Status Note */}
         {!user && (
-          <Alert className="mb-6 bg-blue-50 border-blue-200">
-            <AlertDescription className="text-blue-800">
-              💡 <strong>Tip:</strong> Sign in to save your application and track its status. You can also apply as a guest.
-            </AlertDescription>
-          </Alert>
+          <div className="mb-8 rounded-[4px] border border-pitchline bg-pitch-800/80 px-5 py-4">
+            <p className="text-sm text-chalk-400">
+              <span className="nm-overline mr-2 text-flood-500">Tip</span>
+              Sign in to save your application and track its status. You can also apply as a
+              guest.
+            </p>
+          </div>
         )}
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Application Form</CardTitle>
-            <CardDescription>
-              Fill in your details below. Fields marked with * are required.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Processing Warning */}
-              {(submitting || uploading) && (
-                <Alert className="bg-yellow-50 border-yellow-400 border-2">
-                  <div className="flex items-start gap-3">
-                    <Loader2 className="w-5 h-5 mt-0.5 text-yellow-600 animate-spin flex-shrink-0" />
-                    <div>
-                      <h3 className="font-semibold text-yellow-900 mb-1">⚠️ Please Wait - Do Not Close This Page!</h3>
-                      <p className="text-sm text-yellow-800">
-                        {uploading ? 'Uploading your resume...' : 'Submitting your application...'}
-                      </p>
-                      <p className="text-xs text-yellow-700 mt-1">
-                        This may take a few moments. Closing this page will cancel your submission.
-                      </p>
-                    </div>
-                  </div>
-                </Alert>
-              )}
+        <div className={`${nightCard} p-6 sm:p-8`}>
+          <p className="nm-overline text-flood-500">Trial paperwork</p>
+          <h2 className="mt-2 font-display text-2xl uppercase tracking-tight text-chalk-100">
+            Application form
+          </h2>
+          <p className="mt-2 text-sm text-chalk-400">
+            Fill in your details below. Fields marked with * are required.
+          </p>
 
-              {/* Error Alert */}
-              {error && (
-                <Alert variant="destructive">
-                  <AlertDescription>
-                    <div className="space-y-2">
-                      <p className="font-semibold">{error}</p>
-                      <div className="text-sm space-y-1">
-                        <p>What you can do:</p>
-                        <ul className="list-disc list-inside ml-2 space-y-1">
-                          <li>Check your internet connection</li>
-                          <li>Make sure your resume file is under 5MB</li>
-                          <li>Try submitting again</li>
-                          <li>If the problem persists, contact support at admin@outfyld.in</li>
-                        </ul>
-                      </div>
-                    </div>
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              {/* Personal Information */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Personal Information</h3>
-
-                <div>
-                  <Label htmlFor="fullName">Full Name *</Label>
-                  <Input
-                    id="fullName"
-                    name="fullName"
-                    type="text"
-                    value={formData.fullName}
-                    onChange={handleInputChange}
-                    placeholder="John Doe"
-                    required
-                  />
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="email">Email *</Label>
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      placeholder="john@example.com"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="phone">Phone Number *</Label>
-                    <Input
-                      id="phone"
-                      name="phone"
-                      type="tel"
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      placeholder="9876543210"
-                      maxLength={10}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="college">College/University *</Label>
-                    <Input
-                      id="college"
-                      name="college"
-                      type="text"
-                      value={formData.college}
-                      onChange={handleInputChange}
-                      placeholder="e.g., IIT Bombay, MIT, etc."
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="branch">Branch/Stream *</Label>
-                    <Input
-                      id="branch"
-                      name="branch"
-                      type="text"
-                      value={formData.branch}
-                      onChange={handleInputChange}
-                      placeholder="e.g., Computer Science, IT, Mechanical"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="graduationYear">Year of Graduation *</Label>
-                    <Input
-                      id="graduationYear"
-                      name="graduationYear"
-                      type="text"
-                      value={formData.graduationYear}
-                      onChange={handleInputChange}
-                      placeholder="e.g., 2025, 2026"
-                      required
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Resume Upload */}
-              <div>
-                <Label htmlFor="resume">Resume/CV * (PDF or DOCX, max 5MB)</Label>
-                <div className="mt-2">
-                  <label
-                    htmlFor="resume"
-                    className="flex items-center justify-center w-full px-4 py-6 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-green-500 transition-colors"
-                  >
-                    <div className="text-center">
-                      <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                      {resumeFile ? (
-                        <p className="text-sm text-green-600 font-medium">
-                          ✓ {resumeFile.name} ({(resumeFile.size / 1024).toFixed(0)} KB)
-                        </p>
-                      ) : (
-                        <p className="text-sm text-gray-600">
-                          Click to upload or drag and drop
-                        </p>
-                      )}
-                    </div>
-                  </label>
-                  <input
-                    id="resume"
-                    name="resume"
-                    type="file"
-                    accept=".pdf,.docx"
-                    onChange={handleFileChange}
-                    className="hidden"
-                  />
-                </div>
-              </div>
-
-              {/* Professional Links */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Professional Links</h3>
-
-                <div>
-                  <Label htmlFor="linkedinUrl">LinkedIn Profile *</Label>
-                  <Input
-                    id="linkedinUrl"
-                    name="linkedinUrl"
-                    type="url"
-                    value={formData.linkedinUrl}
-                    onChange={handleInputChange}
-                    placeholder="https://linkedin.com/in/yourprofile"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="githubUrl">GitHub Profile *</Label>
-                  <Input
-                    id="githubUrl"
-                    name="githubUrl"
-                    type="url"
-                    value={formData.githubUrl}
-                    onChange={handleInputChange}
-                    placeholder="https://github.com/yourusername"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="portfolioUrl">Portfolio Website (Optional)</Label>
-                  <Input
-                    id="portfolioUrl"
-                    name="portfolioUrl"
-                    type="url"
-                    value={formData.portfolioUrl}
-                    onChange={handleInputChange}
-                    placeholder="https://yourportfolio.com"
-                  />
-                </div>
-              </div>
-
-              {/* Cover Letter */}
-              <div>
-                <Label htmlFor="coverLetter">Cover Letter (Optional)</Label>
-                <Textarea
-                  id="coverLetter"
-                  name="coverLetter"
-                  value={formData.coverLetter}
-                  onChange={handleInputChange}
-                  placeholder="Tell us why you're interested in this role and what makes you a great fit..."
-                  rows={6}
-                  maxLength={2000}
-                />
-                <p className="text-sm text-gray-500 mt-1">
-                  {formData.coverLetter.length}/2000 characters
+          <form onSubmit={handleSubmit} className="mt-8 space-y-10">
+            {/* Processing Warning */}
+            {(submitting || uploading) && (
+              <div className="rounded-[4px] border border-flood-500/50 bg-pitch-800/80 px-5 py-4">
+                <p className="nm-overline flex items-center gap-2 text-flood-500">
+                  <StatusDot />
+                  Please wait — do not close this page
+                </p>
+                <p className="mt-2 text-sm text-chalk-100">
+                  {uploading ? 'Uploading your resume…' : 'Submitting your application…'}
+                </p>
+                <p className="mt-1 text-xs text-chalk-400">
+                  This may take a few moments. Closing this page will cancel your submission.
                 </p>
               </div>
+            )}
 
-              {/* Voluntary Disclosure (EEO) */}
-              <div className="border-t pt-6">
-                <h3 className="text-lg font-semibold mb-4">Voluntary Disclosure</h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  This information helps us track our diversity efforts and is kept confidential. It will not be used in hiring decisions.
+            {/* Error Alert */}
+            {error && (
+              <div className="rounded-[4px] border border-red-700/60 bg-pitch-800/80 px-5 py-4">
+                <p className="nm-overline flex items-center gap-2 text-red-500">
+                  <StatusDot tone="red" />
+                  Flag on the play
                 </p>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="gender">Gender *</Label>
-                    <select
-                      id="gender"
-                      name="gender"
-                      value={formData.gender}
-                      onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      required
-                    >
-                      <option value="">Select...</option>
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                      <option value="Other">Other</option>
-                      <option value="Prefer not to say">Prefer not to say</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="disabilityStatus">Disability Status *</Label>
-                    <select
-                      id="disabilityStatus"
-                      name="disabilityStatus"
-                      value={formData.disabilityStatus}
-                      onChange={(e) => setFormData({ ...formData, disabilityStatus: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      required
-                    >
-                      <option value="">Select...</option>
-                      <option value="Yes">Yes</option>
-                      <option value="No">No</option>
-                      <option value="Prefer not to say">Prefer not to say</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="veteranStatus">Veteran Status (Optional)</Label>
-                    <select
-                      id="veteranStatus"
-                      name="veteranStatus"
-                      value={formData.veteranStatus}
-                      onChange={(e) => setFormData({ ...formData, veteranStatus: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    >
-                      <option value="">Select...</option>
-                      <option value="Yes">Yes</option>
-                      <option value="No">No</option>
-                      <option value="Prefer not to say">Prefer not to say</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {/* Work Experience (Optional) */}
-              <div className="border-t pt-6">
-                <h3 className="text-lg font-semibold mb-4">Past Work Experience (Optional)</h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  Share your most recent or relevant work experience if you have any.
-                </p>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="workCompany">Company Name</Label>
-                    <Input
-                      id="workCompany"
-                      value={formData.workExperience.company}
-                      onChange={(e) => setFormData({ 
-                        ...formData, 
-                        workExperience: { ...formData.workExperience, company: e.target.value }
-                      })}
-                      placeholder="e.g., Google, Microsoft"
-                      maxLength={100}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="workRole">Role/Position</Label>
-                    <Input
-                      id="workRole"
-                      value={formData.workExperience.role}
-                      onChange={(e) => setFormData({ 
-                        ...formData, 
-                        workExperience: { ...formData.workExperience, role: e.target.value }
-                      })}
-                      placeholder="e.g., Software Engineer Intern"
-                      maxLength={100}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="workDuration">Duration</Label>
-                    <Input
-                      id="workDuration"
-                      value={formData.workExperience.duration}
-                      onChange={(e) => setFormData({ 
-                        ...formData, 
-                        workExperience: { ...formData.workExperience, duration: e.target.value }
-                      })}
-                      placeholder="e.g., 6 months, 1 year"
-                      maxLength={50}
-                    />
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <Label htmlFor="workDescription">Description</Label>
-                    <Textarea
-                      id="workDescription"
-                      value={formData.workExperience.description}
-                      onChange={(e) => setFormData({ 
-                        ...formData, 
-                        workExperience: { ...formData.workExperience, description: e.target.value }
-                      })}
-                      placeholder="Brief description of your responsibilities and achievements..."
-                      rows={4}
-                      maxLength={500}
-                    />
-                    <p className="text-sm text-gray-500 mt-1">
-                      {formData.workExperience.description.length}/500 characters
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Submit Button */}
-              <div className="space-y-4">
-                {/* Critical Warning Note */}
-                <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-4">
-                  <h4 className="font-semibold text-blue-900 mb-2">📌 Before You Submit:</h4>
-                  <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
-                    <li>Review all your information carefully</li>
-                    <li>Ensure your resume is attached and under 5MB</li>
-                    <li><strong>Do NOT close this window or refresh the page during submission</strong></li>
-                    <li>Wait for the confirmation message before leaving</li>
+                <p className="mt-2 text-sm text-chalk-100">{error}</p>
+                <div className="mt-3 text-xs text-chalk-400">
+                  <p>What you can do:</p>
+                  <ul className="mt-1 ml-2 list-inside list-disc space-y-1">
+                    <li>Check your internet connection</li>
+                    <li>Make sure your resume file is under 5MB</li>
+                    <li>Try submitting again</li>
+                    <li>If the problem persists, contact support at admin@outfyld.in</li>
                   </ul>
                 </div>
+              </div>
+            )}
 
-                <div className="flex gap-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={onBack}
-                    disabled={submitting}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={submitting || uploading}
-                    className="flex-1 bg-green-600 hover:bg-green-700"
-                  >
-                    {submitting ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        {uploading ? 'Uploading Resume...' : 'Submitting Application...'}
-                      </>
-                    ) : (
-                      'Submit Application'
-                    )}
-                  </Button>
+            {/* Personal Information */}
+            <div className="space-y-4">
+              <h3 className="border-b border-pitchline pb-3 font-display text-lg uppercase tracking-tight text-chalk-100">
+                Personal information
+              </h3>
+
+              <div>
+                <FieldLabel htmlFor="fullName">Full name *</FieldLabel>
+                <NightInput
+                  id="fullName"
+                  name="fullName"
+                  type="text"
+                  value={formData.fullName}
+                  onChange={handleInputChange}
+                  placeholder="John Doe"
+                  required
+                />
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <FieldLabel htmlFor="email">Email *</FieldLabel>
+                  <NightInput
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    placeholder="john@example.com"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <FieldLabel htmlFor="phone">Phone number *</FieldLabel>
+                  <NightInput
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    placeholder="9876543210"
+                    maxLength={10}
+                    required
+                  />
                 </div>
               </div>
-            </form>
-          </CardContent>
-        </Card>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <FieldLabel htmlFor="college">College/University *</FieldLabel>
+                  <NightInput
+                    id="college"
+                    name="college"
+                    type="text"
+                    value={formData.college}
+                    onChange={handleInputChange}
+                    placeholder="e.g., IIT Bombay, MIT, etc."
+                    required
+                  />
+                </div>
+
+                <div>
+                  <FieldLabel htmlFor="branch">Branch/Stream *</FieldLabel>
+                  <NightInput
+                    id="branch"
+                    name="branch"
+                    type="text"
+                    value={formData.branch}
+                    onChange={handleInputChange}
+                    placeholder="e.g., Computer Science, IT, Mechanical"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <FieldLabel htmlFor="graduationYear">Year of graduation *</FieldLabel>
+                  <NightInput
+                    id="graduationYear"
+                    name="graduationYear"
+                    type="text"
+                    value={formData.graduationYear}
+                    onChange={handleInputChange}
+                    placeholder="e.g., 2025, 2026"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Resume Upload */}
+            <div>
+              <FieldLabel htmlFor="resume">Resume/CV * (PDF or DOCX, max 5MB)</FieldLabel>
+              <div className="mt-2">
+                <label
+                  htmlFor="resume"
+                  className="flex w-full cursor-pointer items-center justify-center rounded-[4px] border border-dashed border-chalk-400/30 bg-pitch-800/50 px-4 py-8 transition-colors duration-200 ease-night hover:border-flood-500/60"
+                >
+                  <div className="text-center">
+                    <Upload className="mx-auto mb-3 h-6 w-6 text-chalk-400" />
+                    {resumeFile ? (
+                      <p className="flex items-center justify-center gap-2 font-mono text-xs text-flood-500">
+                        <StatusDot />
+                        {resumeFile.name} (<Mono>{(resumeFile.size / 1024).toFixed(0)}</Mono> KB)
+                      </p>
+                    ) : (
+                      <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-400">
+                        Click to upload or drag and drop
+                      </p>
+                    )}
+                  </div>
+                </label>
+                <input
+                  id="resume"
+                  name="resume"
+                  type="file"
+                  accept=".pdf,.docx"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+              </div>
+            </div>
+
+            {/* Professional Links */}
+            <div className="space-y-4">
+              <h3 className="border-b border-pitchline pb-3 font-display text-lg uppercase tracking-tight text-chalk-100">
+                Professional links
+              </h3>
+
+              <div>
+                <FieldLabel htmlFor="linkedinUrl">LinkedIn profile *</FieldLabel>
+                <NightInput
+                  id="linkedinUrl"
+                  name="linkedinUrl"
+                  type="url"
+                  value={formData.linkedinUrl}
+                  onChange={handleInputChange}
+                  placeholder="https://linkedin.com/in/yourprofile"
+                  required
+                />
+              </div>
+
+              <div>
+                <FieldLabel htmlFor="githubUrl">GitHub profile *</FieldLabel>
+                <NightInput
+                  id="githubUrl"
+                  name="githubUrl"
+                  type="url"
+                  value={formData.githubUrl}
+                  onChange={handleInputChange}
+                  placeholder="https://github.com/yourusername"
+                  required
+                />
+              </div>
+
+              <div>
+                <FieldLabel htmlFor="portfolioUrl">Portfolio website (Optional)</FieldLabel>
+                <NightInput
+                  id="portfolioUrl"
+                  name="portfolioUrl"
+                  type="url"
+                  value={formData.portfolioUrl}
+                  onChange={handleInputChange}
+                  placeholder="https://yourportfolio.com"
+                />
+              </div>
+            </div>
+
+            {/* Cover Letter */}
+            <div>
+              <FieldLabel htmlFor="coverLetter">Cover letter (Optional)</FieldLabel>
+              <NightTextarea
+                id="coverLetter"
+                name="coverLetter"
+                value={formData.coverLetter}
+                onChange={handleInputChange}
+                placeholder="Tell us why you're interested in this role and what makes you a great fit..."
+                rows={6}
+                maxLength={2000}
+              />
+              <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-400">
+                <Mono>{formData.coverLetter.length}</Mono>/2000 characters
+              </p>
+            </div>
+
+            {/* Voluntary Disclosure (EEO) */}
+            <div className="border-t border-pitchline pt-8">
+              <h3 className="font-display text-lg uppercase tracking-tight text-chalk-100">
+                Voluntary disclosure
+              </h3>
+              <p className="mb-4 mt-2 text-sm text-chalk-400">
+                This information helps us track our diversity efforts and is kept confidential. It will not be used in hiring decisions.
+              </p>
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <FieldLabel htmlFor="gender">Gender *</FieldLabel>
+                  <select
+                    id="gender"
+                    name="gender"
+                    value={formData.gender}
+                    onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                    className={nightField}
+                    required
+                  >
+                    <option value="">Select...</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                    <option value="Prefer not to say">Prefer not to say</option>
+                  </select>
+                </div>
+
+                <div>
+                  <FieldLabel htmlFor="disabilityStatus">Disability status *</FieldLabel>
+                  <select
+                    id="disabilityStatus"
+                    name="disabilityStatus"
+                    value={formData.disabilityStatus}
+                    onChange={(e) => setFormData({ ...formData, disabilityStatus: e.target.value })}
+                    className={nightField}
+                    required
+                  >
+                    <option value="">Select...</option>
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                    <option value="Prefer not to say">Prefer not to say</option>
+                  </select>
+                </div>
+
+                <div>
+                  <FieldLabel htmlFor="veteranStatus">Veteran status (Optional)</FieldLabel>
+                  <select
+                    id="veteranStatus"
+                    name="veteranStatus"
+                    value={formData.veteranStatus}
+                    onChange={(e) => setFormData({ ...formData, veteranStatus: e.target.value })}
+                    className={nightField}
+                  >
+                    <option value="">Select...</option>
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                    <option value="Prefer not to say">Prefer not to say</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Work Experience (Optional) */}
+            <div className="border-t border-pitchline pt-8">
+              <h3 className="font-display text-lg uppercase tracking-tight text-chalk-100">
+                Past work experience (Optional)
+              </h3>
+              <p className="mb-4 mt-2 text-sm text-chalk-400">
+                Share your most recent or relevant work experience if you have any.
+              </p>
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <FieldLabel htmlFor="workCompany">Company name</FieldLabel>
+                  <NightInput
+                    id="workCompany"
+                    value={formData.workExperience.company}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      workExperience: { ...formData.workExperience, company: e.target.value }
+                    })}
+                    placeholder="e.g., Google, Microsoft"
+                    maxLength={100}
+                  />
+                </div>
+
+                <div>
+                  <FieldLabel htmlFor="workRole">Role/Position</FieldLabel>
+                  <NightInput
+                    id="workRole"
+                    value={formData.workExperience.role}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      workExperience: { ...formData.workExperience, role: e.target.value }
+                    })}
+                    placeholder="e.g., Software Engineer Intern"
+                    maxLength={100}
+                  />
+                </div>
+
+                <div>
+                  <FieldLabel htmlFor="workDuration">Duration</FieldLabel>
+                  <NightInput
+                    id="workDuration"
+                    value={formData.workExperience.duration}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      workExperience: { ...formData.workExperience, duration: e.target.value }
+                    })}
+                    placeholder="e.g., 6 months, 1 year"
+                    maxLength={50}
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <FieldLabel htmlFor="workDescription">Description</FieldLabel>
+                  <NightTextarea
+                    id="workDescription"
+                    value={formData.workExperience.description}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      workExperience: { ...formData.workExperience, description: e.target.value }
+                    })}
+                    placeholder="Brief description of your responsibilities and achievements..."
+                    rows={4}
+                    maxLength={500}
+                  />
+                  <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-400">
+                    <Mono>{formData.workExperience.description.length}</Mono>/500 characters
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Submit Button */}
+            <div className="space-y-6">
+              {/* Critical Warning Note */}
+              <div className="rounded-[4px] border border-pitchline bg-pitch-800/80 px-5 py-4">
+                <p className="nm-overline text-flood-500">Before you submit</p>
+                <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-chalk-400">
+                  <li>Review all your information carefully</li>
+                  <li>Ensure your resume is attached and under 5MB</li>
+                  <li className="text-chalk-100">Do NOT close this window or refresh the page during submission</li>
+                  <li>Wait for the confirmation message before leaving</li>
+                </ul>
+              </div>
+
+              <div className="flex gap-4">
+                <button
+                  type="button"
+                  onClick={onBack}
+                  disabled={submitting}
+                  className={nightGhostBtn}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting || uploading}
+                  className={`${nightPrimaryBtn} flex-1`}
+                >
+                  {submitting
+                    ? uploading
+                      ? 'Uploading resume…'
+                      : 'Submitting application…'
+                    : 'Submit application'}
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

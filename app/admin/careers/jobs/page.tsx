@@ -3,13 +3,20 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { NightShell } from '@/components/night/NightShell';
+import { NightLoader } from '@/components/night/NightLoader';
+import {
+  nightCard,
+  nightPrimaryBtn,
+  nightGhostBtn,
+  NightInput,
+  NightTextarea,
+  Overline,
+  StatusDot,
+  Mono,
+} from '@/components/night/ui';
+import { Reveal } from '@/components/landing/night-match/Reveal';
+import { CountUp } from '@/components/landing/night-match/CountUp';
 import {
   Select,
   SelectContent,
@@ -33,7 +40,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Shield, Plus, Edit, Trash2, X, Calendar, MapPin, Briefcase, Users, ArrowLeft, Loader2 } from 'lucide-react';
+import { Plus, Edit, Trash2, MapPin, ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
 interface Job {
@@ -74,21 +81,35 @@ interface JobFormData {
   deadline: string;
 }
 
+// ─── Night Match micro-styles (presentation only) ────────────────────
+
+const fieldLabel =
+  'mb-1.5 block font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-400';
+const helperText = 'mt-1.5 font-mono text-[10px] tracking-[0.02em] text-chalk-400/70';
+const rowGhostBtn =
+  'inline-flex items-center gap-1.5 rounded-[4px] border border-chalk-400/30 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-chalk-100 transition-colors duration-200 ease-night hover:border-flood-500 hover:text-flood-500 disabled:pointer-events-none disabled:opacity-35';
+const rowDangerBtn =
+  'inline-flex items-center gap-1.5 rounded-[4px] border border-red-700/50 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-red-400 transition-colors duration-200 ease-night hover:border-red-500 hover:text-red-300 disabled:pointer-events-none disabled:opacity-35';
+const dangerBtn =
+  'nm-overline inline-flex items-center justify-center gap-2 rounded-[4px] border border-red-700/50 px-6 py-3.5 text-red-400 transition-colors duration-200 ease-night hover:border-red-500 hover:text-red-300 active:translate-y-[2px] disabled:pointer-events-none disabled:opacity-35';
+const squareTag =
+  'inline-flex items-center rounded-[2px] border border-pitchline px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em] text-chalk-400';
+
 export default function ManageJobsPage() {
   const { user, firebaseUser, initialLoading } = useAuth();
   const router = useRouter();
-  
+
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  
+
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  
+
   const [formData, setFormData] = useState<JobFormData>({
     title: '',
     department: '',
@@ -120,15 +141,15 @@ export default function ManageJobsPage() {
     try {
       setLoading(true);
       const token = await firebaseUser?.getIdToken();
-      
+
       const response = await fetch('/api/admin/careers/jobs', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
         setJobs(data.jobs);
       } else {
@@ -160,9 +181,9 @@ export default function ManageJobsPage() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    
+
     // Validation
-    if (!formData.title || !formData.department || !formData.location || 
+    if (!formData.title || !formData.department || !formData.location ||
         !formData.employmentType || !formData.description || !formData.requirements.trim() ||
         !formData.stipendAmount.trim() || !formData.stipendType.trim()) {
       setError('Please fill all required fields');
@@ -170,10 +191,10 @@ export default function ManageJobsPage() {
     }
 
     setSubmitting(true);
-    
+
     try {
       const token = await firebaseUser?.getIdToken();
-      
+
       const response = await fetch('/api/admin/careers/jobs', {
         method: 'POST',
         headers: {
@@ -196,9 +217,9 @@ export default function ManageJobsPage() {
           deadline: formData.deadline || undefined
         })
       });
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
         setSuccess('Job posted successfully!');
         setShowCreateDialog(false);
@@ -218,13 +239,13 @@ export default function ManageJobsPage() {
   const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedJob) return;
-    
+
     setError(null);
     setSubmitting(true);
-    
+
     try {
       const token = await firebaseUser?.getIdToken();
-      
+
       const response = await fetch(`/api/admin/careers/jobs/${selectedJob._id}`, {
         method: 'PUT',
         headers: {
@@ -247,9 +268,9 @@ export default function ManageJobsPage() {
           deadline: formData.deadline || null
         })
       });
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
         setSuccess('Job updated successfully!');
         setShowEditDialog(false);
@@ -269,22 +290,22 @@ export default function ManageJobsPage() {
 
   const handleDelete = async () => {
     if (!selectedJob) return;
-    
+
     setSubmitting(true);
     setError(null);
-    
+
     try {
       const token = await firebaseUser?.getIdToken();
-      
+
       const response = await fetch(`/api/admin/careers/jobs/${selectedJob._id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
         setSuccess('Job deleted successfully!');
         setShowDeleteDialog(false);
@@ -321,10 +342,10 @@ export default function ManageJobsPage() {
 
   const toggleJobStatus = async (job: Job) => {
     const newStatus = job.status === 'open' ? 'closed' : 'open';
-    
+
     try {
       const token = await firebaseUser?.getIdToken();
-      
+
       const response = await fetch(`/api/admin/careers/jobs/${job._id}`, {
         method: 'PUT',
         headers: {
@@ -333,9 +354,9 @@ export default function ManageJobsPage() {
         },
         body: JSON.stringify({ status: newStatus })
       });
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
         setSuccess(`Job ${newStatus === 'open' ? 'opened' : 'closed'} successfully!`);
         fetchJobs();
@@ -350,9 +371,11 @@ export default function ManageJobsPage() {
 
   if (initialLoading || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-green-600" />
-      </div>
+      <NightShell ambient={0.4}>
+        <div className="flex min-h-screen items-center justify-center">
+          <NightLoader label="Opening the scouting desk…" />
+        </div>
+      </NightShell>
     );
   }
 
@@ -360,159 +383,163 @@ export default function ManageJobsPage() {
     return null;
   }
 
+  const openCount = jobs.filter(j => j.status === 'open').length;
+  const closedCount = jobs.filter(j => j.status === 'closed').length;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-green-50 py-8 px-4">
-      <div className="max-w-7xl mx-auto">
+    <NightShell ambient={0.4}>
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <Link href="/admin/dashboard">
-              <Button variant="outline" size="sm">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Dashboard
-              </Button>
-            </Link>
-            <div className="flex items-center gap-2">
-              <div className="bg-green-100 p-2 rounded-lg">
-                <Briefcase className="w-6 h-6 text-green-600" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">Manage Job Postings</h1>
-                <p className="text-gray-600">Create, edit, and manage career opportunities</p>
-              </div>
+        <Reveal>
+          <div className="mb-10 flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
+            <div>
+              <Link
+                href="/admin/dashboard"
+                className="group mb-6 inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-chalk-400 transition-colors duration-200 ease-night hover:text-flood-500"
+              >
+                <ArrowLeft className="h-3.5 w-3.5 transition-transform duration-200 ease-night group-hover:-translate-x-1" />
+                Back to control room
+              </Link>
+              <p className="nm-overline mb-3 text-flood-500">Scouting desk</p>
+              <h1 className="font-display text-4xl uppercase leading-none tracking-tight text-chalk-100 sm:text-6xl">
+                Openings
+              </h1>
+              <p className="mt-3 max-w-md text-sm text-chalk-400">
+                Create, edit and manage the career postings on OutFyld.
+              </p>
             </div>
+            <button
+              onClick={() => { resetForm(); setShowCreateDialog(true); }}
+              className={`${nightPrimaryBtn} shrink-0 self-start lg:self-auto`}
+            >
+              <Plus className="h-4 w-4" />
+              Post new job
+            </button>
           </div>
-          <Button onClick={() => { resetForm(); setShowCreateDialog(true); }} size="lg">
-            <Plus className="w-5 h-5 mr-2" />
-            Post New Job
-          </Button>
-        </div>
+        </Reveal>
 
         {/* Alerts */}
         {error && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-        
-        {success && (
-          <Alert className="mb-6 bg-green-50 border-green-200">
-            <AlertDescription className="text-green-800">{success}</AlertDescription>
-          </Alert>
+          <div className="mb-6 rounded-[4px] border border-red-700/50 bg-red-950/30 px-4 py-3 text-sm text-red-300" role="alert">
+            {error}
+          </div>
         )}
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-gray-600">Total Jobs</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-gray-900">{jobs.length}</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-gray-600">Open Positions</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-green-600">
-                {jobs.filter(j => j.status === 'open').length}
+        {success && (
+          <div className="mb-6 rounded-[4px] border border-flood-500/40 bg-flood-500/10 px-4 py-3 text-sm text-flood-500" role="status">
+            {success}
+          </div>
+        )}
+
+        {/* Stats — scoreboard strip */}
+        <Reveal delay={0.08}>
+          <div className={`${nightCard} mb-8 grid grid-cols-3 gap-y-6 px-6 py-6 sm:divide-x sm:divide-pitchline/60`}>
+            {[
+              { label: 'Total postings', value: jobs.length, lime: false },
+              { label: 'Open positions', value: openCount, lime: true },
+              { label: 'Closed positions', value: closedCount, lime: false },
+            ].map((s, i) => (
+              <div key={s.label} className={i > 0 ? 'sm:pl-7' : ''}>
+                <div className={`font-mono text-3xl tabular-nums tracking-tight sm:text-4xl ${s.lime ? 'text-flood-500' : 'text-chalk-100'}`}>
+                  <CountUp value={s.value} />
+                </div>
+                <p className="mt-1.5 font-mono text-[9px] uppercase tracking-[0.16em] text-chalk-400">
+                  {s.label}
+                </p>
               </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-gray-600">Closed Positions</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-gray-600">
-                {jobs.filter(j => j.status === 'closed').length}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            ))}
+          </div>
+        </Reveal>
 
         {/* Jobs Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>All Job Postings</CardTitle>
-            <CardDescription>Manage all career opportunities posted on OutFyld</CardDescription>
-          </CardHeader>
-          <CardContent>
+        <Reveal delay={0.14}>
+          <div className={`${nightCard} overflow-hidden`}>
+            <div className="border-b border-pitchline/60 px-6 py-4">
+              <Overline>All job postings</Overline>
+              <p className="mt-1 text-xs text-chalk-400/80">
+                Every career opportunity posted on OutFyld.
+              </p>
+            </div>
             {jobs.length === 0 ? (
-              <div className="text-center py-12">
-                <Briefcase className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500 mb-4">No jobs posted yet</p>
-                <Button onClick={() => { resetForm(); setShowCreateDialog(true); }}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Post Your First Job
-                </Button>
+              <div className="px-6 py-16 text-center">
+                <h3 className="font-display text-2xl uppercase tracking-tight text-chalk-100">
+                  No postings on the board
+                </h3>
+                <p className="mx-auto mt-2 max-w-xs text-sm text-chalk-400">
+                  The scouting desk is quiet. Post the first opening.
+                </p>
+                <button
+                  onClick={() => { resetForm(); setShowCreateDialog(true); }}
+                  className={`${nightGhostBtn} mt-6`}
+                >
+                  <Plus className="h-4 w-4" />
+                  Post your first job
+                </button>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>Job Title</TableHead>
-                      <TableHead>Department</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Location</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Posted</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                    <TableRow className="border-pitchline/60 hover:bg-transparent">
+                      <TableHead className="font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-400">Job title</TableHead>
+                      <TableHead className="font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-400">Department</TableHead>
+                      <TableHead className="font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-400">Type</TableHead>
+                      <TableHead className="font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-400">Location</TableHead>
+                      <TableHead className="font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-400">Status</TableHead>
+                      <TableHead className="font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-400">Posted</TableHead>
+                      <TableHead className="text-right font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-400">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {jobs.map((job) => (
-                      <TableRow key={job._id}>
-                        <TableCell className="font-medium">{job.title}</TableCell>
+                      <TableRow
+                        key={job._id}
+                        className="border-pitchline/60 transition-colors duration-200 ease-night hover:bg-white/[0.03]"
+                      >
+                        <TableCell className="font-medium text-chalk-100">{job.title}</TableCell>
                         <TableCell>
-                          <Badge variant="outline">{job.department}</Badge>
+                          <span className={squareTag}>{job.department}</span>
                         </TableCell>
-                        <TableCell>{job.employmentType}</TableCell>
+                        <TableCell className="text-sm text-chalk-400">{job.employmentType}</TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-1 text-sm text-gray-600">
-                            <MapPin className="w-3 h-3" />
+                          <div className="flex items-center gap-1 text-sm text-chalk-400">
+                            <MapPin className="h-3 w-3" />
                             {job.location}
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge 
-                            variant={job.status === 'open' ? 'default' : 'secondary'}
-                            className={job.status === 'open' ? 'bg-green-600' : ''}
-                          >
+                          <span className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-400">
+                            <StatusDot tone={job.status === 'open' ? 'lime' : 'chalk'} />
                             {job.status}
-                          </Badge>
+                          </span>
                         </TableCell>
-                        <TableCell className="text-sm text-gray-600">
-                          {new Date(job.createdAt).toLocaleDateString()}
+                        <TableCell>
+                          <Mono className="text-sm text-chalk-400">
+                            {new Date(job.createdAt).toLocaleDateString()}
+                          </Mono>
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
+                            <button
                               onClick={() => toggleJobStatus(job)}
+                              className={rowGhostBtn}
                             >
                               {job.status === 'open' ? 'Close' : 'Open'}
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
+                            </button>
+                            <button
                               onClick={() => openEditDialog(job)}
+                              className={rowGhostBtn}
+                              aria-label={`Edit ${job.title}`}
                             >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
+                              <Edit className="h-4 w-4" />
+                            </button>
+                            <button
                               onClick={() => { setSelectedJob(job); setShowDeleteDialog(true); }}
+                              className={rowDangerBtn}
+                              aria-label={`Delete ${job.title}`}
                             >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                              <Trash2 className="h-4 w-4" />
+                            </button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -521,22 +548,24 @@ export default function ManageJobsPage() {
                 </Table>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </Reveal>
 
         {/* Create Job Dialog */}
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Post New Job</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="font-display text-2xl uppercase tracking-tight text-chalk-100">
+                Post new job
+              </DialogTitle>
+              <DialogDescription className="text-chalk-400">
                 Create a new job posting. It will be published immediately as &quot;Open&quot;.
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
-                <Label htmlFor="title">Job Title *</Label>
-                <Input
+                <label htmlFor="title" className={fieldLabel}>Job title *</label>
+                <NightInput
                   id="title"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
@@ -547,9 +576,9 @@ export default function ManageJobsPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="department">Department *</Label>
-                  <Select 
-                    value={formData.department} 
+                  <label htmlFor="department" className={fieldLabel}>Department *</label>
+                  <Select
+                    value={formData.department}
                     onValueChange={(value) => setFormData({ ...formData, department: value })}
                   >
                     <SelectTrigger>
@@ -564,9 +593,9 @@ export default function ManageJobsPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="employmentType">Employment Type *</Label>
-                  <Select 
-                    value={formData.employmentType} 
+                  <label htmlFor="employmentType" className={fieldLabel}>Employment type *</label>
+                  <Select
+                    value={formData.employmentType}
                     onValueChange={(value) => setFormData({ ...formData, employmentType: value })}
                   >
                     <SelectTrigger>
@@ -583,8 +612,8 @@ export default function ManageJobsPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="location">Location *</Label>
-                  <Input
+                  <label htmlFor="location" className={fieldLabel}>Location *</label>
+                  <NightInput
                     id="location"
                     value={formData.location}
                     onChange={(e) => setFormData({ ...formData, location: e.target.value })}
@@ -594,8 +623,8 @@ export default function ManageJobsPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="deadline">Application Deadline (Optional)</Label>
-                  <Input
+                  <label htmlFor="deadline" className={fieldLabel}>Application deadline (optional)</label>
+                  <NightInput
                     id="deadline"
                     type="date"
                     value={formData.deadline}
@@ -605,8 +634,8 @@ export default function ManageJobsPage() {
               </div>
 
               <div>
-                <Label htmlFor="description">Job Description *</Label>
-                <Textarea
+                <label htmlFor="description" className={fieldLabel}>Job description *</label>
+                <NightTextarea
                   id="description"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -617,8 +646,8 @@ export default function ManageJobsPage() {
               </div>
 
               <div>
-                <Label htmlFor="responsibilities">Responsibilities *</Label>
-                <Textarea
+                <label htmlFor="responsibilities" className={fieldLabel}>Responsibilities *</label>
+                <NightTextarea
                   id="responsibilities"
                   value={formData.responsibilities}
                   onChange={(e) => setFormData({ ...formData, responsibilities: e.target.value })}
@@ -626,13 +655,13 @@ export default function ManageJobsPage() {
                   rows={5}
                   required
                 />
-                <p className="text-xs text-gray-500 mt-1">Enter each responsibility on a new line</p>
+                <p className={helperText}>Enter each responsibility on a new line</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="stipendAmount">Stipend Amount *</Label>
-                  <Input
+                  <label htmlFor="stipendAmount" className={fieldLabel}>Stipend amount *</label>
+                  <NightInput
                     id="stipendAmount"
                     value={formData.stipendAmount}
                     onChange={(e) => setFormData({ ...formData, stipendAmount: e.target.value })}
@@ -641,8 +670,8 @@ export default function ManageJobsPage() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="stipendType">Stipend Type *</Label>
-                  <Input
+                  <label htmlFor="stipendType" className={fieldLabel}>Stipend type *</label>
+                  <NightInput
                     id="stipendType"
                     value={formData.stipendType}
                     onChange={(e) => setFormData({ ...formData, stipendType: e.target.value })}
@@ -653,19 +682,19 @@ export default function ManageJobsPage() {
               </div>
 
               <div>
-                <Label htmlFor="internshipYear">Internship Year (Optional)</Label>
-                <Input
+                <label htmlFor="internshipYear" className={fieldLabel}>Internship year (optional)</label>
+                <NightInput
                   id="internshipYear"
                   value={formData.internshipYear}
                   onChange={(e) => setFormData({ ...formData, internshipYear: e.target.value })}
                   placeholder="e.g., 2025, 2026"
                 />
-                <p className="text-xs text-gray-500 mt-1">Specify the year for which this internship is open</p>
+                <p className={helperText}>Specify the year for which this internship is open</p>
               </div>
 
               <div>
-                <Label htmlFor="requirements">Requirements (one per line) *</Label>
-                <Textarea
+                <label htmlFor="requirements" className={fieldLabel}>Requirements (one per line) *</label>
+                <NightTextarea
                   id="requirements"
                   value={formData.requirements}
                   onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
@@ -673,17 +702,21 @@ export default function ManageJobsPage() {
                   rows={6}
                   required
                 />
-                <p className="text-xs text-gray-500 mt-1">Enter each requirement on a new line</p>
+                <p className={helperText}>Enter each requirement on a new line</p>
               </div>
 
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setShowCreateDialog(false)}>
+                <button
+                  type="button"
+                  className={nightGhostBtn}
+                  onClick={() => setShowCreateDialog(false)}
+                >
                   Cancel
-                </Button>
-                <Button type="submit" disabled={submitting}>
-                  {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
-                  Post Job
-                </Button>
+                </button>
+                <button type="submit" disabled={submitting} className={nightPrimaryBtn}>
+                  {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                  Post job
+                </button>
               </DialogFooter>
             </form>
           </DialogContent>
@@ -691,17 +724,19 @@ export default function ManageJobsPage() {
 
         {/* Edit Job Dialog */}
         <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Edit Job Posting</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="font-display text-2xl uppercase tracking-tight text-chalk-100">
+                Edit job posting
+              </DialogTitle>
+              <DialogDescription className="text-chalk-400">
                 Update the job details. Changes will be reflected immediately.
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleEdit} className="space-y-4">
               <div>
-                <Label htmlFor="edit-title">Job Title *</Label>
-                <Input
+                <label htmlFor="edit-title" className={fieldLabel}>Job title *</label>
+                <NightInput
                   id="edit-title"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
@@ -711,9 +746,9 @@ export default function ManageJobsPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="edit-department">Department *</Label>
-                  <Select 
-                    value={formData.department} 
+                  <label htmlFor="edit-department" className={fieldLabel}>Department *</label>
+                  <Select
+                    value={formData.department}
                     onValueChange={(value) => setFormData({ ...formData, department: value })}
                   >
                     <SelectTrigger>
@@ -728,9 +763,9 @@ export default function ManageJobsPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="edit-employmentType">Employment Type *</Label>
-                  <Select 
-                    value={formData.employmentType} 
+                  <label htmlFor="edit-employmentType" className={fieldLabel}>Employment type *</label>
+                  <Select
+                    value={formData.employmentType}
                     onValueChange={(value) => setFormData({ ...formData, employmentType: value })}
                   >
                     <SelectTrigger>
@@ -747,8 +782,8 @@ export default function ManageJobsPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="edit-location">Location *</Label>
-                  <Input
+                  <label htmlFor="edit-location" className={fieldLabel}>Location *</label>
+                  <NightInput
                     id="edit-location"
                     value={formData.location}
                     onChange={(e) => setFormData({ ...formData, location: e.target.value })}
@@ -757,8 +792,8 @@ export default function ManageJobsPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="edit-deadline">Application Deadline (Optional)</Label>
-                  <Input
+                  <label htmlFor="edit-deadline" className={fieldLabel}>Application deadline (optional)</label>
+                  <NightInput
                     id="edit-deadline"
                     type="date"
                     value={formData.deadline}
@@ -768,8 +803,8 @@ export default function ManageJobsPage() {
               </div>
 
               <div>
-                <Label htmlFor="edit-description">Job Description *</Label>
-                <Textarea
+                <label htmlFor="edit-description" className={fieldLabel}>Job description *</label>
+                <NightTextarea
                   id="edit-description"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -779,21 +814,21 @@ export default function ManageJobsPage() {
               </div>
 
               <div>
-                <Label htmlFor="edit-responsibilities">Responsibilities *</Label>
-                <Textarea
+                <label htmlFor="edit-responsibilities" className={fieldLabel}>Responsibilities *</label>
+                <NightTextarea
                   id="edit-responsibilities"
                   value={formData.responsibilities}
                   onChange={(e) => setFormData({ ...formData, responsibilities: e.target.value })}
                   rows={5}
                   required
                 />
-                <p className="text-xs text-gray-500 mt-1">Enter each responsibility on a new line</p>
+                <p className={helperText}>Enter each responsibility on a new line</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="edit-stipendAmount">Stipend Amount *</Label>
-                  <Input
+                  <label htmlFor="edit-stipendAmount" className={fieldLabel}>Stipend amount *</label>
+                  <NightInput
                     id="edit-stipendAmount"
                     value={formData.stipendAmount}
                     onChange={(e) => setFormData({ ...formData, stipendAmount: e.target.value })}
@@ -802,8 +837,8 @@ export default function ManageJobsPage() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="edit-stipendType">Stipend Type *</Label>
-                  <Input
+                  <label htmlFor="edit-stipendType" className={fieldLabel}>Stipend type *</label>
+                  <NightInput
                     id="edit-stipendType"
                     value={formData.stipendType}
                     onChange={(e) => setFormData({ ...formData, stipendType: e.target.value })}
@@ -814,8 +849,8 @@ export default function ManageJobsPage() {
               </div>
 
               <div>
-                <Label htmlFor="edit-requirements">Requirements (one per line) *</Label>
-                <Textarea
+                <label htmlFor="edit-requirements" className={fieldLabel}>Requirements (one per line) *</label>
+                <NightTextarea
                   id="edit-requirements"
                   value={formData.requirements}
                   onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
@@ -825,13 +860,17 @@ export default function ManageJobsPage() {
               </div>
 
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setShowEditDialog(false)}>
+                <button
+                  type="button"
+                  className={nightGhostBtn}
+                  onClick={() => setShowEditDialog(false)}
+                >
                   Cancel
-                </Button>
-                <Button type="submit" disabled={submitting}>
-                  {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Edit className="w-4 h-4 mr-2" />}
-                  Update Job
-                </Button>
+                </button>
+                <button type="submit" disabled={submitting} className={nightPrimaryBtn}>
+                  {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Edit className="h-4 w-4" />}
+                  Update job
+                </button>
               </DialogFooter>
             </form>
           </DialogContent>
@@ -841,24 +880,26 @@ export default function ManageJobsPage() {
         <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Delete Job Posting</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="font-display text-2xl uppercase tracking-tight text-chalk-100">
+                Delete job posting
+              </DialogTitle>
+              <DialogDescription className="text-chalk-400">
                 Are you sure you want to delete &quot;{selectedJob?.title}&quot;?
                 This action cannot be undone.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+              <button className={nightGhostBtn} onClick={() => setShowDeleteDialog(false)}>
                 Cancel
-              </Button>
-              <Button variant="destructive" onClick={handleDelete} disabled={submitting}>
-                {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}
-                Delete Job
-              </Button>
+              </button>
+              <button className={dangerBtn} onClick={handleDelete} disabled={submitting}>
+                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                Delete job
+              </button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
-    </div>
+    </NightShell>
   );
 }

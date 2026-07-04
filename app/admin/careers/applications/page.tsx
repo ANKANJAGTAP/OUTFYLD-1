@@ -3,13 +3,21 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { NightShell } from '@/components/night/NightShell';
+import { NightLoader } from '@/components/night/NightLoader';
+import {
+  nightCard,
+  nightCardHover,
+  nightPrimaryBtn,
+  nightGhostBtn,
+  NightInput,
+  NightTextarea,
+  Overline,
+  StatusDot,
+  Mono,
+} from '@/components/night/ui';
+import { Reveal } from '@/components/landing/night-match/Reveal';
+import { CountUp } from '@/components/landing/night-match/CountUp';
 import {
   Select,
   SelectContent,
@@ -33,12 +41,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { 
-  FileText, 
-  ArrowLeft, 
-  Download, 
-  ExternalLink, 
-  Trash2, 
+import {
+  FileText,
+  ArrowLeft,
+  Download,
+  ExternalLink,
+  Trash2,
   Search,
   Filter,
   Loader2,
@@ -102,19 +110,62 @@ interface Application {
   offerLetterGeneratedAt?: string; // Track when offer was successfully sent
 }
 
+// ─── Night Match micro-styles (presentation only) ────────────────────
+
+const headerBtn =
+  'nm-overline inline-flex items-center justify-center gap-2 rounded-[4px] border border-chalk-400/30 px-4 py-2.5 text-chalk-100 transition-colors duration-200 ease-night hover:border-flood-500 hover:text-flood-500 disabled:pointer-events-none disabled:opacity-35';
+const rowGhostBtn =
+  'inline-flex items-center gap-1.5 rounded-[4px] border border-chalk-400/30 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-chalk-100 transition-colors duration-200 ease-night hover:border-flood-500 hover:text-flood-500 disabled:pointer-events-none disabled:opacity-35';
+const rowLimeBtn =
+  'inline-flex items-center gap-1.5 rounded-[4px] border border-flood-500/40 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-flood-500 transition-[border-color,box-shadow] duration-200 ease-night hover:border-flood-500 hover:shadow-flood disabled:pointer-events-none disabled:opacity-35';
+const rowDangerBtn =
+  'inline-flex items-center gap-1.5 rounded-[4px] border border-red-700/50 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-red-400 transition-colors duration-200 ease-night hover:border-red-500 hover:text-red-300 disabled:pointer-events-none disabled:opacity-35';
+const dangerBtn =
+  'nm-overline inline-flex items-center justify-center gap-2 rounded-[4px] border border-red-700/50 px-6 py-3.5 text-red-400 transition-colors duration-200 ease-night hover:border-red-500 hover:text-red-300 active:translate-y-[2px] disabled:pointer-events-none disabled:opacity-35';
+const tableHeadCell = 'font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-400';
+const squareTag =
+  'inline-flex items-center rounded-[2px] border border-pitchline px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em] text-chalk-400';
+const infoLabel = 'block font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-400';
+const fieldLabel = `mb-1.5 ${infoLabel}`;
+const limeUnderlineLink =
+  'inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.12em] text-flood-500 underline decoration-flood-500/40 underline-offset-4 transition-[text-decoration-color] duration-200 ease-night hover:decoration-flood-500';
+const statusLine =
+  'flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-400';
+
+// Status → dot tone + broadcast label (no pills, no emoji)
+const STATUS_META: Record<string, { label: string; tone: 'lime' | 'chalk' | 'red' }> = {
+  submitted: { label: 'Submitted', tone: 'chalk' },
+  under_review: { label: 'Under review', tone: 'chalk' },
+  shortlisted_email_sent: { label: 'Shortlisted', tone: 'lime' },
+  offer_sent: { label: 'Offer sent', tone: 'lime' },
+  offer_accepted: { label: 'Offer accepted', tone: 'lime' },
+  rejected: { label: 'Rejected', tone: 'red' },
+  hired: { label: 'Hired', tone: 'lime' },
+};
+
+function StatusText({ status, className = '' }: { status: string; className?: string }) {
+  const meta = STATUS_META[status] || { label: status.replace(/_/g, ' '), tone: 'chalk' as const };
+  return (
+    <span className={`${statusLine} ${className}`}>
+      <StatusDot tone={meta.tone} />
+      {meta.label}
+    </span>
+  );
+}
+
 export default function ManageApplicationsPage() {
   const { user, firebaseUser, initialLoading } = useAuth();
   const router = useRouter();
-  
+
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  
+
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  
+
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
@@ -124,19 +175,19 @@ export default function ManageApplicationsPage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [sendingEmail, setSendingEmail] = useState<string | null>(null); // Track which application is sending email
-  
+
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
   const [duplicatePositions, setDuplicatePositions] = useState<{id: string, title: string}[]>([]);
   const [selectedPosition, setSelectedPosition] = useState<string[]>([]);
   const [removingDuplicates, setRemovingDuplicates] = useState(false);
-  
+
   // Bulk email states
   const [showBulkShortlistDialog, setShowBulkShortlistDialog] = useState(false);
   const [showBulkOfferDialog, setShowBulkOfferDialog] = useState(false);
   const [bulkEmailProgress, setBulkEmailProgress] = useState({ current: 0, total: 0 });
   const [bulkEmailResults, setBulkEmailResults] = useState<{ success: number; failed: number; errors: string[] }>({ success: 0, failed: 0, errors: [] });
   const [isBulkSending, setIsBulkSending] = useState(false);
-  
+
   const [updateForm, setUpdateForm] = useState({
     status: '',
     adminNotes: ''
@@ -166,20 +217,20 @@ export default function ManageApplicationsPage() {
     try {
       setLoading(true);
       const token = await firebaseUser?.getIdToken();
-      
+
       let url = `/api/admin/careers/applications?limit=100&page=${currentPage}`;
       if (statusFilter !== 'all') {
         url += `&status=${statusFilter}`;
       }
-      
+
       const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
         setApplications(data.applications);
         setTotalCount(data.pagination?.total || data.applications.length);
@@ -197,13 +248,13 @@ export default function ManageApplicationsPage() {
   const handleUpdateStatus = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedApplication) return;
-    
+
     setError(null);
     setSubmitting(true);
-    
+
     try {
       const token = await firebaseUser?.getIdToken();
-      
+
       const response = await fetch(`/api/admin/careers/applications/${selectedApplication._id}`, {
         method: 'PUT',
         headers: {
@@ -215,9 +266,9 @@ export default function ManageApplicationsPage() {
           adminNotes: updateForm.adminNotes
         })
       });
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
         setSuccess('Application updated successfully!');
         setShowDetailDialog(false);
@@ -236,22 +287,22 @@ export default function ManageApplicationsPage() {
 
   const handleDelete = async () => {
     if (!selectedApplication) return;
-    
+
     setSubmitting(true);
     setError(null);
-    
+
     try {
       const token = await firebaseUser?.getIdToken();
-      
+
       const response = await fetch(`/api/admin/careers/applications/${selectedApplication._id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
         setSuccess('Application deleted successfully!');
         setShowDeleteDialog(false);
@@ -271,19 +322,19 @@ export default function ManageApplicationsPage() {
   const handleSendShortlistEmail = async (applicationId: string) => {
     setSendingEmail(applicationId);
     setError(null);
-    
+
     try {
       const token = await firebaseUser?.getIdToken();
-      
+
       const response = await fetch(`/api/admin/careers/applications/${applicationId}/send-shortlist`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
         setSuccess(data.message || 'Shortlist notification email sent successfully!');
         fetchApplications(); // Refresh the list
@@ -301,19 +352,19 @@ export default function ManageApplicationsPage() {
   const handleSendOfferEmail = async (applicationId: string) => {
     setSendingEmail(applicationId);
     setError(null);
-    
+
     try {
       const token = await firebaseUser?.getIdToken();
-      
+
       const response = await fetch(`/api/admin/careers/applications/${applicationId}/send-offer`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
         setSuccess(data.message || 'Offer letter email sent successfully!');
         fetchApplications(); // Refresh the list
@@ -332,17 +383,17 @@ export default function ManageApplicationsPage() {
     try {
       setError(null);
       setShowDuplicateDialog(true);
-      
+
       const token = await firebaseUser?.getIdToken();
-      
+
       const response = await fetch('/api/admin/careers/applications/duplicate-positions', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
         setDuplicatePositions(data.positions);
         if (data.positions.length === 0) {
@@ -368,9 +419,9 @@ export default function ManageApplicationsPage() {
     try {
       setRemovingDuplicates(true);
       setError(null);
-      
+
       const token = await firebaseUser?.getIdToken();
-      
+
       const response = await fetch('/api/admin/careers/applications/remove-duplicates', {
         method: 'POST',
         headers: {
@@ -381,9 +432,9 @@ export default function ManageApplicationsPage() {
           targetJobIds: selectedPosition
         })
       });
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
         setSuccess(`${data.message}`);
         setTimeout(() => setSuccess(null), 5000);
@@ -447,7 +498,7 @@ export default function ManageApplicationsPage() {
 
   const handleBulkOfferConfirm = () => {
     // Only include applications that are shortlisted but haven't had offer letters generated yet
-    const eligibleApps = applications.filter(app => 
+    const eligibleApps = applications.filter(app =>
       app.status === 'shortlisted_email_sent' && !app.offerLetterGeneratedAt
     );
     setBulkEmailProgress({ current: 0, total: eligibleApps.length });
@@ -458,7 +509,7 @@ export default function ManageApplicationsPage() {
   const handleBulkOffer = async () => {
     setIsBulkSending(true);
     // Only process applications that haven't had offer letters generated yet
-    const eligibleApps = applications.filter(app => 
+    const eligibleApps = applications.filter(app =>
       app.status === 'shortlisted_email_sent' && !app.offerLetterGeneratedAt
     );
     let successCount = 0;
@@ -499,18 +550,18 @@ export default function ManageApplicationsPage() {
   const handleExportCSV = async () => {
     try {
       const token = await firebaseUser?.getIdToken();
-      
+
       let url = '/api/admin/careers/applications/export';
       if (statusFilter !== 'all') {
         url += `?status=${statusFilter}`;
       }
-      
+
       const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       if (response.ok) {
         const blob = await response.blob();
         const downloadUrl = window.URL.createObjectURL(blob);
@@ -546,7 +597,7 @@ export default function ManageApplicationsPage() {
     try {
       setLoadingOtherApps(true);
       const token = await firebaseUser?.getIdToken();
-      
+
       const response = await fetch(`/api/admin/careers/applications?email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -569,33 +620,12 @@ export default function ManageApplicationsPage() {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'submitted':
-        return 'bg-blue-100 text-blue-700';
-      case 'under_review':
-        return 'bg-yellow-100 text-yellow-700';
-      case 'shortlisted_email_sent':
-        return 'bg-cyan-100 text-cyan-700';
-      case 'offer_sent':
-        return 'bg-green-100 text-green-700';
-      case 'offer_accepted':
-        return 'bg-emerald-100 text-emerald-700';
-      case 'rejected':
-        return 'bg-red-100 text-red-700';
-      case 'hired':
-        return 'bg-purple-100 text-purple-700';
-      default:
-        return 'bg-gray-100 text-gray-700';
-    }
-  };
-
   const getStatusLabel = (status: string) => {
     return status.replace('_', ' ').toUpperCase();
   };
 
   // Filter applications by search term
-  const filteredApplications = applications.filter(app => 
+  const filteredApplications = applications.filter(app =>
     app.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     app.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     app.jobId?.title?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -603,9 +633,11 @@ export default function ManageApplicationsPage() {
 
   if (initialLoading || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-green-600" />
-      </div>
+      <NightShell ambient={0.4}>
+        <div className="flex min-h-screen items-center justify-center">
+          <NightLoader label="Pulling the scouting files…" />
+        </div>
+      </NightShell>
     );
   }
 
@@ -613,143 +645,111 @@ export default function ManageApplicationsPage() {
     return null;
   }
 
+  const pendingOfferCount = applications.filter(app => app.status === 'shortlisted_email_sent' && !app.offerLetterGeneratedAt).length;
+
+  const statTiles: { label: string; value: number; filter: string; lime?: boolean }[] = [
+    { label: 'Total applications', value: totalCount, filter: 'all', lime: true },
+    { label: 'New', value: applications.filter(a => a.status === 'submitted').length, filter: 'submitted' },
+    { label: 'Under review', value: applications.filter(a => a.status === 'under_review').length, filter: 'under_review' },
+    { label: 'Shortlist sent', value: applications.filter(a => a.status === 'shortlisted_email_sent').length, filter: 'shortlisted_email_sent' },
+    { label: 'Offer sent', value: applications.filter(a => a.status === 'offer_sent').length, filter: 'offer_sent' },
+    { label: 'Hired', value: applications.filter(a => a.status === 'hired').length, filter: 'hired' },
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-green-50 py-8 px-4">
-      <div className="max-w-7xl mx-auto">
+    <NightShell ambient={0.4}>
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <Link href="/admin/dashboard">
-              <Button variant="outline" size="sm">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Dashboard
-              </Button>
-            </Link>
-            <div className="flex items-center gap-2">
-              <div className="bg-blue-100 p-2 rounded-lg">
-                <FileText className="w-6 h-6 text-blue-600" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">Job Applications</h1>
-                <p className="text-gray-600">Review and manage candidate applications</p>
-              </div>
+        <Reveal>
+          <div className="mb-10 flex flex-col justify-between gap-6 xl:flex-row xl:items-end">
+            <div>
+              <Link
+                href="/admin/dashboard"
+                className="group mb-6 inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-chalk-400 transition-colors duration-200 ease-night hover:text-flood-500"
+              >
+                <ArrowLeft className="h-3.5 w-3.5 transition-transform duration-200 ease-night group-hover:-translate-x-1" />
+                Back to control room
+              </Link>
+              <p className="nm-overline mb-3 text-flood-500">Scouting desk</p>
+              <h1 className="font-display text-4xl uppercase leading-none tracking-tight text-chalk-100 sm:text-6xl">
+                Applications
+              </h1>
+              <p className="mt-3 max-w-md text-sm text-chalk-400">
+                Review candidates, run the shortlist and send out the offers.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <button onClick={handleBulkShortlistConfirm} className={headerBtn}>
+                <Mail className="h-4 w-4" />
+                Send shortlist to all
+              </button>
+              <button
+                onClick={handleBulkOfferConfirm}
+                className={headerBtn}
+                disabled={pendingOfferCount === 0}
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                Send offer to all
+                {pendingOfferCount > 0 && (
+                  <Mono className="text-flood-500">({pendingOfferCount})</Mono>
+                )}
+              </button>
+              <button onClick={handleOpenDuplicateDialog} className={headerBtn}>
+                <Users className="h-4 w-4" />
+                Remove duplicates
+              </button>
+              <button onClick={handleExportCSV} className={headerBtn}>
+                <Download className="h-4 w-4" />
+                Export CSV
+              </button>
             </div>
           </div>
-          <div className="flex gap-3">
-            <Button onClick={handleBulkShortlistConfirm} variant="outline">
-              <Mail className="w-4 h-4 mr-2" />
-              Send Shortlist to All
-            </Button>
-            <Button 
-              onClick={handleBulkOfferConfirm} 
-              variant="outline"
-              disabled={applications.filter(app => app.status === 'shortlisted_email_sent' && !app.offerLetterGeneratedAt).length === 0}
-            >
-              <CheckCircle2 className="w-4 h-4 mr-2" />
-              Send Offer to All
-              {applications.filter(app => app.status === 'shortlisted_email_sent' && !app.offerLetterGeneratedAt).length > 0 && (
-                <span className="ml-1">({applications.filter(app => app.status === 'shortlisted_email_sent' && !app.offerLetterGeneratedAt).length})</span>
-              )}
-            </Button>
-            <Button onClick={handleOpenDuplicateDialog} variant="outline">
-              <Users className="w-4 h-4 mr-2" />
-              Remove Duplicates
-            </Button>
-            <Button onClick={handleExportCSV} variant="outline">
-              <Download className="w-4 h-4 mr-2" />
-              Export CSV
-            </Button>
-          </div>
-        </div>
+        </Reveal>
 
         {/* Alerts */}
         {error && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-        
-        {success && (
-          <Alert className="mb-6 bg-green-50 border-green-200">
-            <AlertDescription className="text-green-800">{success}</AlertDescription>
-          </Alert>
+          <div className="mb-6 rounded-[4px] border border-red-700/50 bg-red-950/30 px-4 py-3 text-sm text-red-300" role="alert">
+            {error}
+          </div>
         )}
 
-        {/* Stats & Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setStatusFilter('all')}>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-gray-600">Total Applications</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-gray-900">{totalCount}</div>
-            </CardContent>
-          </Card>
-          
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setStatusFilter('submitted')}>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-gray-600">New</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-blue-600">
-                {applications.filter(a => a.status === 'submitted').length}
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setStatusFilter('under_review')}>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-gray-600">Under Review</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-yellow-600">
-                {applications.filter(a => a.status === 'under_review').length}
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setStatusFilter('shortlisted_email_sent')}>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-gray-600">Shortlist Sent</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-cyan-600">
-                {applications.filter(a => a.status === 'shortlisted_email_sent').length}
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setStatusFilter('offer_sent')}>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-gray-600">Offer Sent</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-green-600">
-                {applications.filter(a => a.status === 'offer_sent').length}
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setStatusFilter('hired')}>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-gray-600">Hired</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-purple-600">
-                {applications.filter(a => a.status === 'hired').length}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        {success && (
+          <div className="mb-6 rounded-[4px] border border-flood-500/40 bg-flood-500/10 px-4 py-3 text-sm text-flood-500" role="status">
+            {success}
+          </div>
+        )}
+
+        {/* Stats — clickable scoreboard filters */}
+        <Reveal delay={0.08}>
+          <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
+            {statTiles.map((tile) => (
+              <button
+                key={tile.filter}
+                type="button"
+                onClick={() => setStatusFilter(tile.filter)}
+                className={`${nightCard} ${nightCardHover} cursor-pointer px-5 py-4 text-left ${
+                  statusFilter === tile.filter ? 'border-flood-500/60 shadow-flood' : ''
+                }`}
+              >
+                <div className={`font-mono text-3xl tabular-nums tracking-tight ${tile.lime ? 'text-flood-500' : 'text-chalk-100'}`}>
+                  <CountUp value={tile.value} />
+                </div>
+                <p className="mt-1.5 font-mono text-[9px] uppercase tracking-[0.16em] text-chalk-400">
+                  {tile.label}
+                </p>
+              </button>
+            ))}
+          </div>
+        </Reveal>
 
         {/* Search & Filters */}
-        <Card className="mb-6">
-          <CardContent className="pt-6">
-            <div className="flex flex-col md:flex-row gap-4">
+        <Reveal delay={0.12}>
+          <div className={`${nightCard} mb-6 px-5 py-5`}>
+            <div className="flex flex-col gap-4 md:flex-row">
               <div className="flex-1">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <Input
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-chalk-400" />
+                  <NightInput
                     placeholder="Search by name, email, or job title..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -760,7 +760,7 @@ export default function ManageApplicationsPage() {
               <div className="w-full md:w-64">
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger>
-                    <Filter className="w-4 h-4 mr-2" />
+                    <Filter className="mr-2 h-4 w-4" />
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -776,127 +776,139 @@ export default function ManageApplicationsPage() {
                 </Select>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </Reveal>
 
         {/* Applications Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Applications ({filteredApplications.length})</CardTitle>
-            <CardDescription>
-              {statusFilter !== 'all' && `Filtered by: ${getStatusLabel(statusFilter)}`}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+        <Reveal delay={0.16}>
+          <div className={`${nightCard} overflow-hidden`}>
+            <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-pitchline/60 px-6 py-4">
+              <Overline>
+                Applications
+                <Mono className="text-chalk-100">({filteredApplications.length})</Mono>
+              </Overline>
+              {statusFilter !== 'all' && (
+                <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-flood-500">
+                  Filtered by: {getStatusLabel(statusFilter)}
+                </span>
+              )}
+            </div>
             {filteredApplications.length === 0 ? (
-              <div className="text-center py-12">
-                <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500">No applications found</p>
+              <div className="px-6 py-16 text-center">
+                <h3 className="font-display text-2xl uppercase tracking-tight text-chalk-100">
+                  No applications found
+                </h3>
+                <p className="mx-auto mt-2 max-w-xs text-sm text-chalk-400">
+                  Nothing in the scouting files for this view.
+                </p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>Applicant</TableHead>
-                      <TableHead>Job Title</TableHead>
-                      <TableHead>Department</TableHead>
-                      <TableHead>Applied On</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                    <TableRow className="border-pitchline/60 hover:bg-transparent">
+                      <TableHead className={tableHeadCell}>Applicant</TableHead>
+                      <TableHead className={tableHeadCell}>Job title</TableHead>
+                      <TableHead className={tableHeadCell}>Department</TableHead>
+                      <TableHead className={tableHeadCell}>Applied on</TableHead>
+                      <TableHead className={tableHeadCell}>Status</TableHead>
+                      <TableHead className={`${tableHeadCell} text-right`}>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredApplications.map((application) => (
-                      <TableRow key={application._id}>
+                      <TableRow
+                        key={application._id}
+                        className="border-pitchline/60 transition-colors duration-200 ease-night hover:bg-white/[0.03]"
+                      >
                         <TableCell>
                           <div>
-                            <div className="font-medium">{application.fullName}</div>
-                            <div className="text-sm text-gray-500">{application.email}</div>
+                            <div className="font-medium text-chalk-100">{application.fullName}</div>
+                            <div className="text-sm text-chalk-400">{application.email}</div>
                           </div>
                         </TableCell>
                         <TableCell>
                           <div>
-                            <div className="font-medium">{application.jobId?.title || 'N/A'}</div>
-                            <div className="text-sm text-gray-500">{application.jobId?.employmentType}</div>
+                            <div className="font-medium text-chalk-100">{application.jobId?.title || 'N/A'}</div>
+                            <div className="text-sm text-chalk-400">{application.jobId?.employmentType}</div>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline">{application.jobId?.department}</Badge>
-                        </TableCell>
-                        <TableCell className="text-sm text-gray-600">
-                          <div>{format(new Date(application.appliedDate), 'dd MMM yyyy')}</div>
-                          <div className="text-xs text-gray-500">{format(new Date(application.appliedDate), 'HH:mm')}</div>
+                          <span className={squareTag}>{application.jobId?.department}</span>
                         </TableCell>
                         <TableCell>
-                          <div className="flex flex-col gap-1">
-                            <Badge className={getStatusColor(application.status)}>
-                              {getStatusLabel(application.status)}
-                            </Badge>
+                          <Mono className="block text-sm text-chalk-100">
+                            {format(new Date(application.appliedDate), 'dd MMM yyyy')}
+                          </Mono>
+                          <Mono className="text-xs text-chalk-400">
+                            {format(new Date(application.appliedDate), 'HH:mm')}
+                          </Mono>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col gap-1.5">
+                            <StatusText status={application.status} />
                             {application.status === 'offer_accepted' && (
-                              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">
-                                ✓ Offer Accepted
-                              </Badge>
+                              <span className="flex items-center gap-2 font-mono text-[9px] uppercase tracking-[0.14em] text-flood-500">
+                                <StatusDot tone="lime" />
+                                Offer accepted
+                              </span>
                             )}
                             {application.status === 'hired' && application.paymentStatus === 'completed' && (
-                              <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-300">
-                                ✓ Payment Completed
-                              </Badge>
+                              <span className="flex items-center gap-2 font-mono text-[9px] uppercase tracking-[0.14em] text-flood-500">
+                                <StatusDot tone="lime" />
+                                Payment completed
+                              </span>
                             )}
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-2 flex-wrap">
+                          <div className="flex flex-wrap items-center justify-end gap-2">
                             {/* Send Shortlist Email Button - visible if not yet shortlisted */}
                             {!['shortlisted_email_sent', 'offer_sent', 'offer_accepted', 'hired'].includes(application.status) && (
-                              <Button
-                                variant="outline"
-                                size="sm"
+                              <button
                                 onClick={() => handleSendShortlistEmail(application._id)}
                                 disabled={sendingEmail === application._id}
-                                className="bg-cyan-50 border-cyan-300 hover:bg-cyan-100 text-cyan-700"
+                                className={rowLimeBtn}
                               >
                                 {sendingEmail === application._id ? (
-                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                  <Loader2 className="h-4 w-4 animate-spin" />
                                 ) : (
-                                  <Mail className="w-4 h-4" />
+                                  <Mail className="h-4 w-4" />
                                 )}
-                                <span className="ml-1">Shortlist</span>
-                              </Button>
+                                Shortlist
+                              </button>
                             )}
-                            
+
                             {/* Send Offer Letter Button - visible only for 'shortlisted_email_sent' status */}
                             {application.status === 'shortlisted_email_sent' && (
-                              <Button
-                                variant="outline"
-                                size="sm"
+                              <button
                                 onClick={() => handleSendOfferEmail(application._id)}
                                 disabled={sendingEmail === application._id}
-                                className="bg-green-50 border-green-300 hover:bg-green-100 text-green-700"
+                                className={rowLimeBtn}
                               >
                                 {sendingEmail === application._id ? (
-                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                  <Loader2 className="h-4 w-4 animate-spin" />
                                 ) : (
-                                  <CheckCircle2 className="w-4 h-4" />
+                                  <CheckCircle2 className="h-4 w-4" />
                                 )}
-                                <span className="ml-1">Send Offer</span>
-                              </Button>
+                                Send offer
+                              </button>
                             )}
-                            
-                            <Button
-                              variant="outline"
-                              size="sm"
+
+                            <button
                               onClick={() => openDetailDialog(application)}
+                              className={rowGhostBtn}
+                              aria-label={`View application from ${application.fullName}`}
                             >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
+                              <Eye className="h-4 w-4" />
+                            </button>
+                            <button
                               onClick={() => { setSelectedApplication(application); setShowDeleteDialog(true); }}
+                              className={rowDangerBtn}
+                              aria-label={`Delete application from ${application.fullName}`}
                             >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                              <Trash2 className="h-4 w-4" />
+                            </button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -905,124 +917,130 @@ export default function ManageApplicationsPage() {
                 </Table>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </Reveal>
 
         {/* Pagination */}
         {!loading && totalPages > 1 && (
-          <Card className="mt-6">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-600">
-                  Showing {applications.length > 0 ? ((currentPage - 1) * 100) + 1 : 0} to {Math.min(currentPage * 100, totalCount)} of {totalCount} applications
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setCurrentPage(prev => Math.max(1, prev - 1));
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                    disabled={currentPage === 1}
-                  >
-                    Previous
-                  </Button>
-                  
-                  <div className="flex gap-1">
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      let pageNum: number;
-                      if (totalPages <= 5) {
-                        pageNum = i + 1;
-                      } else if (currentPage <= 3) {
-                        pageNum = i + 1;
-                      } else if (currentPage >= totalPages - 2) {
-                        pageNum = totalPages - 4 + i;
-                      } else {
-                        pageNum = currentPage - 2 + i;
-                      }
-                      
-                      return (
-                        <Button
-                          key={pageNum}
-                          variant={currentPage === pageNum ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => {
-                            setCurrentPage(pageNum);
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                          }}
-                          className="w-10"
-                        >
-                          {pageNum}
-                        </Button>
-                      );
-                    })}
-                  </div>
-                  
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setCurrentPage(prev => Math.min(totalPages, prev + 1));
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                    disabled={currentPage === totalPages}
-                  >
-                    Next
-                  </Button>
-                </div>
+          <div className={`${nightCard} mt-6 px-6 py-4`}>
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-chalk-400">
+                Showing <Mono className="text-chalk-100">{applications.length > 0 ? ((currentPage - 1) * 100) + 1 : 0}</Mono> to{' '}
+                <Mono className="text-chalk-100">{Math.min(currentPage * 100, totalCount)}</Mono> of{' '}
+                <Mono className="text-chalk-100">{totalCount}</Mono> applications
               </div>
-            </CardContent>
-          </Card>
+              <div className="flex items-center gap-2">
+                <button
+                  className={rowGhostBtn}
+                  onClick={() => {
+                    setCurrentPage(prev => Math.max(1, prev - 1));
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </button>
+
+                <div className="flex gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum: number;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => {
+                          setCurrentPage(pageNum);
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        className={`inline-flex h-8 w-10 items-center justify-center rounded-[4px] font-mono text-[11px] tabular-nums transition-colors duration-200 ease-night ${
+                          currentPage === pageNum
+                            ? 'bg-flood-500 text-pitch-900'
+                            : 'border border-chalk-400/30 text-chalk-100 hover:border-flood-500 hover:text-flood-500'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <button
+                  className={rowGhostBtn}
+                  onClick={() => {
+                    setCurrentPage(prev => Math.min(totalPages, prev + 1));
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Application Detail Dialog */}
         <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Application Details</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="font-display text-2xl uppercase tracking-tight text-chalk-100">
+                Application details
+              </DialogTitle>
+              <DialogDescription className="text-chalk-400">
                 Review applicant information and update status
               </DialogDescription>
             </DialogHeader>
-            
+
             {selectedApplication && (
               <div className="space-y-6">
                 {/* Job Info */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="font-semibold mb-2">Applied For</h3>
-                  <p className="text-lg font-medium">{selectedApplication.jobId?.title}</p>
-                  <div className="flex gap-2 mt-2">
-                    <Badge>{selectedApplication.jobId?.department}</Badge>
-                    <Badge variant="outline">{selectedApplication.jobId?.employmentType}</Badge>
+                <div className="rounded-[4px] border border-pitchline bg-pitch-800/60 p-4">
+                  <span className={infoLabel}>Applied for</span>
+                  <p className="mt-1 font-display text-xl uppercase tracking-tight text-chalk-100">
+                    {selectedApplication.jobId?.title}
+                  </p>
+                  <div className="mt-2 flex gap-2">
+                    <span className={squareTag}>{selectedApplication.jobId?.department}</span>
+                    <span className={squareTag}>{selectedApplication.jobId?.employmentType}</span>
                   </div>
                 </div>
 
                 {/* Personal Info */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-gray-600">Full Name</Label>
-                    <p className="font-medium">{selectedApplication.fullName}</p>
+                    <span className={infoLabel}>Full name</span>
+                    <p className="mt-1 font-medium text-chalk-100">{selectedApplication.fullName}</p>
                   </div>
                   <div>
-                    <Label className="text-gray-600">Email</Label>
-                    <div className="flex items-center gap-1">
-                      <Mail className="w-3 h-3 text-gray-400" />
-                      <p className="font-medium">{selectedApplication.email}</p>
+                    <span className={infoLabel}>Email</span>
+                    <div className="mt-1 flex items-center gap-1.5">
+                      <Mail className="h-3 w-3 text-chalk-400" />
+                      <p className="font-medium text-chalk-100">{selectedApplication.email}</p>
                     </div>
                   </div>
                   <div>
-                    <Label className="text-gray-600">Phone</Label>
-                    <div className="flex items-center gap-1">
-                      <Phone className="w-3 h-3 text-gray-400" />
-                      <p className="font-medium">{selectedApplication.phone}</p>
+                    <span className={infoLabel}>Phone</span>
+                    <div className="mt-1 flex items-center gap-1.5">
+                      <Phone className="h-3 w-3 text-chalk-400" />
+                      <Mono className="font-medium text-chalk-100">{selectedApplication.phone}</Mono>
                     </div>
                   </div>
                   <div>
-                    <Label className="text-gray-600">Applied On</Label>
-                    <div className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3 text-gray-400" />
-                      <p className="font-medium">{format(new Date(selectedApplication.appliedDate), 'dd MMM yyyy, HH:mm')}</p>
+                    <span className={infoLabel}>Applied on</span>
+                    <div className="mt-1 flex items-center gap-1.5">
+                      <Calendar className="h-3 w-3 text-chalk-400" />
+                      <Mono className="font-medium text-chalk-100">
+                        {format(new Date(selectedApplication.appliedDate), 'dd MMM yyyy, HH:mm')}
+                      </Mono>
                     </div>
                   </div>
                 </div>
@@ -1032,19 +1050,19 @@ export default function ManageApplicationsPage() {
                   <div className="grid grid-cols-2 gap-4">
                     {selectedApplication.college && (
                       <div>
-                        <Label className="text-gray-600">College/University</Label>
-                        <div className="flex items-center gap-1">
-                          <GraduationCap className="w-3 h-3 text-gray-400" />
-                          <p className="font-medium">{selectedApplication.college}</p>
+                        <span className={infoLabel}>College/University</span>
+                        <div className="mt-1 flex items-center gap-1.5">
+                          <GraduationCap className="h-3 w-3 text-chalk-400" />
+                          <p className="font-medium text-chalk-100">{selectedApplication.college}</p>
                         </div>
                       </div>
                     )}
                     {selectedApplication.availability && (
                       <div>
-                        <Label className="text-gray-600">Availability</Label>
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-3 h-3 text-gray-400" />
-                          <p className="font-medium">{selectedApplication.availability}</p>
+                        <span className={infoLabel}>Availability</span>
+                        <div className="mt-1 flex items-center gap-1.5">
+                          <Clock className="h-3 w-3 text-chalk-400" />
+                          <p className="font-medium text-chalk-100">{selectedApplication.availability}</p>
                         </div>
                       </div>
                     )}
@@ -1053,38 +1071,38 @@ export default function ManageApplicationsPage() {
 
                 {/* Links */}
                 <div className="space-y-2">
-                  <Label className="text-gray-600">Professional Links</Label>
-                  <div className="flex flex-wrap gap-2">
-                    <a 
-                      href={selectedApplication.linkedinUrl} 
-                      target="_blank" 
+                  <span className={infoLabel}>Professional links</span>
+                  <div className="flex flex-wrap gap-4">
+                    <a
+                      href={selectedApplication.linkedinUrl}
+                      target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-blue-600 hover:underline text-sm"
+                      className={limeUnderlineLink}
                     >
-                      <Linkedin className="w-4 h-4" />
+                      <Linkedin className="h-4 w-4" />
                       LinkedIn
-                      <ExternalLink className="w-3 h-3" />
+                      <ExternalLink className="h-3 w-3" />
                     </a>
-                    <a 
-                      href={selectedApplication.githubUrl} 
-                      target="_blank" 
+                    <a
+                      href={selectedApplication.githubUrl}
+                      target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-gray-700 hover:underline text-sm"
+                      className={limeUnderlineLink}
                     >
-                      <Github className="w-4 h-4" />
+                      <Github className="h-4 w-4" />
                       GitHub
-                      <ExternalLink className="w-3 h-3" />
+                      <ExternalLink className="h-3 w-3" />
                     </a>
                     {selectedApplication.portfolioUrl && (
-                      <a 
-                        href={selectedApplication.portfolioUrl} 
-                        target="_blank" 
+                      <a
+                        href={selectedApplication.portfolioUrl}
+                        target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-purple-600 hover:underline text-sm"
+                        className={limeUnderlineLink}
                       >
-                        <Globe className="w-4 h-4" />
+                        <Globe className="h-4 w-4" />
                         Portfolio
-                        <ExternalLink className="w-3 h-3" />
+                        <ExternalLink className="h-3 w-3" />
                       </a>
                     )}
                   </div>
@@ -1092,83 +1110,63 @@ export default function ManageApplicationsPage() {
 
                 {/* Other Applications by Same Candidate */}
                 {loadingOtherApps ? (
-                  <div className="flex items-center justify-center p-4 bg-gray-50 rounded-lg">
-                    <Loader2 className="w-5 h-5 animate-spin text-gray-400 mr-2" />
-                    <span className="text-sm text-gray-600">Loading other applications...</span>
+                  <div className="flex items-center justify-center rounded-[4px] border border-pitchline bg-pitch-800/60 p-4">
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin text-chalk-400" />
+                    <span className="text-sm text-chalk-400">Loading other applications...</span>
                   </div>
                 ) : otherApplications.length > 0 && (
-                  <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
-                    <h3 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
-                      <FileText className="w-5 h-5" />
+                  <div className="rounded-[4px] border border-flood-500/30 bg-pitch-800/60 p-4">
+                    <p className="nm-overline mb-3 flex items-center gap-2 text-flood-500">
+                      <FileText className="h-4 w-4" />
                       This candidate has also applied to:
-                    </h3>
+                    </p>
                     <div className="space-y-2">
                       {otherApplications.map((app) => (
-                        <div 
-                          key={app._id} 
-                          className="flex items-center justify-between bg-white p-3 rounded border border-blue-200 hover:border-blue-300 transition-colors"
+                        <div
+                          key={app._id}
+                          className="flex items-center justify-between rounded-[4px] border border-pitchline bg-pitch-700/80 p-3 transition-colors duration-200 ease-night hover:border-flood-500/40"
                         >
                           <div className="flex-1">
-                            <p className="font-medium text-gray-900">{app.jobId?.title}</p>
-                            <div className="flex gap-2 mt-1">
-                              <Badge variant="outline" className="text-xs">{app.jobId?.department}</Badge>
-                              <Badge variant="outline" className="text-xs">{app.jobId?.employmentType}</Badge>
+                            <p className="font-medium text-chalk-100">{app.jobId?.title}</p>
+                            <div className="mt-1.5 flex gap-2">
+                              <span className={squareTag}>{app.jobId?.department}</span>
+                              <span className={squareTag}>{app.jobId?.employmentType}</span>
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
                             <div className="text-right">
-                              <Badge className={`
-                                ${app.status === 'hired' || app.status === 'offer_accepted' 
-                                  ? 'bg-green-600' 
-                                  : app.status === 'offer_sent'
-                                  ? 'bg-emerald-600'
-                                  : app.status === 'shortlisted_email_sent'
-                                  ? 'bg-cyan-600'
-                                  : app.status === 'under_review' 
-                                  ? 'bg-blue-600' 
-                                  : app.status === 'submitted'
-                                  ? 'bg-gray-600'
-                                  : 'bg-red-600'}
-                              `}>
-                                {app.status === 'hired' && '✅ Hired'}
-                                {app.status === 'offer_accepted' && '✅ Offer Accepted'}
-                                {app.status === 'offer_sent' && '📧 Offer Sent'}
-                                {app.status === 'shortlisted_email_sent' && '⭐ Shortlisted'}
-                                {app.status === 'under_review' && '🔍 Under Review'}
-                                {app.status === 'submitted' && '📋 Submitted'}
-                                {app.status === 'rejected' && '❌ Rejected'}
-                              </Badge>
-                              <p className="text-xs text-gray-500 mt-1">
+                              <StatusText status={app.status} className="justify-end" />
+                              <Mono className="mt-1 block text-xs text-chalk-400">
                                 {format(new Date(app.appliedDate), 'dd MMM yyyy')}
-                              </p>
+                              </Mono>
                             </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
+                            <button
                               onClick={() => {
                                 setShowDetailDialog(false);
                                 setTimeout(() => openDetailDialog(app), 100);
                               }}
-                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-100"
+                              className={rowGhostBtn}
+                              aria-label={`View application for ${app.jobId?.title}`}
                             >
-                              <Eye className="w-4 h-4" />
-                            </Button>
+                              <Eye className="h-4 w-4" />
+                            </button>
                           </div>
                         </div>
                       ))}
                     </div>
                     {otherApplications.some(app => app.status === 'hired' || app.status === 'offer_accepted' || app.status === 'offer_sent' || app.status === 'shortlisted_email_sent') && (
-                      <div className="mt-3 p-3 bg-yellow-50 border border-yellow-300 rounded">
-                        <p className="text-sm text-yellow-800">
-                          <strong>⚠️ Note:</strong> This candidate is already {' '}
-                          {otherApplications.find(app => app.status === 'hired') 
-                            ? `hired for "${otherApplications.find(app => app.status === 'hired')?.jobId?.title}"` 
+                      <div className="mt-3 rounded-[4px] border border-red-700/40 bg-red-950/20 p-3">
+                        <p className="text-sm text-chalk-400">
+                          <span className="nm-overline mr-2 text-red-400">Note:</span>
+                          This candidate is already {' '}
+                          {otherApplications.find(app => app.status === 'hired')
+                            ? `hired for "${otherApplications.find(app => app.status === 'hired')?.jobId?.title}"`
                             : otherApplications.find(app => app.status === 'offer_accepted')
                             ? `has accepted offer for "${otherApplications.find(app => app.status === 'offer_accepted')?.jobId?.title}"`
                             : otherApplications.find(app => app.status === 'offer_sent')
                             ? `has been sent an offer for "${otherApplications.find(app => app.status === 'offer_sent')?.jobId?.title}"`
                             : `shortlisted for "${otherApplications.find(app => app.status === 'shortlisted_email_sent')?.jobId?.title}"`
-                          }. 
+                          }.
                           Please consider this before making a decision.
                         </p>
                       </div>
@@ -1178,28 +1176,28 @@ export default function ManageApplicationsPage() {
 
                 {/* Offer Acceptance Status */}
                 {(selectedApplication.status === 'offer_sent' || selectedApplication.status === 'offer_accepted') && (
-                  <div className={`p-4 rounded-lg border-2 ${
+                  <div className={`rounded-[4px] border p-4 ${
                     selectedApplication.offerAccepted || selectedApplication.status === 'offer_accepted'
-                      ? 'bg-green-50 border-green-300' 
-                      : 'bg-yellow-50 border-yellow-300'
+                      ? 'border-flood-500/40 bg-flood-500/5'
+                      : 'border-pitchline bg-pitch-800/60'
                   }`}>
-                    <Label className="text-gray-600">Offer Status</Label>
+                    <span className={infoLabel}>Offer status</span>
                     {selectedApplication.offerAccepted || selectedApplication.status === 'offer_accepted' ? (
-                      <div className="flex items-center gap-2 mt-2">
-                        <CheckCircle2 className="w-5 h-5 text-green-600" />
+                      <div className="mt-2 flex items-center gap-2">
+                        <CheckCircle2 className="h-5 w-5 text-flood-500" />
                         <div>
-                          <p className="font-semibold text-green-700">Offer Accepted ✓</p>
+                          <p className="font-semibold text-flood-500">Offer accepted</p>
                           {selectedApplication.offerAcceptedAt && (
-                            <p className="text-sm text-green-600">
+                            <Mono className="text-sm text-chalk-400">
                               Accepted on {format(new Date(selectedApplication.offerAcceptedAt!), 'dd MMM yyyy, HH:mm')}
-                            </p>
+                            </Mono>
                           )}
                         </div>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2 mt-2">
-                        <Clock className="w-5 h-5 text-yellow-600" />
-                        <p className="font-medium text-yellow-700">Awaiting candidate response</p>
+                      <div className="mt-2 flex items-center gap-2">
+                        <Clock className="h-5 w-5 text-chalk-400" />
+                        <p className="font-medium text-chalk-100">Awaiting candidate response</p>
                       </div>
                     )}
                   </div>
@@ -1207,117 +1205,109 @@ export default function ManageApplicationsPage() {
 
                 {/* Payment Information (Admin Only) */}
                 {selectedApplication.status === 'hired' && selectedApplication.paymentStatus && (
-                  <div className={`p-4 rounded-lg border-2 ${
-                    selectedApplication.paymentStatus === 'completed' 
-                      ? 'bg-emerald-50 border-emerald-300' 
+                  <div className={`rounded-[4px] border p-4 ${
+                    selectedApplication.paymentStatus === 'completed'
+                      ? 'border-flood-500/40 bg-flood-500/5'
                       : selectedApplication.paymentStatus === 'pending'
-                      ? 'bg-yellow-50 border-yellow-300'
-                      : 'bg-red-50 border-red-300'
+                      ? 'border-pitchline bg-pitch-800/60'
+                      : 'border-red-700/50 bg-red-950/20'
                   }`}>
-                    <Label className="text-gray-600">Payment Information</Label>
-                    <div className="mt-3 space-y-2">
+                    <span className={infoLabel}>Payment information</span>
+                    <div className="mt-3 space-y-2.5">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Payment Status:</span>
-                        <Badge className={
-                          selectedApplication.paymentStatus === 'completed' 
-                            ? 'bg-emerald-600' 
-                            : selectedApplication.paymentStatus === 'pending'
-                            ? 'bg-yellow-600'
-                            : 'bg-red-600'
-                        }>
-                          {selectedApplication.paymentStatus === 'completed' ? '✓ Completed' : 
-                           selectedApplication.paymentStatus === 'pending' ? 'Pending' : 
+                        <span className="text-sm text-chalk-400">Payment status:</span>
+                        <span className={statusLine}>
+                          <StatusDot tone={
+                            selectedApplication.paymentStatus === 'completed' ? 'lime' :
+                            selectedApplication.paymentStatus === 'pending' ? 'chalk' : 'red'
+                          } />
+                          {selectedApplication.paymentStatus === 'completed' ? 'Completed' :
+                           selectedApplication.paymentStatus === 'pending' ? 'Pending' :
                            'Failed'}
-                        </Badge>
+                        </span>
                       </div>
-                      
+
                       {selectedApplication.paymentStatus === 'completed' && (
                         <>
                           {selectedApplication.paymentDate && (
                             <div className="flex items-center justify-between">
-                              <span className="text-sm text-gray-600">Payment Date & Time:</span>
-                              <span className="font-medium text-emerald-700">
+                              <span className="text-sm text-chalk-400">Payment date &amp; time:</span>
+                              <Mono className="font-medium text-chalk-100">
                                 {format(new Date(selectedApplication.paymentDate), 'dd MMMM yyyy, hh:mm a')}
-                              </span>
+                              </Mono>
                             </div>
                           )}
-                          
+
                           {selectedApplication.paymentTransactionId && (
                             <div className="flex items-center justify-between">
-                              <span className="text-sm text-gray-600">Transaction ID:</span>
-                              <code className="text-xs bg-white px-2 py-1 rounded border">
+                              <span className="text-sm text-chalk-400">Transaction ID:</span>
+                              <code className="rounded-[2px] border border-pitchline bg-pitch-800 px-2 py-1 font-mono text-xs text-chalk-100">
                                 {selectedApplication.paymentTransactionId}
                               </code>
                             </div>
                           )}
-                          
+
                           {selectedApplication.paymentAmount && (
                             <div className="flex items-center justify-between">
-                              <span className="text-sm text-gray-600">Payment Amount:</span>
-                              <span className="font-bold text-emerald-700 text-lg">
+                              <span className="text-sm text-chalk-400">Payment amount:</span>
+                              <Mono className="text-lg font-bold text-flood-500">
                                 ₹{selectedApplication.paymentAmount.toFixed(2)}
-                              </span>
+                              </Mono>
                             </div>
                           )}
-                          
+
                           {selectedApplication.paymentReceiptUrl && (
                             <div className="mt-3">
-                              <div className="flex items-center gap-2">
-                                <a 
-                                  href={selectedApplication.paymentReceiptUrl} 
-                                  target="_blank" 
+                              <div className="flex flex-wrap items-center gap-3">
+                                <a
+                                  href={selectedApplication.paymentReceiptUrl}
+                                  target="_blank"
                                   rel="noopener noreferrer"
-                                  className="flex items-center justify-center gap-2 p-2 bg-emerald-100 rounded-lg hover:bg-emerald-200 transition-colors flex-1"
+                                  className={limeUnderlineLink}
                                 >
-                                  <FileText className="w-4 h-4 text-emerald-700" />
-                                  <span className="font-medium text-emerald-700">Download Receipt</span>
-                                  <Download className="w-3 h-3 text-emerald-700" />
+                                  <FileText className="h-4 w-4" />
+                                  Download receipt
+                                  <Download className="h-3 w-3" />
                                 </a>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
+                                <button
                                   onClick={() => window.open(selectedApplication.paymentReceiptUrl, '_blank', 'noopener,noreferrer')}
-                                  className="flex items-center gap-1 bg-emerald-50 border-emerald-300 hover:bg-emerald-100"
+                                  className={rowGhostBtn}
                                 >
-                                  <Eye className="w-4 h-4 text-emerald-700" />
-                                  <span className="text-emerald-700">View</span>
-                                </Button>
+                                  <Eye className="h-4 w-4" />
+                                  View
+                                </button>
                               </div>
                             </div>
                           )}
                         </>
                       )}
                     </div>
-                    
+
                     {/* Joining Letter */}
                     {selectedApplication.joiningLetterPdfUrl && (
-                      <div className="mt-4 p-4 bg-purple-50 rounded-lg border border-purple-200">
-                        <Label className="text-gray-700 font-semibold flex items-center gap-2">
-                          <FileText className="w-4 h-4 text-purple-700" />
-                          Joining Letter
-                        </Label>
-                        <div className="flex items-center gap-2 mt-3">
-                          <a 
-                            href={selectedApplication.joiningLetterPdfUrl} 
-                            target="_blank" 
+                      <div className="mt-4 rounded-[4px] border border-pitchline bg-pitch-800/60 p-4">
+                        <span className={`${infoLabel} flex items-center gap-2`}>
+                          <FileText className="h-4 w-4 text-flood-500" />
+                          Joining letter
+                        </span>
+                        <div className="mt-3 flex flex-wrap items-center gap-3">
+                          <a
+                            href={selectedApplication.joiningLetterPdfUrl}
+                            target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center justify-center gap-2 p-2 bg-purple-100 rounded-lg hover:bg-purple-200 transition-colors flex-1"
+                            className={limeUnderlineLink}
                           >
-                            <FileText className="w-4 h-4 text-purple-700" />
-                            <span className="font-medium text-purple-700">
-                              {selectedApplication.offerLetterId ? `Joining-Letter-${selectedApplication.offerLetterId}.pdf` : 'Joining-Letter.pdf'}
-                            </span>
-                            <Download className="w-3 h-3 text-purple-700" />
+                            <FileText className="h-4 w-4" />
+                            {selectedApplication.offerLetterId ? `Joining-Letter-${selectedApplication.offerLetterId}.pdf` : 'Joining-Letter.pdf'}
+                            <Download className="h-3 w-3" />
                           </a>
-                          <Button
-                            variant="outline"
-                            size="sm"
+                          <button
                             onClick={() => window.open(selectedApplication.joiningLetterPdfUrl, '_blank', 'noopener,noreferrer')}
-                            className="flex items-center gap-1 bg-purple-50 border-purple-300 hover:bg-purple-100"
+                            className={rowGhostBtn}
                           >
-                            <Eye className="w-4 h-4 text-purple-700" />
-                            <span className="text-purple-700">View</span>
-                          </Button>
+                            <Eye className="h-4 w-4" />
+                            View
+                          </button>
                         </div>
                       </div>
                     )}
@@ -1326,46 +1316,46 @@ export default function ManageApplicationsPage() {
 
                 {/* Resume */}
                 <div>
-                  <Label className="text-gray-600">Resume</Label>
-                  <div className="flex items-center gap-2 mt-2">
-                    <a 
-                      href={selectedApplication.resume.url} 
-                      target="_blank" 
+                  <span className={infoLabel}>Resume</span>
+                  <div className="mt-2 flex items-center gap-2">
+                    <a
+                      href={selectedApplication.resume.url}
+                      target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors flex-1"
+                      className="flex flex-1 items-center gap-2 rounded-[4px] border border-flood-500/30 bg-pitch-800/60 p-3 transition-[border-color,box-shadow] duration-200 ease-night hover:border-flood-500 hover:shadow-flood"
                     >
-                      <FileText className="w-5 h-5 text-blue-600" />
-                      <span className="font-medium text-blue-600">{selectedApplication.resume.fileName}</span>
-                      <ExternalLink className="w-4 h-4 text-blue-600 ml-auto" />
+                      <FileText className="h-5 w-5 text-flood-500" />
+                      <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-flood-500 underline decoration-flood-500/40 underline-offset-4">
+                        {selectedApplication.resume.fileName}
+                      </span>
+                      <ExternalLink className="ml-auto h-4 w-4 text-flood-500" />
                     </a>
-                    <Button
-                      variant="outline"
-                      size="sm"
+                    <button
                       onClick={() => window.open(selectedApplication.resume.url, '_blank', 'noopener,noreferrer')}
-                      className="flex items-center gap-1"
+                      className={rowGhostBtn}
                     >
-                      <Eye className="w-4 h-4" />
+                      <Eye className="h-4 w-4" />
                       View
-                    </Button>
+                    </button>
                   </div>
                 </div>
 
                 {/* Cover Letter */}
                 {selectedApplication.coverLetter && (
                   <div>
-                    <Label className="text-gray-600">Cover Letter</Label>
-                    <p className="mt-2 p-3 bg-gray-50 rounded-lg text-sm whitespace-pre-wrap">
+                    <span className={infoLabel}>Cover letter</span>
+                    <p className="mt-2 whitespace-pre-wrap rounded-[4px] border border-pitchline bg-pitch-800/60 p-3 text-sm text-chalk-100/90">
                       {selectedApplication.coverLetter}
                     </p>
                   </div>
                 )}
 
                 {/* Update Status Form */}
-                <form onSubmit={handleUpdateStatus} className="space-y-4 border-t pt-4">
+                <form onSubmit={handleUpdateStatus} className="space-y-4 border-t border-pitchline pt-4">
                   <div>
-                    <Label htmlFor="status">Update Status</Label>
-                    <Select 
-                      value={updateForm.status} 
+                    <label htmlFor="status" className={fieldLabel}>Update status</label>
+                    <Select
+                      value={updateForm.status}
                       onValueChange={(value) => setUpdateForm({ ...updateForm, status: value })}
                     >
                       <SelectTrigger>
@@ -1384,8 +1374,8 @@ export default function ManageApplicationsPage() {
                   </div>
 
                   <div>
-                    <Label htmlFor="adminNotes">Admin Notes (Internal)</Label>
-                    <Textarea
+                    <label htmlFor="adminNotes" className={fieldLabel}>Admin notes (internal)</label>
+                    <NightTextarea
                       id="adminNotes"
                       value={updateForm.adminNotes}
                       onChange={(e) => setUpdateForm({ ...updateForm, adminNotes: e.target.value })}
@@ -1395,10 +1385,10 @@ export default function ManageApplicationsPage() {
                   </div>
 
                   {selectedApplication.adminNotes && selectedApplication.reviewedBy && (
-                    <div className="bg-yellow-50 p-3 rounded-lg text-sm">
-                      <p className="font-medium">Previous Notes:</p>
-                      <p className="text-gray-700 mt-1">{selectedApplication.adminNotes}</p>
-                      <p className="text-xs text-gray-500 mt-2">
+                    <div className="rounded-[4px] border border-pitchline bg-pitch-800/60 p-3 text-sm">
+                      <p className="nm-overline text-chalk-400">Previous notes</p>
+                      <p className="mt-2 text-chalk-100/90">{selectedApplication.adminNotes}</p>
+                      <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.1em] text-chalk-400">
                         By {selectedApplication.reviewedBy.name} on{' '}
                         {selectedApplication.reviewedAt && format(new Date(selectedApplication.reviewedAt), 'dd MMM yyyy, HH:mm')}
                       </p>
@@ -1406,13 +1396,13 @@ export default function ManageApplicationsPage() {
                   )}
 
                   <DialogFooter>
-                    <Button type="button" variant="outline" onClick={() => setShowDetailDialog(false)}>
+                    <button type="button" className={nightGhostBtn} onClick={() => setShowDetailDialog(false)}>
                       Close
-                    </Button>
-                    <Button type="submit" disabled={submitting}>
-                      {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Edit className="w-4 h-4 mr-2" />}
-                      Update Application
-                    </Button>
+                    </button>
+                    <button type="submit" disabled={submitting} className={nightPrimaryBtn}>
+                      {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Edit className="h-4 w-4" />}
+                      Update application
+                    </button>
                   </DialogFooter>
                 </form>
               </div>
@@ -1424,20 +1414,22 @@ export default function ManageApplicationsPage() {
         <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Delete Application</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="font-display text-2xl uppercase tracking-tight text-chalk-100">
+                Delete application
+              </DialogTitle>
+              <DialogDescription className="text-chalk-400">
                 Are you sure you want to delete this application from {selectedApplication?.fullName}?
                 This will also delete the resume from Cloudinary. This action cannot be undone.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+              <button className={nightGhostBtn} onClick={() => setShowDeleteDialog(false)}>
                 Cancel
-              </Button>
-              <Button variant="destructive" onClick={handleDelete} disabled={submitting}>
-                {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}
-                Delete Application
-              </Button>
+              </button>
+              <button className={dangerBtn} onClick={handleDelete} disabled={submitting}>
+                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                Delete application
+              </button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -1446,17 +1438,19 @@ export default function ManageApplicationsPage() {
         <Dialog open={showDuplicateDialog} onOpenChange={setShowDuplicateDialog}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Remove Duplicate Applications</DialogTitle>
-              <DialogDescription>
-                Select which job position to keep for candidates who applied to multiple positions. 
+              <DialogTitle className="font-display text-2xl uppercase tracking-tight text-chalk-100">
+                Remove duplicate applications
+              </DialogTitle>
+              <DialogDescription className="text-chalk-400">
+                Select which job position to keep for candidates who applied to multiple positions.
                 All other applications from the same candidate (matched by email or phone) will be permanently deleted.
               </DialogDescription>
             </DialogHeader>
-            
+
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label>Positions to Keep</Label>
-                <div className="border rounded-lg p-4 space-y-3 max-h-64 overflow-y-auto">
+                <span className={infoLabel}>Positions to keep</span>
+                <div className="max-h-64 space-y-3 overflow-y-auto rounded-[4px] border border-pitchline bg-pitch-800/60 p-4">
                   {duplicatePositions.map((position) => (
                     <div key={position.id} className="flex items-center space-x-2">
                       <input
@@ -1470,59 +1464,58 @@ export default function ManageApplicationsPage() {
                             setSelectedPosition(selectedPosition.filter(id => id !== position.id));
                           }
                         }}
-                        className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="h-4 w-4 accent-flood-500"
                       />
                       <label
                         htmlFor={`position-${position.id}`}
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                        className="cursor-pointer text-sm font-medium leading-none text-chalk-100"
                       >
                         {position.title}
                       </label>
                     </div>
                   ))}
                 </div>
-                <p className="text-sm text-gray-500">
-                  {duplicatePositions.length} position(s) have duplicate candidates • {selectedPosition.length} selected
+                <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-chalk-400">
+                  <Mono className="text-chalk-100">{duplicatePositions.length}</Mono> position(s) have duplicate candidates •{' '}
+                  <Mono className="text-flood-500">{selectedPosition.length}</Mono> selected
                 </p>
               </div>
-              
+
               {selectedPosition.length > 0 && (
-                <Alert>
-                  <AlertDescription>
-                    All applications from candidates who applied to multiple positions will be removed, 
-                    except for their applications to the selected position(s).
-                  </AlertDescription>
-                </Alert>
+                <div className="rounded-[4px] border border-pitchline bg-pitch-800/60 p-3 text-sm text-chalk-400">
+                  All applications from candidates who applied to multiple positions will be removed,
+                  except for their applications to the selected position(s).
+                </div>
               )}
             </div>
 
             <DialogFooter>
-              <Button 
-                variant="outline" 
+              <button
+                className={nightGhostBtn}
                 onClick={() => {
                   setShowDuplicateDialog(false);
                   setSelectedPosition([]);
                 }}
               >
                 Cancel
-              </Button>
-              <Button 
-                variant="destructive" 
-                onClick={handleRemoveDuplicates} 
+              </button>
+              <button
+                className={dangerBtn}
+                onClick={handleRemoveDuplicates}
                 disabled={removingDuplicates || selectedPosition.length === 0}
               >
                 {removingDuplicates ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    <Loader2 className="h-4 w-4 animate-spin" />
                     Removing...
                   </>
                 ) : (
                   <>
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Remove Duplicates
+                    <Trash2 className="h-4 w-4" />
+                    Remove duplicates
                   </>
                 )}
-              </Button>
+              </button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -1533,10 +1526,12 @@ export default function ManageApplicationsPage() {
         }}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Send Shortlist Email to All</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="font-display text-2xl uppercase tracking-tight text-chalk-100">
+                Send shortlist email to all
+              </DialogTitle>
+              <DialogDescription className="text-chalk-400">
                 {!isBulkSending && bulkEmailProgress.current === 0 ? (
-                  <>Send shortlist notification emails to all <strong>{applications.length}</strong> applications on this page?</>
+                  <>Send shortlist notification emails to all <strong className="text-chalk-100">{applications.length}</strong> applications on this page?</>
                 ) : (
                   'Sending shortlist emails...'
                 )}
@@ -1546,13 +1541,13 @@ export default function ManageApplicationsPage() {
             {isBulkSending && (
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
+                  <div className="flex justify-between font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-400">
                     <span>Progress</span>
-                    <span className="font-medium">{bulkEmailProgress.current} / {bulkEmailProgress.total}</span>
+                    <Mono className="text-chalk-100">{bulkEmailProgress.current} / {bulkEmailProgress.total}</Mono>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2.5">
-                    <div 
-                      className="bg-blue-600 h-2.5 rounded-full transition-all duration-300" 
+                  <div className="h-1.5 w-full overflow-hidden rounded-[2px] bg-pitch-800">
+                    <div
+                      className="h-full bg-flood-500 shadow-flood transition-all duration-300 ease-night"
                       style={{ width: `${(bulkEmailProgress.current / bulkEmailProgress.total) * 100}%` }}
                     ></div>
                   </div>
@@ -1562,23 +1557,27 @@ export default function ManageApplicationsPage() {
 
             {!isBulkSending && bulkEmailProgress.current > 0 && (
               <div className="space-y-4 py-4">
-                <Alert className={bulkEmailResults.failed === 0 ? "bg-green-50 border-green-200" : "bg-yellow-50 border-yellow-200"}>
-                  <AlertDescription>
-                    <div className="font-medium mb-2">Summary:</div>
-                    <div className="space-y-1">
-                      <div className="text-green-700">✓ Successfully sent: {bulkEmailResults.success}</div>
-                      {bulkEmailResults.failed > 0 && (
-                        <div className="text-red-700">✗ Failed: {bulkEmailResults.failed}</div>
-                      )}
-                    </div>
-                  </AlertDescription>
-                </Alert>
+                <div className={`rounded-[4px] border p-4 ${bulkEmailResults.failed === 0 ? 'border-flood-500/40 bg-flood-500/5' : 'border-red-700/40 bg-red-950/20'}`}>
+                  <p className="nm-overline mb-3 text-chalk-400">Summary</p>
+                  <div className="space-y-1.5">
+                    <p className="flex items-center gap-2 font-mono text-xs uppercase tracking-[0.12em] text-flood-500">
+                      <StatusDot tone="lime" />
+                      Successfully sent: <Mono>{bulkEmailResults.success}</Mono>
+                    </p>
+                    {bulkEmailResults.failed > 0 && (
+                      <p className="flex items-center gap-2 font-mono text-xs uppercase tracking-[0.12em] text-red-400">
+                        <StatusDot tone="red" />
+                        Failed: <Mono>{bulkEmailResults.failed}</Mono>
+                      </p>
+                    )}
+                  </div>
+                </div>
 
                 {bulkEmailResults.errors.length > 0 && (
-                  <div className="max-h-48 overflow-y-auto space-y-1">
-                    <div className="font-medium text-sm text-red-700 mb-2">Errors:</div>
+                  <div className="max-h-48 space-y-1 overflow-y-auto">
+                    <p className="nm-overline mb-2 text-red-400">Errors</p>
                     {bulkEmailResults.errors.map((error, index) => (
-                      <div key={index} className="text-xs text-red-600 bg-red-50 p-2 rounded">
+                      <div key={index} className="rounded-[2px] bg-red-950/30 p-2 text-xs text-red-300">
                         {error}
                       </div>
                     ))}
@@ -1590,27 +1589,27 @@ export default function ManageApplicationsPage() {
             <DialogFooter>
               {!isBulkSending && bulkEmailProgress.current === 0 ? (
                 <>
-                  <Button variant="outline" onClick={() => setShowBulkShortlistDialog(false)}>
+                  <button className={nightGhostBtn} onClick={() => setShowBulkShortlistDialog(false)}>
                     Cancel
-                  </Button>
-                  <Button onClick={handleBulkShortlist}>
-                    <Mail className="w-4 h-4 mr-2" />
-                    Send to {applications.length} Applicants
-                  </Button>
+                  </button>
+                  <button className={nightPrimaryBtn} onClick={handleBulkShortlist}>
+                    <Mail className="h-4 w-4" />
+                    Send to {applications.length} applicants
+                  </button>
                 </>
               ) : !isBulkSending ? (
-                <Button onClick={() => {
+                <button className={nightPrimaryBtn} onClick={() => {
                   setShowBulkShortlistDialog(false);
                   setBulkEmailProgress({ current: 0, total: 0 });
                   setBulkEmailResults({ success: 0, failed: 0, errors: [] });
                 }}>
                   Close
-                </Button>
+                </button>
               ) : (
-                <Button disabled>
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                <button className={nightPrimaryBtn} disabled>
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   Sending...
-                </Button>
+                </button>
               )}
             </DialogFooter>
           </DialogContent>
@@ -1622,10 +1621,12 @@ export default function ManageApplicationsPage() {
         }}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Send Offer Letter to All</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="font-display text-2xl uppercase tracking-tight text-chalk-100">
+                Send offer letter to all
+              </DialogTitle>
+              <DialogDescription className="text-chalk-400">
                 {!isBulkSending && bulkEmailProgress.current === 0 ? (
-                  <>Send offer letter emails to <strong>{applications.filter(app => app.status === 'shortlisted_email_sent' && !app.offerLetterGeneratedAt).length}</strong> remaining applications with status "Shortlisted Email Sent"?</>
+                  <>Send offer letter emails to <strong className="text-chalk-100">{pendingOfferCount}</strong> remaining applications with status &quot;Shortlisted Email Sent&quot;?</>
                 ) : (
                   'Sending offer letters...'
                 )}
@@ -1635,13 +1636,13 @@ export default function ManageApplicationsPage() {
             {isBulkSending && (
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
+                  <div className="flex justify-between font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-400">
                     <span>Progress</span>
-                    <span className="font-medium">{bulkEmailProgress.current} / {bulkEmailProgress.total}</span>
+                    <Mono className="text-chalk-100">{bulkEmailProgress.current} / {bulkEmailProgress.total}</Mono>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2.5">
-                    <div 
-                      className="bg-green-600 h-2.5 rounded-full transition-all duration-300" 
+                  <div className="h-1.5 w-full overflow-hidden rounded-[2px] bg-pitch-800">
+                    <div
+                      className="h-full bg-flood-500 shadow-flood transition-all duration-300 ease-night"
                       style={{ width: `${(bulkEmailProgress.current / bulkEmailProgress.total) * 100}%` }}
                     ></div>
                   </div>
@@ -1651,23 +1652,27 @@ export default function ManageApplicationsPage() {
 
             {!isBulkSending && bulkEmailProgress.current > 0 && (
               <div className="space-y-4 py-4">
-                <Alert className={bulkEmailResults.failed === 0 ? "bg-green-50 border-green-200" : "bg-yellow-50 border-yellow-200"}>
-                  <AlertDescription>
-                    <div className="font-medium mb-2">Summary:</div>
-                    <div className="space-y-1">
-                      <div className="text-green-700">✓ Successfully sent: {bulkEmailResults.success}</div>
-                      {bulkEmailResults.failed > 0 && (
-                        <div className="text-red-700">✗ Failed: {bulkEmailResults.failed}</div>
-                      )}
-                    </div>
-                  </AlertDescription>
-                </Alert>
+                <div className={`rounded-[4px] border p-4 ${bulkEmailResults.failed === 0 ? 'border-flood-500/40 bg-flood-500/5' : 'border-red-700/40 bg-red-950/20'}`}>
+                  <p className="nm-overline mb-3 text-chalk-400">Summary</p>
+                  <div className="space-y-1.5">
+                    <p className="flex items-center gap-2 font-mono text-xs uppercase tracking-[0.12em] text-flood-500">
+                      <StatusDot tone="lime" />
+                      Successfully sent: <Mono>{bulkEmailResults.success}</Mono>
+                    </p>
+                    {bulkEmailResults.failed > 0 && (
+                      <p className="flex items-center gap-2 font-mono text-xs uppercase tracking-[0.12em] text-red-400">
+                        <StatusDot tone="red" />
+                        Failed: <Mono>{bulkEmailResults.failed}</Mono>
+                      </p>
+                    )}
+                  </div>
+                </div>
 
                 {bulkEmailResults.errors.length > 0 && (
-                  <div className="max-h-48 overflow-y-auto space-y-1">
-                    <div className="font-medium text-sm text-red-700 mb-2">Errors:</div>
+                  <div className="max-h-48 space-y-1 overflow-y-auto">
+                    <p className="nm-overline mb-2 text-red-400">Errors</p>
                     {bulkEmailResults.errors.map((error, index) => (
-                      <div key={index} className="text-xs text-red-600 bg-red-50 p-2 rounded">
+                      <div key={index} className="rounded-[2px] bg-red-950/30 p-2 text-xs text-red-300">
                         {error}
                       </div>
                     ))}
@@ -1679,32 +1684,32 @@ export default function ManageApplicationsPage() {
             <DialogFooter>
               {!isBulkSending && bulkEmailProgress.current === 0 ? (
                 <>
-                  <Button variant="outline" onClick={() => setShowBulkOfferDialog(false)}>
+                  <button className={nightGhostBtn} onClick={() => setShowBulkOfferDialog(false)}>
                     Cancel
-                  </Button>
-                  <Button onClick={handleBulkOffer} disabled={applications.filter(app => app.status === 'shortlisted_email_sent' && !app.offerLetterGeneratedAt).length === 0}>
-                    <CheckCircle2 className="w-4 h-4 mr-2" />
-                    Send to {applications.filter(app => app.status === 'shortlisted_email_sent' && !app.offerLetterGeneratedAt).length} Applicants
-                  </Button>
+                  </button>
+                  <button className={nightPrimaryBtn} onClick={handleBulkOffer} disabled={pendingOfferCount === 0}>
+                    <CheckCircle2 className="h-4 w-4" />
+                    Send to {pendingOfferCount} applicants
+                  </button>
                 </>
               ) : !isBulkSending ? (
-                <Button onClick={() => {
+                <button className={nightPrimaryBtn} onClick={() => {
                   setShowBulkOfferDialog(false);
                   setBulkEmailProgress({ current: 0, total: 0 });
                   setBulkEmailResults({ success: 0, failed: 0, errors: [] });
                 }}>
                   Close
-                </Button>
+                </button>
               ) : (
-                <Button disabled>
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                <button className={nightPrimaryBtn} disabled>
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   Sending...
-                </Button>
+                </button>
               )}
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
-    </div>
+    </NightShell>
   );
 }
