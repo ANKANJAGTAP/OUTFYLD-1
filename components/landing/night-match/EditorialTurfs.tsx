@@ -102,7 +102,7 @@ function TurfRow({ turf, index, flip }: { turf?: Turf; index: number; flip: bool
 
   const media = (
     <div className={`relative lg:col-span-7 ${flip ? 'lg:col-start-6' : 'lg:col-start-1'}`}>
-      <div className="relative aspect-[4/3] w-full overflow-hidden sm:aspect-[16/10]">
+      <div className="nm-turf-media relative aspect-[4/3] w-full overflow-hidden sm:aspect-[16/10]">
         {/* parallax image layer — scroll-linked horizontal slide (from the row's
             side). Scaled up so the travel never reveals a container edge. */}
         <div className="nm-img-parallax absolute inset-0 will-change-transform">
@@ -219,6 +219,100 @@ export function EditorialTurfs({ turfs }: { turfs: Turf[] }) {
   // Always render 4 slots; missing turfs become Night Match placeholders
   const slots: (Turf | undefined)[] = Array.from({ length: 4 }, (_, i) => turfs[i]);
 
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const pathRef = useRef<SVGPathElement>(null);
+
+  // A single lime connector that threads the 4 images side to side: it runs
+  // down the inner edge of each turf, then jumps diagonally across the gap to
+  // the next turf (which sits on the opposite side). The whole path DRAWS
+  // itself as you scroll down and RETRACTS as you scroll up — scrubbed 1:1.
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    const svg = svgRef.current;
+    const path = pathRef.current;
+    if (!wrap || !svg || !path) return;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Rebuild the path `d` from live image positions; returns its total length.
+    const build = (): number => {
+      // Only meaningful on lg+, where images actually alternate left/right.
+      if (window.innerWidth < 1024) return 0;
+      const cr = wrap.getBoundingClientRect();
+      const W = wrap.clientWidth;
+      const H = wrap.clientHeight;
+      const medias = Array.from(wrap.querySelectorAll<HTMLElement>('.nm-turf-media'));
+      if (medias.length < 2 || W === 0) return 0;
+
+      const pts = medias.map((m) => {
+        const r = m.getBoundingClientRect();
+        const x = r.left - cr.left;
+        const y = r.top - cr.top;
+        // inner edge = the side facing the page centre (right edge for a
+        // left-column image, left edge for a right-column image)
+        const innerX = x + r.width / 2 < W / 2 ? x + r.width : x;
+        return { x: innerX, top: y, bottom: y + r.height };
+      });
+
+      let d = `M ${pts[0].x.toFixed(1)} 0`;
+      for (const p of pts) {
+        d += ` L ${p.x.toFixed(1)} ${p.top.toFixed(1)} L ${p.x.toFixed(1)} ${p.bottom.toFixed(1)}`;
+      }
+      d += ` L ${pts[pts.length - 1].x.toFixed(1)} ${H.toFixed(1)}`;
+
+      svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+      path.setAttribute('d', d);
+      const len = path.getTotalLength();
+      path.style.strokeDasharray = String(len);
+      path.style.strokeDashoffset = reduce ? '0' : String(len);
+      return len;
+    };
+
+    let ctx: { revert: () => void } | undefined;
+    let cancelled = false;
+    let onResize: (() => void) | undefined;
+
+    const cancelIdle = deferIdle(async () => {
+      const [{ gsap }, { ScrollTrigger }] = await Promise.all([
+        import('gsap'),
+        import('gsap/ScrollTrigger'),
+      ]);
+      if (cancelled) return;
+      const len0 = build();
+      if (reduce || !len0) return;
+      gsap.registerPlugin(ScrollTrigger);
+      ctx = gsap.context(() => {
+        gsap.fromTo(
+          path,
+          { strokeDashoffset: () => path.getTotalLength() },
+          {
+            strokeDashoffset: 0,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: wrap,
+              start: 'top 78%',
+              end: 'bottom 88%',
+              scrub: 0.6,
+              invalidateOnRefresh: true,
+            },
+          }
+        );
+      });
+      onResize = () => {
+        build();
+        ScrollTrigger.refresh();
+      };
+      window.addEventListener('resize', onResize);
+    });
+
+    return () => {
+      cancelled = true;
+      cancelIdle();
+      if (onResize) window.removeEventListener('resize', onResize);
+      ctx?.revert();
+    };
+  }, []);
+
   return (
     <section className="relative z-[2] bg-pitch-900/[0.92] text-chalk-100">
       <PitchDivider flag="right" />
@@ -229,7 +323,26 @@ export function EditorialTurfs({ turfs }: { turfs: Turf[] }) {
           <h2 className="nm-display-l">Floodlit &amp; ready</h2>
         </Reveal>
 
-        <div className="flex flex-col gap-20 lg:gap-28">
+        <div ref={wrapRef} className="relative flex flex-col gap-20 lg:gap-28">
+          {/* scroll-drawn zig-zag connector threading the images side to side */}
+          <svg
+            ref={svgRef}
+            aria-hidden
+            preserveAspectRatio="none"
+            className="pointer-events-none absolute inset-0 z-[5] hidden h-full w-full overflow-visible lg:block"
+          >
+            <path
+              ref={pathRef}
+              d=""
+              fill="none"
+              stroke="#C8F135"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{ filter: 'drop-shadow(0 0 7px rgba(200,241,53,0.5))' }}
+            />
+          </svg>
+
           {slots.map((t, i) => (
             <TurfRow key={t?._id || `slot-${i}`} turf={t} index={i} flip={i % 2 === 1} />
           ))}
