@@ -33,7 +33,7 @@ interface BookingRaw {
   createdAt: string;
 }
 
-interface BookingDisplay {
+export interface BookingDisplay {
   id: string;
   turfId: string;
   turfName: string;
@@ -69,7 +69,7 @@ const STATUS: Record<string, { label: string; tone: 'lime' | 'chalk' | 'red' }> 
 
 // ─── Season record row with inline expanding ticket stub ────────────
 
-function RecordRow({
+export function RecordRow({
   booking,
   expanded,
   onToggle,
