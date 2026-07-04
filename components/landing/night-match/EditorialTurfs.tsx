@@ -55,6 +55,7 @@ function TurfRow({ turf, index, flip }: { turf?: Turf; index: number; flip: bool
       }
       gsap.registerPlugin(ScrollTrigger);
       const rise = el.querySelectorAll('.nm-rise');
+      const imgLayer = el.querySelector('.nm-img-parallax');
       ctx = gsap.context(() => {
         // Continuous choreography → scrub-bound: the 4° wipe draws open on
         // the way down and closes again on the way back up, meta rises/falls.
@@ -71,6 +72,25 @@ function TurfRow({ turf, index, flip }: { turf?: Turf; index: number; flip: bool
           { y: 0, autoAlpha: 1, duration: 0.6, stagger: 0.08, ease: 'none' },
           '-=0.5'
         );
+
+        // Scroll-LINKED horizontal parallax on the image itself: it enters
+        // from the row's side (left-column rows from the left, right-column
+        // rows from the right) and keeps drifting across the whole time the
+        // row is on screen — position bound 1:1 to the scrollbar.
+        gsap.fromTo(
+          imgLayer,
+          { xPercent: flip ? 11 : -11 },
+          {
+            xPercent: flip ? -7 : 7,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: el,
+              start: 'top bottom',
+              end: 'bottom top',
+              scrub: true,
+            },
+          }
+        );
       }, el);
     });
     return () => {
@@ -83,26 +103,30 @@ function TurfRow({ turf, index, flip }: { turf?: Turf; index: number; flip: bool
   const media = (
     <div className={`relative lg:col-span-7 ${flip ? 'lg:col-start-6' : 'lg:col-start-1'}`}>
       <div className="relative aspect-[4/3] w-full overflow-hidden sm:aspect-[16/10]">
-        {img ? (
-          <Image
-            src={img}
-            alt={turf?.name || 'Featured turf'}
-            fill
-            sizes="(max-width: 1024px) 100vw, 58vw"
-            className="object-cover object-center"
-          />
-        ) : (
-          // Night Match placeholder — floodlit pitch texture
-          <div className="absolute inset-0 bg-[radial-gradient(120%_90%_at_75%_-10%,#16241d_0%,#0b1310_45%,#080b0a_80%)]">
-            <div
-              className="absolute inset-x-0 bottom-0 h-1/2 opacity-[0.07]"
-              style={{
-                backgroundImage:
-                  'repeating-linear-gradient(97deg, transparent 0 70px, rgba(243,247,241,0.9) 70px 72px)',
-              }}
+        {/* parallax image layer — scroll-linked horizontal slide (from the row's
+            side). Scaled up so the travel never reveals a container edge. */}
+        <div className="nm-img-parallax absolute inset-0 will-change-transform">
+          {img ? (
+            <Image
+              src={img}
+              alt={turf?.name || 'Featured turf'}
+              fill
+              sizes="(max-width: 1024px) 100vw, 58vw"
+              className="scale-[1.28] object-cover object-center"
             />
-          </div>
-        )}
+          ) : (
+            // Night Match placeholder — floodlit pitch texture
+            <div className="absolute inset-0 scale-[1.28] bg-[radial-gradient(120%_90%_at_75%_-10%,#16241d_0%,#0b1310_45%,#080b0a_80%)]">
+              <div
+                className="absolute inset-x-0 bottom-0 h-1/2 opacity-[0.07]"
+                style={{
+                  backgroundImage:
+                    'repeating-linear-gradient(97deg, transparent 0 70px, rgba(243,247,241,0.9) 70px 72px)',
+                }}
+              />
+            </div>
+          )}
+        </div>
         {/* bottom scrim for name legibility */}
         <div className="absolute inset-0 bg-gradient-to-t from-pitch-900/85 via-pitch-900/10 to-transparent" />
         {/* 4° wipe reveal overlay */}
