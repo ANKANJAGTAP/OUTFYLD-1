@@ -7,6 +7,7 @@ import { FilterSidebar } from "@/components/browse/FilterSidebar";
 import TurfGrid from "@/components/browse/TurfGrid";
 import { NightFooter } from '@/components/landing/night-match/NightFooter';
 import { NightShell } from "@/components/night/NightShell";
+import { NightDrawer } from "@/components/night/NightDrawer";
 import { SquadSelector } from "@/components/night/SquadSelector";
 import { OdometerText } from "@/components/night/OdometerText";
 import { PitchDivider } from "@/components/landing/night-match/PitchDivider";
@@ -82,6 +83,8 @@ function BrowsePageInner() {
   const [sortBy, setSortBy] = useState("newest");
   const [currentPage, setCurrentPage] = useState(1);
   const [browseData, setBrowseData] = useState<BrowseData | null>(null);
+  // Mobile-only filter drawer (desktop keeps the sticky sidebar)
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const SPORT_CHIPS = [
     "All",
@@ -180,8 +183,21 @@ function BrowsePageInner() {
               )}
             </div>
 
-            {/* Sort */}
+            {/* Sort (+ mobile Filters trigger) */}
             <div className="flex w-full items-center gap-3 md:w-auto">
+              {/* Mobile-only: open the filter drawer */}
+              <button
+                onClick={() => setFiltersOpen(true)}
+                className="flex h-11 shrink-0 items-center gap-2 rounded-[4px] border border-pitchline bg-pitch-900/60 px-4 font-mono text-xs uppercase tracking-[0.12em] text-chalk-100 transition-colors duration-200 ease-night hover:border-flood-500/60 lg:hidden"
+              >
+                <SlidersHorizontal className="h-4 w-4 text-flood-500" />
+                Filters
+                {activeFilterCount > 0 && (
+                  <span className="rounded-[3px] border border-flood-500/40 px-1.5 text-[10px] leading-4 text-flood-500">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </button>
               <span className="hidden items-center gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-chalk-400 sm:flex">
                 <ArrowUpDown className="h-3.5 w-3.5 text-flood-500" />
                 Sort
@@ -271,8 +287,8 @@ function BrowsePageInner() {
 
         {/* ── Grid Layout: Sidebar + Turfs ── */}
         <div className="relative grid min-h-[calc(100vh-200px)] gap-6 lg:grid-cols-4 lg:gap-8">
-          {/* Sidebar */}
-          <div className="sticky top-[150px] max-h-[calc(100vh-170px)] self-start overflow-y-auto pb-4 lg:col-span-1 [&::-webkit-scrollbar]:hidden">
+          {/* Sidebar — desktop only; mobile uses the NightDrawer below */}
+          <div className="sticky top-[150px] hidden max-h-[calc(100vh-170px)] self-start overflow-y-auto pb-4 lg:col-span-1 lg:block [&::-webkit-scrollbar]:hidden">
             <div className="overflow-hidden rounded-[4px] border border-pitchline bg-pitch-700/80">
               <div className="flex items-center justify-between border-b border-pitchline/60 px-5 py-4">
                 <div className="flex items-center gap-2.5">
@@ -319,6 +335,39 @@ function BrowsePageInner() {
           </div>
         </div>
       </div>
+
+      {/* ── Mobile filter drawer ── */}
+      <NightDrawer
+        open={filtersOpen}
+        onClose={() => setFiltersOpen(false)}
+        subtitle="Dial it in"
+        title="Filters"
+        footer={
+          <div className="flex items-center gap-3">
+            <button
+              onClick={resetAll}
+              className="flex h-12 items-center justify-center gap-2 rounded-[4px] border border-chalk-400/30 px-5 font-mono text-xs uppercase tracking-[0.14em] text-chalk-100 transition-colors duration-200 ease-night hover:border-flood-500 hover:text-flood-500"
+            >
+              <X className="h-4 w-4" />
+              Reset
+            </button>
+            <button
+              onClick={() => setFiltersOpen(false)}
+              className="flex h-12 flex-1 items-center justify-center gap-2 rounded-[4px] bg-flood-500 px-5 font-mono text-xs uppercase tracking-[0.14em] text-pitch-900 transition-[transform,background-color] duration-200 ease-night hover:bg-flood-600 active:translate-y-[2px]"
+            >
+              Show <OdometerText value={liveCount} /> {liveCount === 1 ? "result" : "results"}
+            </button>
+          </div>
+        }
+      >
+        <FilterSidebar
+          filters={filters}
+          onFiltersChange={setFilters}
+          availableCities={browseData?.filters.cities || []}
+          availableSports={browseData?.filters.sports || []}
+          priceRange={browseData?.filters.priceRange || { min: 0, max: 10000 }}
+        />
+      </NightDrawer>
 
       <NightFooter />
     </NightShell>
