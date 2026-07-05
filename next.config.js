@@ -2,8 +2,17 @@ const withPWA = require('@ducanh2912/next-pwa').default({
   dest: 'public',
   register: true,
   disable: process.env.NODE_ENV === 'development',
+  // After a deploy, a browser that still holds the previous build's service
+  // worker was serving the OLD cached app shell on the first load (e.g. the
+  // light-theme header) until the user navigated. skipWaiting + clientsClaim
+  // make a freshly-installed worker activate and take control of open pages
+  // immediately; reloadOnOnline refreshes once connectivity returns so stale
+  // chunks never linger.
+  cacheOnFrontEndNav: true,
+  reloadOnOnline: true,
   workboxOptions: {
     skipWaiting: true,
+    clientsClaim: true,
   },
 });
 

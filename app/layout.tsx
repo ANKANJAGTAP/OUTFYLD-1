@@ -5,6 +5,7 @@ import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { LocationProvider } from '@/contexts/LocationContext';
 import RoleRedirect from '@/components/RoleRedirect';
+import { ServiceWorkerUpdater } from '@/components/ServiceWorkerUpdater';
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Analytics } from "@vercel/analytics/next"
 
@@ -59,6 +60,7 @@ export default function RootLayout({
             <Toaster position="top-right" richColors closeButton />
           </LocationProvider>
         </AuthProvider>
+        <ServiceWorkerUpdater />
         <SpeedInsights />
         <Analytics />
       </body>
