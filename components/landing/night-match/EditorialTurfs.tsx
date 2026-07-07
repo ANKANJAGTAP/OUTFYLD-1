@@ -30,6 +30,20 @@ function turfImage(t?: Turf): string | null {
   return url;
 }
 
+// Anton (the display font) loads with preload:false and swaps in AFTER these
+// scroll effects measure the layout at idle time — shifting heading heights and
+// leaving every ScrollTrigger's start/end (and the connector's measured path)
+// stale, so reveals fire at the wrong scroll point and the line misaligns. One
+// ScrollTrigger.refresh() once the webfonts settle recomputes everything. The
+// module-level guard keeps it to a single refresh no matter how many rows call.
+let fontRefreshScheduled = false;
+function refreshAfterFonts(ScrollTrigger: { refresh: () => void }) {
+  if (fontRefreshScheduled) return;
+  if (typeof document === 'undefined' || !document.fonts) return;
+  fontRefreshScheduled = true;
+  document.fonts.ready.then(() => ScrollTrigger.refresh());
+}
+
 function TurfRow({ turf, index, flip }: { turf?: Turf; index: number; flip: boolean }) {
   const row = useRef<HTMLDivElement>(null);
   const img = turfImage(turf);
@@ -92,6 +106,9 @@ function TurfRow({ turf, index, flip }: { turf?: Turf; index: number; flip: bool
           }
         );
       }, el);
+
+      // Recompute all trigger positions once the display font has swapped in.
+      refreshAfterFonts(ScrollTrigger);
     });
     return () => {
       cancelled = true;
@@ -235,7 +252,10 @@ export function EditorialTurfs({ turfs }: { turfs: Turf[] }) {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     // Rebuild the path `d` from live image positions; returns its total length.
-    const build = (): number => {
+    // On refreshes (setInitialOffset=false) we update the geometry + dasharray
+    // but leave strokeDashoffset to the scrubbed tween, so re-measuring after a
+    // font swap never flashes the line hidden.
+    const build = (setInitialOffset = true): number => {
       // Only meaningful on lg+, where images actually alternate left/right.
       if (window.innerWidth < 1024) return 0;
       const cr = wrap.getBoundingClientRect();
@@ -264,13 +284,17 @@ export function EditorialTurfs({ turfs }: { turfs: Turf[] }) {
       path.setAttribute('d', d);
       const len = path.getTotalLength();
       path.style.strokeDasharray = String(len);
-      path.style.strokeDashoffset = reduce ? '0' : String(len);
+      if (reduce) {
+        path.style.strokeDashoffset = '0';
+      } else if (setInitialOffset) {
+        path.style.strokeDashoffset = String(len);
+      }
       return len;
     };
 
     let ctx: { revert: () => void } | undefined;
     let cancelled = false;
-    let onResize: (() => void) | undefined;
+    let cleanupObservers: (() => void) | undefined;
 
     const cancelIdle = deferIdle(async () => {
       const [{ gsap }, { ScrollTrigger }] = await Promise.all([
@@ -278,9 +302,9 @@ export function EditorialTurfs({ turfs }: { turfs: Turf[] }) {
         import('gsap/ScrollTrigger'),
       ]);
       if (cancelled) return;
+      gsap.registerPlugin(ScrollTrigger);
       const len0 = build();
       if (reduce || !len0) return;
-      gsap.registerPlugin(ScrollTrigger);
       ctx = gsap.context(() => {
         gsap.fromTo(
           path,
@@ -298,17 +322,38 @@ export function EditorialTurfs({ turfs }: { turfs: Turf[] }) {
           }
         );
       });
-      onResize = () => {
-        build();
+
+      // Re-measure the path geometry BEFORE every refresh recomputes trigger
+      // positions, so a font swap / image load / resize keeps the line locked to
+      // the images. A ResizeObserver on the wrapper catches layout shifts that a
+      // window 'resize' listener would miss (the biggest one: the Anton font
+      // swapping in and growing the turf-name headings after first paint).
+      const onRefreshInit = () => build(false);
+      ScrollTrigger.addEventListener('refreshInit', onRefreshInit);
+
+      let lastW = wrap.clientWidth;
+      let lastH = wrap.clientHeight;
+      const ro = new ResizeObserver(() => {
+        if (wrap.clientWidth === lastW && wrap.clientHeight === lastH) return;
+        lastW = wrap.clientWidth;
+        lastH = wrap.clientHeight;
         ScrollTrigger.refresh();
+      });
+      ro.observe(wrap);
+
+      // and once webfonts settle (belt-and-suspenders with the RO)
+      refreshAfterFonts(ScrollTrigger);
+
+      cleanupObservers = () => {
+        ScrollTrigger.removeEventListener('refreshInit', onRefreshInit);
+        ro.disconnect();
       };
-      window.addEventListener('resize', onResize);
     });
 
     return () => {
       cancelled = true;
       cancelIdle();
-      if (onResize) window.removeEventListener('resize', onResize);
+      cleanupObservers?.();
       ctx?.revert();
     };
   }, []);
