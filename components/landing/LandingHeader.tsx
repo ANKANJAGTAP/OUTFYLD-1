@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Menu, X, MapPin, User, LogOut, Shield, ChevronDown, ListOrdered, FileText, Award } from 'lucide-react';
@@ -18,23 +18,20 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-export function LandingHeader() {
+export function LandingHeader({ home = false }: { home?: boolean }) {
   const { isOpen, setIsOpen, handleMouseEnter, handleMouseLeave } = useHoverDropdown();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { user, firebaseUser, logout, loading, initialLoading } = useAuth();
   const router = useRouter();
-  const pathname = usePathname();
-  const isHome = pathname === '/';
-  // Night Match routes share the dark floodlit header treatment
-  const NIGHT_ROUTES = ['/', '/browse', '/about', '/contact'];
-  const isNight =
-    NIGHT_ROUTES.includes(pathname) ||
-    pathname.startsWith('/book/') ||
-    pathname.startsWith('/bookings/') ||
-    pathname.startsWith('/feedback/') ||
-    pathname.startsWith('/careers') ||
-    pathname.startsWith('/dashboard');
+  // Every page that renders this header is now a Night Match (dark) surface, so
+  // the theme is unconditionally dark. It used to be derived from usePathname(),
+  // but that hook resolves to '' during Vercel's static/ISR prerender — which
+  // baked the OLD light header into the production HTML while the hero rendered
+  // dark. `home` is passed explicitly (only the homepage floats a transparent
+  // bar over its hero); no render-context-dependent hook drives the theme.
+  const isHome = home;
+  const isNight = true;
 
   // Handle scroll to change header background on home page
   useEffect(() => {
@@ -120,8 +117,8 @@ export function LandingHeader() {
             {initialLoading ? (
                // Show skeleton loader while determining auth state
                <div className="flex items-center space-x-3">
-                  <div className="h-9 w-20 bg-gray-200/50 animate-pulse rounded-md"></div>
-                  <div className="h-9 w-20 bg-gray-200/50 animate-pulse rounded-md"></div>
+                  <div className="h-9 w-20 bg-chalk-100/10 animate-pulse rounded-md"></div>
+                  <div className="h-9 w-20 bg-chalk-100/10 animate-pulse rounded-md"></div>
                </div>
             ) : firebaseUser && user ? (
               // User is logged in
@@ -303,8 +300,8 @@ export function LandingHeader() {
                 {initialLoading ? (
                   // Mobile skeleton loader
                   <>
-                    <div className="h-9 w-full bg-gray-200 animate-pulse rounded-md"></div>
-                    <div className="h-9 w-full bg-gray-200 animate-pulse rounded-md"></div>
+                    <div className="h-9 w-full bg-chalk-100/10 animate-pulse rounded-md"></div>
+                    <div className="h-9 w-full bg-chalk-100/10 animate-pulse rounded-md"></div>
                   </>
                 ) : firebaseUser && user ? (
                   // Mobile: User is logged in
@@ -399,12 +396,16 @@ export function LandingHeader() {
                   // Mobile: User is not logged in
                   <>
                     <Link href="/auth/login">
-                      <Button variant="outline" size="sm" className="w-full">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="w-full bg-transparent border border-chalk-400/30 text-chalk-100 hover:border-flood-500 hover:text-flood-500 hover:bg-transparent"
+                      >
                         Login
                       </Button>
                     </Link>
                     <Link href="/auth/register">
-                      <Button size="sm" className="w-full bg-green-500 hover:bg-green-600">
+                      <Button size="sm" className="w-full bg-flood-500 text-pitch-900 font-semibold hover:bg-flood-600">
                         Sign Up
                       </Button>
                     </Link>

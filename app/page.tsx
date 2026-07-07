@@ -31,7 +31,7 @@ export default async function Home() {
         <NightClass />
         {/* one persistent living layer behind every section (z-1; sections are z-2, slightly translucent) */}
         <AmbientLayer />
-        <LandingHeader />
+        <LandingHeader home />
         <HeroKickoff />
         <Scoreboard stats={stats} />
         <BroadcastTicker stats={stats} />
